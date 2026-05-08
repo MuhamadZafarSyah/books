@@ -1,13 +1,13 @@
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { redirect } from "next/navigation";
+import { auth } from "./auth";
 
 /**
  * Get the current authenticated user, or null if not logged in.
  * Use in Server Components to conditionally render content.
  */
 export async function getCurrentUser() {
-  const session = await auth()
-  return session?.user ?? null
+  const session = await auth();
+  return session?.user ?? null;
 }
 
 /**
@@ -15,11 +15,11 @@ export async function getCurrentUser() {
  * Use in Server Components that must be behind auth.
  */
 export async function requireAuth() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user) {
-    redirect("/auth")
+    redirect("/auth");
   }
 
-  return session.user
+  return session.user;
 }
