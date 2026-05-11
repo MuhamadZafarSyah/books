@@ -1,8 +1,34 @@
-import { Resend } from "resend"
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+function createTransporter() {
+  const port = Number(requireEnv("SMTP_PORT"));
+
+  if (!Number.isInteger(port)) {
+    throw new Error("SMTP_PORT must be a valid number");
+  }
+
+  return nodemailer.createTransport({
+    host: requireEnv("SMTP_HOST"),
+    port,
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: requireEnv("SMTP_USER"),
+      pass: requireEnv("SMTP_PASSWORD"),
+    },
+  });
+}
 
 /**
  * Send a verification email with a tokenized link.
@@ -10,33 +36,39 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
  */
 export async function sendVerificationEmail(
   email: string,
-  token: string
+  token: string,
 ): Promise<void> {
-  const verificationUrl = `${APP_URL}/api/auth/verify-email?token=${token}`
+  const verificationUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || requireEnv("SMTP_USER");
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL || "noreply@resend.dev",
+  await transporter.sendMail({
+    from,
     to: email,
-    subject: "Verify your email address",
+    subject: "Verify your Shelfgram email address",
+    text: `Verify your email by opening this link: ${verificationUrl}\n\nThis link will expire in 1 hour.`,
     html: `
-      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">
+      <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1b1c19; background: #fbf9f4;">
+        <p style="font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #6d5b46; margin: 0 0 16px;">
+          Shelfgram
+        </p>
+        <h1 style="font-family: Georgia, 'Times New Roman', serif; color: #061b0e; font-size: 30px; line-height: 1.2; margin: 0 0 16px;">
           Verify your email
-        </h2>
-        <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-          Click the button below to verify your email address and complete your registration.
+        </h1>
+        <p style="color: #434843; font-size: 16px; line-height: 1.6; margin: 0 0 28px;">
+          Click the button below to verify your email address and complete your Shelfgram registration.
           This link will expire in <strong>1 hour</strong>.
         </p>
         <a
           href="${verificationUrl}"
-          style="display: inline-block; background-color: #111; color: #fff; padding: 14px 28px; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 8px;"
+          style="display: inline-block; background-color: #061b0e; color: #ffffff; padding: 14px 24px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px;"
         >
           Verify Email
         </a>
-        <p style="color: #999; font-size: 13px; margin-top: 32px; line-height: 1.5;">
-          If you didn't request this, you can safely ignore this email.
+        <p style="color: #737973; font-size: 13px; margin: 32px 0 0; line-height: 1.5;">
+          If you did not request this, you can safely ignore this email.
         </p>
       </div>
     `,
-  })
+  });
 }

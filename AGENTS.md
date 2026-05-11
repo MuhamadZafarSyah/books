@@ -33,7 +33,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - Prisma v7 schema is `src/prisma/schema.prisma`; `prisma.config.ts` loads `.env` and points migrations to `src/prisma/migrations`.
 - The app Prisma client is `src/lib/db.ts`, using `@prisma/adapter-pg` with `pg.Pool` and `DATABASE_URL`.
-- Required env vars inferred from code: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`; optional `RESEND_FROM_EMAIL`.
+- Required env vars inferred from code: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `NEXT_PUBLIC_APP_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`; optional `SMTP_SECURE`, `EMAIL_FROM`.
 - NextAuth v5 config lives in `src/lib/auth.ts` and exports `{ handlers, signIn, signOut, auth }`; `src/app/api/auth/[...nextauth]/route.ts` only re-exports `GET`/`POST`.
 - Auth uses JWT sessions even though standard NextAuth Prisma models are in the schema; credentials login requires `emailVerified` and a bcrypt password, while Google sign-in auto-verifies existing users.
 - Email registration flow is split across `src/actions/auth.ts`, `src/lib/email.ts`, and `GET /api/auth/verify-email`.

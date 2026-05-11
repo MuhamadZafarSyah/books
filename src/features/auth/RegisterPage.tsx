@@ -54,7 +54,7 @@ function RegisterPage() {
       />
 
       <main className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        <section className="relative flex min-h-[34rem] w-full flex-col justify-between overflow-hidden bg-[#1b3022] p-6 text-[#d0e9d4] sm:min-h-[42rem] sm:p-8 lg:min-h-screen lg:w-3/5 lg:p-16 xl:p-20">
+        <section className="relative flex min-h-136 w-full flex-col justify-between overflow-hidden bg-[#1b3022] p-6 text-[#d0e9d4] sm:min-h-168 sm:p-8 lg:min-h-screen lg:w-3/5 lg:p-16 xl:p-20">
           <div
             aria-hidden="true"
             className="absolute -right-24 -top-24 size-96 rounded-full bg-[#061b0e]/40 blur-[120px]"
@@ -83,7 +83,7 @@ function RegisterPage() {
               </cite>
             </div>
 
-            <Card className="group relative aspect-[4/3] max-w-2xl rounded-3xl border-0 bg-transparent p-0 shadow-2xl shadow-[#061b0e]/40 ring-0">
+            <Card className="group relative aspect-4/3 max-w-2xl rounded-3xl border-0 bg-transparent p-0 shadow-2xl shadow-[#061b0e]/40 ring-0">
               <CardContent className="relative h-full overflow-hidden rounded-3xl p-0">
                 <div
                   aria-label="Reading journal scene"
