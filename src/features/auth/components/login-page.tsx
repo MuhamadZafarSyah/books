@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
@@ -160,40 +161,25 @@ function LoginPage() {
                                     ) : null}
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <Label
-                                            htmlFor="password"
-                                            className="text-sm normal-case tracking-normal text-muted-foreground"
-                                        >
-                                            Password
-                                        </Label>
+                                <PasswordInput
+                                    id="password"
+                                    label="Password"
+                                    labelAddon={
                                         <Link
                                             className="text-xs font-semibold text-secondary-foreground transition-colors hover:text-primary"
                                             href="#"
                                         >
                                             Forgot password?
                                         </Link>
-                                    </div>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            placeholder="********"
-                                            autoComplete="current-password"
-                                            disabled={isPending}
-                                            aria-invalid={Boolean(errors.password)}
-                                            className="h-12 rounded-2xl border border-input bg-background px-10 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-                                            {...register("password")}
-                                        />
-                                    </div>
-                                    {errors.password ? (
-                                        <p className="text-sm font-medium text-destructive">
-                                            {errors.password.message}
-                                        </p>
-                                    ) : null}
-                                </div>
+                                    }
+                                    labelClassName="text-sm normal-case tracking-normal text-muted-foreground"
+                                    placeholder="********"
+                                    autoComplete="current-password"
+                                    disabled={isPending}
+                                    error={errors.password?.message}
+                                    inputClassName="h-12 rounded-2xl border border-input bg-background pl-4 pr-12 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                                    {...register("password")}
+                                />
 
                                 <Button
                                     type="submit"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,17 +8,11 @@ import {
   ArrowRight,
   CheckCircle2,
   Circle,
-  Eye,
-  EyeOff,
   Lock,
   Quote,
   ShieldCheck,
 } from "lucide-react";
-import {
-  useForm,
-  useWatch,
-  type UseFormRegisterReturn,
-} from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { setPassword } from "@/actions/auth";
@@ -31,8 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import {
   setPasswordSchema,
@@ -68,67 +61,9 @@ function RequirementItem({ met, children }: { met: boolean; children: string }) 
   );
 }
 
-function PasswordInput({
-  id,
-  label,
-  registration,
-  error,
-  show,
-  onToggleShow,
-  disabled,
-}: {
-  id: string;
-  label: string;
-  registration: UseFormRegisterReturn;
-  error?: string;
-  show: boolean;
-  onToggleShow: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={id}
-        className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#061b0e]"
-      >
-        {label}
-      </Label>
-      <div className="relative">
-        <Lock className="absolute left-5 top-1/2 size-5 -translate-y-1/2 text-[#737973]" />
-        <Input
-          id={id}
-          type={show ? "text" : "password"}
-          placeholder="••••••••"
-          autoComplete="new-password"
-          disabled={disabled}
-          aria-invalid={Boolean(error)}
-          className="h-12 rounded-xl border border-[#c3c8c1] bg-[#fbf9f4] pl-14 pr-14 text-base text-[#1b1c19] shadow-none placeholder:text-[#434843]/35 focus-visible:border-[#061b0e] focus-visible:ring-2 focus-visible:ring-[#061b0e]/10 sm:h-14"
-          {...registration}
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onToggleShow}
-          disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full text-[#434843] hover:bg-[#f0eee9] hover:text-[#061b0e]"
-          aria-label={show ? `Hide ${label}` : `Show ${label}`}
-        >
-          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </Button>
-      </div>
-      {error ? (
-        <p className="text-sm font-medium text-[#ba1a1a]">{error}</p>
-      ) : null}
-    </div>
-  );
-}
-
 export default function SetPasswordPage({ token }: SetPasswordPageProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     control,
     handleSubmit,
@@ -168,8 +103,6 @@ export default function SetPasswordPage({ token }: SetPasswordPageProps) {
       }
 
       reset();
-      setShowPassword(false);
-      setShowConfirmPassword(false);
       toast.success("Password set successfully. Please sign in.");
       router.replace("/auth");
     });
@@ -241,21 +174,25 @@ export default function SetPasswordPage({ token }: SetPasswordPageProps) {
                 <PasswordInput
                   id="password"
                   label="New Password"
-                  registration={register("password")}
                   error={errors.password?.message}
-                  show={showPassword}
-                  onToggleShow={() => setShowPassword((show) => !show)}
+                  labelClassName="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#061b0e]"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
                   disabled={isPending || !token}
+                  inputClassName="h-12 rounded-xl border border-[#c3c8c1] bg-[#fbf9f4] pl-4 pr-12 text-base text-[#1b1c19] shadow-none placeholder:text-[#434843]/35 focus-visible:border-[#061b0e] focus-visible:ring-2 focus-visible:ring-[#061b0e]/10 sm:h-14"
+                  {...register("password")}
                 />
 
                 <PasswordInput
                   id="confirm-password"
                   label="Confirm Password"
-                  registration={register("confirmPassword")}
                   error={errors.confirmPassword?.message}
-                  show={showConfirmPassword}
-                  onToggleShow={() => setShowConfirmPassword((show) => !show)}
+                  labelClassName="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#061b0e]"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
                   disabled={isPending || !token}
+                  inputClassName="h-12 rounded-xl border border-[#c3c8c1] bg-[#fbf9f4] pl-4 pr-12 text-base text-[#1b1c19] shadow-none placeholder:text-[#434843]/35 focus-visible:border-[#061b0e] focus-visible:ring-2 focus-visible:ring-[#061b0e]/10 sm:h-14"
+                  {...register("confirmPassword")}
                 />
 
                 <Card className="rounded-xl border-0 bg-[#f0eee9] py-0 shadow-none ring-0">
