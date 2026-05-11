@@ -68,7 +68,7 @@ function RegisterPage() {
       />
 
       <main className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        <section className="relative flex min-h-[32rem] w-full flex-col justify-between overflow-hidden bg-[#1b3022] p-5 text-[#d0e9d4] sm:min-h-[38rem] sm:p-6 lg:min-h-screen lg:w-3/5 lg:p-12 xl:p-16">
+        <section className="relative flex min-h-128 w-full flex-col justify-between overflow-hidden bg-[#1b3022] p-5 text-[#d0e9d4] sm:min-h-152 sm:p-6 lg:min-h-screen lg:w-3/5 lg:p-12 xl:p-16">
           <div
             aria-hidden="true"
             className="absolute -right-24 -top-24 size-96 rounded-full bg-[#061b0e]/40 blur-[120px]"
