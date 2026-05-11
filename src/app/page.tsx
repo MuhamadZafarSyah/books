@@ -2,32 +2,30 @@ import Link from "next/link";
 import { BookOpen, Handshake, LibraryBig, MessageCircle, ShieldCheck, Star, Users } from "lucide-react";
 
 import { CinematicHero } from "@/components/ui/cinematic-landing-hero";
+import { CinematicReadingFlow } from "@/components/ui/cinematic-reading-flow";
 
 const featureCards = [
   {
     icon: BookOpen,
-    title: "Reading log yang rapi",
-    description:
-      "Kelola buku sedang dibaca, selesai, ingin dibaca, dan koleksi fisik dengan status yang konsisten.",
+    title: "Catat buku",
+    description: "Kelola status baca dan koleksi fisik dalam satu rak.",
   },
   {
     icon: MessageCircle,
-    title: "Review dan quote personal",
-    description:
-      "Bagikan rating, kesan, dan catatan tanpa membuat feed terasa bising seperti social media umum.",
+    title: "Tulis review",
+    description: "Rating, quote, dan kesan tampil ringkas di feed.",
   },
   {
     icon: Handshake,
-    title: "Peminjaman buku fisik",
-    description:
-      "Tampilkan buku yang tersedia dipinjam dengan status, kondisi, dan request yang aman.",
+    title: "Pinjam buku",
+    description: "Lihat buku tersedia dan ajukan request dengan aman.",
   },
 ] as const;
 
 const trustItems = [
-  "Profil membaca membantu rekomendasi terasa personal.",
-  "Status koleksi fisik jelas sebelum request peminjaman.",
-  "Metric sosial menjadi dukungan, bukan pusat tekanan.",
+  "Profil membaca yang personal.",
+  "Status pinjam yang jelas.",
+  "Feed sosial yang tetap tenang.",
 ] as const;
 
 const statCards = [
@@ -41,30 +39,31 @@ export default function Page() {
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       <CinematicHero
         brandName="Shelfgram"
-        cardHeading="Platform social reading yang terasa seperti ruang baca."
-        ctaDescription="Mulai catat buku yang kamu baca, tulis review, bangun profil kebiasaan membaca, dan buka peluang peminjaman buku fisik dengan sesama pembaca."
-        ctaHeading="Bangun Shelfgram-mu."
+        cardDescription="Catat buku, tulis review, dan temukan koleksi fisik pembaca lain."
+        cardHeading="Buku. Review. Pinjam."
+        ctaDescription="Catat buku dan temukan pembaca lain."
+        ctaHeading="Mulai rakmu."
         metricLabel="buku terkurasi"
         metricValue={128}
         splineScene="https://prod.spline.design/oWb2YJN5ufCpBoa3/scene.splinecode"
-        tagline1="Baca, tandai,"
-        tagline2="terhubung lewat buku."
+        tagline1="Baca."
+        tagline2="Review. Pinjam."
       />
+
+      <CinematicReadingFlow />
 
       <section className="relative border-y border-border/80 bg-card/60 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8B6F4E]">
-              Setelah hero cinematic
+              Intinya
             </p>
             <h2 className="mt-3 max-w-3xl font-heading text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-              Visual 3D yang menarik perhatian, alur produk tetap jelas untuk pembaca.
+              Satu tempat untuk buku, review, dan peminjaman.
             </h2>
           </div>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            Landing ini menonjolkan Spline scene sebagai titik fokus, lalu mengarahkan user ke
-            manfaat utama Shelfgram: reading log, review, profil membaca, dan peminjaman buku
-            fisik yang aman.
+            Shelfgram dibuat untuk pembaca yang ingin mencatat bacaan dan terhubung tanpa feed yang berisik.
           </p>
         </div>
 
@@ -129,7 +128,7 @@ export default function Page() {
               UI consistency
             </p>
             <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-              Tetap cozy, editorial, dan nyaman setelah efek cinematic selesai.
+              Cozy, jelas, dan konsisten.
             </h2>
             <ul className="mt-7 grid gap-3">
               {trustItems.map((item) => (

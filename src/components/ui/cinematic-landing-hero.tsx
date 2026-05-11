@@ -87,14 +87,22 @@ const INJECTED_STYLES = `
   }
 
   .sg-floating-badge {
-    background: linear-gradient(135deg, rgba(255, 249, 240, 0.14) 0%, rgba(255, 249, 240, 0.035) 100%);
+    background: linear-gradient(135deg, rgba(7, 21, 15, 0.94) 0%, rgba(31, 77, 58, 0.86) 100%);
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
     box-shadow:
-      0 0 0 1px rgba(255, 249, 240, 0.12),
-      0 24px 50px -14px rgba(0, 0, 0, 0.72),
+      0 0 0 1px rgba(255, 249, 240, 0.2),
+      0 24px 50px -14px rgba(0, 0, 0, 0.85),
       inset 0 1px 1px rgba(255,249,240,0.18),
-      inset 0 -1px 1px rgba(0,0,0,0.45);
+      inset 0 -1px 1px rgba(0,0,0,0.55);
+  }
+
+  .sg-copy-panel {
+    background: linear-gradient(135deg, rgba(7, 21, 15, 0.78) 0%, rgba(31, 77, 58, 0.48) 100%);
+    border: 1px solid rgba(255, 249, 240, 0.16);
+    box-shadow: 0 22px 54px -28px rgba(0, 0, 0, 0.76), inset 0 1px 1px rgba(255,249,240,0.1);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .sg-btn-light, .sg-btn-dark {
@@ -135,20 +143,18 @@ export interface CinematicHeroProps extends React.HTMLAttributes<HTMLDivElement>
 
 export function CinematicHero({
   brandName = "Shelfgram",
-  tagline1 = "Baca, tandai,",
-  tagline2 = "terhubung lewat buku.",
-  cardHeading = "Rak baca yang terasa hidup.",
+  tagline1 = "Baca.",
+  tagline2 = "Review. Pinjam.",
+  cardHeading = "Buku. Review. Pinjam.",
   cardDescription = (
     <>
-      <span className="font-semibold text-[#fff9f0]">Shelfgram</span> menyatukan
-      reading log, review, profil kebiasaan membaca, dan koleksi buku fisik dalam
-      satu ruang sosial yang tenang.
+      Catat buku, tulis review, dan temukan koleksi fisik pembaca lain.
     </>
   ),
   metricValue = 128,
   metricLabel = "buku terkurasi",
-  ctaHeading = "Mulai rak bacaanmu.",
-  ctaDescription = "Catat buku, tulis review, bangun profil membaca, dan temukan koneksi lewat koleksi fisik pembaca lain.",
+  ctaHeading = "Mulai rakmu.",
+  ctaDescription = "Catat buku. Tulis review. Temukan pembaca lain.",
   splineScene = DEFAULT_SPLINE_SCENE,
   className,
   ...props
@@ -338,7 +344,7 @@ export function CinematicHero({
       <div aria-hidden="true" className="sg-bg-grid absolute inset-0 z-0 pointer-events-none opacity-60" />
 
       <div className="sg-hero-text-wrapper sg-transform-3d absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
-        <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground shadow-sm backdrop-blur sm:text-sm">
+        <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm backdrop-blur sm:text-sm">
           <LibraryBig aria-hidden="true" className="size-4 text-primary" />
           Social reading for cozy libraries
         </p>
@@ -406,7 +412,7 @@ export function CinematicHero({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">Review tersimpan</p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/55 sm:text-xs">Rating dan kesan dalam satu feed.</p>
+                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">Rating dan kesan.</p>
                 </div>
               </div>
 
@@ -416,29 +422,29 @@ export function CinematicHero({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">Buku bisa dipinjam</p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/55 sm:text-xs">Status koleksi fisik jelas.</p>
+                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">Siap dipinjam.</p>
                 </div>
               </div>
             </div>
 
-            <div className="sg-card-left sg-gsap-reveal order-3 flex w-full flex-col justify-center px-2 text-center lg:order-1 lg:px-0 lg:text-left">
+            <div className="sg-card-left sg-copy-panel sg-gsap-reveal order-3 flex w-full flex-col justify-center rounded-[1.5rem] px-4 py-4 text-center lg:order-1 lg:px-5 lg:py-5 lg:text-left">
               <h3 className="mb-3 font-heading text-2xl font-semibold tracking-tight text-[#fff9f0] sm:text-3xl lg:text-4xl">
                 {cardHeading}
               </h3>
-              <p className="mx-auto hidden max-w-sm text-sm leading-7 text-[#fff9f0]/68 md:block lg:mx-0 lg:max-w-none lg:text-base">
+              <p className="mx-auto hidden max-w-sm text-sm leading-7 text-[#fff9f0]/90 md:block lg:mx-0 lg:max-w-none lg:text-base">
                 {cardDescription}
               </p>
 
-              <div className="sg-mini-card mt-5 hidden rounded-2xl border border-[#fff9f0]/10 bg-[#fff9f0]/8 p-4 text-left backdrop-blur md:block">
+              <div className="sg-mini-card mt-5 hidden rounded-2xl border border-[#fff9f0]/16 bg-[#07150f]/55 p-4 text-left backdrop-blur md:block">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#fff9f0]/50">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#fff9f0]/75">
                       Library pulse
                     </p>
                     <p className="mt-1 text-3xl font-bold text-[#fff9f0]">
                       <span className="sg-counter-val">0</span>
                     </p>
-                    <p className="text-xs text-[#fff9f0]/55">{metricLabel}</p>
+                    <p className="text-xs text-[#fff9f0]/82">{metricLabel}</p>
                   </div>
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-[#fff9f0]/10 text-[#d6b28b]">
                     <MessageCircle aria-hidden="true" className="size-6" />
