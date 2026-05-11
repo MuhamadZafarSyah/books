@@ -8,6 +8,15 @@ export const registerSchema = z.object({
     .email("Please enter a valid email address."),
 });
 
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required.")
+    .email("Please enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
+});
+
 export const setPasswordSchema = z
   .object({
     password: z
@@ -26,5 +35,6 @@ export const setPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type SetPasswordFormValues = z.infer<typeof setPasswordSchema>;

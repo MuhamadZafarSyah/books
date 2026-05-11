@@ -1,8 +1,14 @@
 "use client";
 
+import { useTransition } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
+import { loginWithCredentials, loginWithGoogle } from "@/actions/auth";
 import {
     Card,
     CardContent,
@@ -15,8 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { loginWithGoogle } from "@/actions/auth";
+import {
+    loginSchema,
+    type LoginFormValues,
+} from "@/features/auth/schemas/auth-schemas";
 
 const noiseBackground =
     "url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')";
@@ -25,6 +33,35 @@ const readingCornerImage =
     "https://lh3.googleusercontent.com/aida-public/AB6AXuANT1Vw7l_nFCWLjBoauUol2cB6ZnDAvVxQ_dBpzkZEqBqhCiqbGzJIdiRGkEtu160cuApO-96zB5nVdxooERUrctnVoTKcu512NKUrdEc8-Z1keewKPfIbiI3z1k_yZPsA5k5FPdao4TkTRDvN4vY4ELsh2MRtayUiPBf9SANcqz3ZpG2sLLKLF4L7per4StTPh6vmUGv4R82sZcaRmV7zKq5KYHbpNsbep_-YBiu38U22qjUrN1cHjvxOrSUdAjD9AY2tXgZm-3s";
 
 function LoginPage() {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+    });
+
+    function onSubmit(values: LoginFormValues) {
+        startTransition(async () => {
+            const result = await loginWithCredentials(values.email, values.password);
+
+            if (!result.success) {
+                toast.error(result.error ?? "Unable to sign in.");
+                return;
+            }
+
+            toast.success("Signed in successfully.");
+            router.replace("/dashboard");
+            router.refresh();
+        });
+    }
+
     const handleLoginWithGoogle = async () => {
         try {
             await loginWithGoogle();
@@ -92,7 +129,10 @@ function LoginPage() {
                         </CardHeader>
 
                         <CardContent className="px-0">
-                            <form className="space-y-6">
+                            <form
+                                className="space-y-6"
+                                onSubmit={handleSubmit(onSubmit)}
+                            >
                                 <div className="space-y-2">
                                     <Label
                                         htmlFor="email"
@@ -104,12 +144,20 @@ function LoginPage() {
                                         <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             id="email"
-                                            name="email"
                                             type="email"
                                             placeholder="reader@example.com"
+                                            autoComplete="email"
+                                            disabled={isPending}
+                                            aria-invalid={Boolean(errors.email)}
                                             className="h-12 rounded-2xl border border-input bg-background px-10 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                                            {...register("email")}
                                         />
                                     </div>
+                                    {errors.email ? (
+                                        <p className="text-sm font-medium text-destructive">
+                                            {errors.email.message}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div className="space-y-2">
@@ -131,16 +179,25 @@ function LoginPage() {
                                         <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             id="password"
-                                            name="password"
                                             type="password"
                                             placeholder="********"
+                                            autoComplete="current-password"
+                                            disabled={isPending}
+                                            aria-invalid={Boolean(errors.password)}
                                             className="h-12 rounded-2xl border border-input bg-background px-10 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                                            {...register("password")}
                                         />
                                     </div>
+                                    {errors.password ? (
+                                        <p className="text-sm font-medium text-destructive">
+                                            {errors.password.message}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <Button
                                     type="submit"
+                                    disabled={isPending}
                                     className="h-12 w-full rounded-2xl text-sm font-semibold normal-case tracking-normal shadow-lg shadow-primary/10"
                                 >
                                     Sign In
