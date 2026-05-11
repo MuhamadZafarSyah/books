@@ -10,6 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Real source is under `src/`: App Router routes in `src/app`, auth UI in `src/features/auth`, shared code in `src/lib`, server actions in `src/actions`.
 - Path alias is `@/* -> ./src/*`; prefer it for app imports.
 - Tailwind v4 is configured through `src/app/globals.css` and `@tailwindcss/postcss`; shadcn config is `components.json` with UI aliases to `@/components/ui`.
+- Use feature folders under `src/features/<feature>/`; for auth, UI components live in `components/` and Zod schemas in `schemas/`.
 
 ## Commands
 
@@ -25,6 +26,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - UI must be responsive across mobile, tablet, and desktop; review layouts with small-screen-first Tailwind classes before finalizing.
 - Prefer existing shadcn UI components from `src/components/ui` for buttons, inputs, labels, cards, separators, toasts, and similar primitives; only use raw HTML when no matching component exists or the component would be inappropriate.
 - Before importing a component, hook, icon, or framework API, verify it exists in this repo/dependency version; do not leave speculative imports or imports from packages that are not installed.
+- Build forms with `react-hook-form` plus Zod schemas/resolvers; keep form schemas near the feature (for auth, `src/features/auth/schemas/auth-schemas.ts`) and avoid hand-rolled `FormEvent` submit handlers.
+- Redux Toolkit is installed, but only use it for genuinely shared app state; keep local UI state such as password visibility in component state, and do not put form state in Redux.
+- If Redux becomes necessary, keep one app store and colocate feature slices under `src/features/<feature>/store/`.
 - For Next.js or React APIs, check the installed Next `16.2.5` docs in `node_modules/next/dist/docs/` when unsure; avoid deprecated APIs and heed deprecation notices.
 - Keep generated UI aligned with the Shelfgram Stitch direction: cozy editorial, warm cream surfaces, forest-green primary, muted brown accents, Noto Serif headings, Manrope body, soft rounded controls, paper-grain/ambient depth when useful.
 - After UI/code changes, run `npm run lint`; run `npm run build` when changes touch routing, server/client boundaries, auth, Prisma, or framework APIs.
