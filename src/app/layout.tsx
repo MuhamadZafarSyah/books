@@ -3,6 +3,8 @@ import { Geist_Mono, Manrope, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const notoSerif = Noto_Serif({
   variable: "--font-heading",
@@ -43,8 +45,16 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster richColors />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          enableSystem
+        >
+          {children}
+          <ThemeToggle />
+          <Toaster richColors />
+        </ThemeProvider>
       </body>
     </html>
   );
