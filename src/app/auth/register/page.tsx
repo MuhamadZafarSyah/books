@@ -1,5 +1,10 @@
-import RegisterPage from "@/features/auth/components/register-page";
+import RegisterForm from "@/features/auth/components/register-form";
+import RegisterShell from "@/features/auth/components/register-shell";
 
 export default function Page() {
-  return <RegisterPage />;
+  return (
+    <RegisterShell>
+      <RegisterForm />
+    </RegisterShell>
+  );
 }

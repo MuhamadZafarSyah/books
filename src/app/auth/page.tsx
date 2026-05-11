@@ -1,5 +1,10 @@
-import LoginPage from "@/features/auth/components/login-page";
+import LoginForm from "@/features/auth/components/login-form";
+import LoginShell from "@/features/auth/components/login-shell";
 
 export default function Page() {
-  return <LoginPage />;
+  return (
+    <LoginShell>
+      <LoginForm />
+    </LoginShell>
+  );
 }

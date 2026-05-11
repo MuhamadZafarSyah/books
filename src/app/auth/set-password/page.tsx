@@ -1,4 +1,5 @@
-import SetPasswordPage from "@/features/auth/components/set-password-page";
+import SetPasswordForm from "@/features/auth/components/set-password-form";
+import SetPasswordShell from "@/features/auth/components/set-password-shell";
 
 type SetPasswordRouteProps = {
   searchParams: Promise<{ token?: string | string[] }>;
@@ -10,5 +11,9 @@ export default async function Page({ searchParams }: SetPasswordRouteProps) {
     ? (params.token[0] ?? "")
     : (params.token ?? "");
 
-  return <SetPasswordPage token={token} />;
+  return (
+    <SetPasswordShell>
+      <SetPasswordForm token={token} />
+    </SetPasswordShell>
+  );
 }

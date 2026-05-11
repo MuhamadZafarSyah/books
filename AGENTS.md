@@ -25,8 +25,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - UI must be responsive across mobile, tablet, and desktop; review layouts with small-screen-first Tailwind classes before finalizing.
 - Prefer existing shadcn UI components from `src/components/ui` for buttons, inputs, labels, cards, separators, toasts, and similar primitives; only use raw HTML when no matching component exists or the component would be inappropriate.
+- Prefer Server Components for App Router `page.tsx` files and static layout/marketing UI. For interactive screens, compose a server shell with focused Client Component islands instead of making the whole page client-side.
+- For auth routes, keep static page structure in `*-shell.tsx` Server Components and form behavior in `*-form.tsx` Client Components, e.g. `LoginShell` + `LoginForm`, `RegisterShell` + `RegisterForm`, and `SetPasswordShell` + `SetPasswordForm`.
 - Before importing a component, hook, icon, or framework API, verify it exists in this repo/dependency version; do not leave speculative imports or imports from packages that are not installed.
 - Build forms with `react-hook-form` plus Zod schemas/resolvers; keep form schemas near the feature (for auth, `src/features/auth/schemas/auth-schemas.ts`) and avoid hand-rolled `FormEvent` submit handlers.
+- Keep Client Component boundaries narrow: `"use client"` belongs on interactive form/control files only, not on route pages or static shells unless there is a concrete browser API/state requirement.
 - Redux Toolkit is installed, but only use it for genuinely shared app state; keep local UI state such as password visibility in component state, and do not put form state in Redux.
 - If Redux becomes necessary, keep one app store and colocate feature slices under `src/features/<feature>/store/`.
 - For Next.js or React APIs, check the installed Next `16.2.5` docs in `node_modules/next/dist/docs/` when unsure; avoid deprecated APIs and heed deprecation notices.
@@ -41,6 +44,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - NextAuth v5 config lives in `src/lib/auth.ts` and exports `{ handlers, signIn, signOut, auth }`; `src/app/api/auth/[...nextauth]/route.ts` only re-exports `GET`/`POST`.
 - Auth uses JWT sessions even though standard NextAuth Prisma models are in the schema; credentials login requires `emailVerified` and a bcrypt password, while Google sign-in auto-verifies existing users.
 - Email registration flow is split across `src/actions/auth.ts`, `src/lib/email.ts`, and `GET /api/auth/verify-email`.
+- Auth UI follows a server-shell/client-form split: route pages under `src/app/auth` compose shell and form components; server actions stay in `src/actions/auth.ts`; validation schemas stay in `src/features/auth/schemas/auth-schemas.ts`.
 
 ## Gotchas
 
