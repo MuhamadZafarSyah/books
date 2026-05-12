@@ -38,6 +38,13 @@ export function CinematicReadingFlow({ className }: { className?: string }) {
     const section = sectionRef.current;
     if (!section) return;
 
+    const getPinDistance = () => {
+      const viewport = window.innerHeight || 800;
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+
+      return Math.max(viewport * (isMobile ? 2.65 : 3.25), isMobile ? 1900 : 2600);
+    };
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       gsap.set(section.querySelectorAll(".flow-reveal"), { autoAlpha: 1, y: 0, scale: 1 });
       return;
@@ -52,8 +59,12 @@ export function CinematicReadingFlow({ className }: { className?: string }) {
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: "bottom bottom",
+          end: () => `+=${getPinDistance()}`,
+          pin: true,
+          pinSpacing: true,
           scrub: 1,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -77,9 +88,9 @@ export function CinematicReadingFlow({ className }: { className?: string }) {
   return (
     <section
       ref={sectionRef}
-      className={cn("relative min-h-[240vh] overflow-clip bg-[#17120d] text-[#fff9f0]", className)}
+      className={cn("relative min-h-dvh overflow-clip bg-[#17120d] text-[#fff9f0]", className)}
     >
-      <div className="sticky top-0 flex min-h-dvh items-center px-4 py-16 sm:px-6 lg:px-8">
+      <div className="flex min-h-dvh items-center px-4 py-10 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#d6b28b]">
