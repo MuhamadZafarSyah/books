@@ -1,0 +1,106 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { MapPin, Calendar, Edit, BookOpen, Users, Star } from "lucide-react";
+
+type ProfileUser = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+function getInitials(name?: string | null, email?: string | null): string {
+  if (name) {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
+  if (email) {
+    return email[0].toUpperCase();
+  }
+  return "U";
+}
+
+const profileStats = [
+  { label: "Buku Dibaca", value: "42", icon: BookOpen },
+  { label: "Pengikut", value: "128", icon: Users },
+  { label: "Review", value: "18", icon: Star },
+];
+
+export function ProfileHeader({ user }: { user: ProfileUser }) {
+  return (
+    <Card className="overflow-hidden">
+      {/* Cover/Banner */}
+      <div className="relative h-32 bg-linear-to-br from-primary/20 via-primary/10 to-accent/30 sm:h-40">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTItMjJoMnYyaC0yVjhoMnYyaC0ydi0yem0yIDEwdjJoLTEydi0yaDEyem0tMTIgNGgxMnYySDI0di0yem0xMi04SDI0di0yaDEydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+      </div>
+
+      <CardContent className="relative px-5 pb-5 sm:px-6">
+        {/* Avatar - overlapping banner */}
+        <div className="-mt-12 mb-4 flex items-end justify-between sm:-mt-14">
+          <Avatar className="size-20 border-4 border-card shadow-lg sm:size-24">
+            {user.image && (
+              <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
+            )}
+            <AvatarFallback className="text-xl font-bold">
+              {getInitials(user.name, user.email)}
+            </AvatarFallback>
+          </Avatar>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer gap-1.5 rounded-full transition-all duration-200 hover:shadow-sm"
+          >
+            <Edit aria-hidden="true" className="size-3.5" />
+            Edit Profil
+          </Button>
+        </div>
+
+        {/* User Info */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
+              {user.name ?? "Pembaca"}
+            </h2>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+
+          <p className="max-w-lg text-sm leading-relaxed text-foreground/80">
+            Pecinta sastra Indonesia dan buku-buku non-fiksi. Selalu mencari
+            cerita yang menginspirasi dan membuka perspektif baru. Senang
+            berbagi rekomendasi bacaan.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <MapPin aria-hidden="true" className="size-3" />
+              Jakarta, Indonesia
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Calendar aria-hidden="true" className="size-3" />
+              Bergabung Januari 2025
+            </span>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="flex items-center gap-6 border-t border-border/50 pt-4">
+            {profileStats.map((stat) => (
+              <div key={stat.label} className="flex items-center gap-2 text-sm">
+                <stat.icon
+                  aria-hidden="true"
+                  className="size-4 text-muted-foreground"
+                />
+                <span className="font-bold">{stat.value}</span>
+                <span className="text-muted-foreground">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

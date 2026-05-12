@@ -76,21 +76,21 @@ Gunakan palet hangat yang mendukung kenyamanan membaca dan tetap memiliki hierar
 
 ### Core Colors
 
-| Token | Hex | Penggunaan |
-| --- | --- | --- |
-| `background` | `#F8F1E7` | Background utama, terasa seperti kertas hangat |
-| `surface` | `#FFF9F0` | Card, sheet, form, panel |
-| `surface-muted` | `#F1E4D2` | Section alternatif, subtle block, sidebar |
-| `primary` | `#1F4D3A` | CTA utama, active nav, selected state |
-| `primary-hover` | `#173B2C` | Hover/pressed primary |
-| `secondary` | `#8B6F4E` | Accent brown, metadata, secondary badge |
-| `accent` | `#C98348` | Highlight quote, rating accent, warm CTA support |
-| `text` | `#241A12` | Teks utama |
-| `text-muted` | `#6F6256` | Deskripsi, metadata, helper text |
-| `border` | `#E0D1BD` | Border card/input yang lembut |
-| `success` | `#2F7D4F` | Status berhasil, verified, tersedia dipinjam |
-| `warning` | `#B7791F` | Peringatan, stok/availability terbatas |
-| `danger` | `#B4473A` | Error dan destructive action |
+| Token           | Hex       | Penggunaan                                       |
+| --------------- | --------- | ------------------------------------------------ |
+| `background`    | `#F8F1E7` | Background utama, terasa seperti kertas hangat   |
+| `surface`       | `#FFF9F0` | Card, sheet, form, panel                         |
+| `surface-muted` | `#F1E4D2` | Section alternatif, subtle block, sidebar        |
+| `primary`       | `#1F4D3A` | CTA utama, active nav, selected state            |
+| `primary-hover` | `#173B2C` | Hover/pressed primary                            |
+| `secondary`     | `#8B6F4E` | Accent brown, metadata, secondary badge          |
+| `accent`        | `#C98348` | Highlight quote, rating accent, warm CTA support |
+| `text`          | `#241A12` | Teks utama                                       |
+| `text-muted`    | `#6F6256` | Deskripsi, metadata, helper text                 |
+| `border`        | `#E0D1BD` | Border card/input yang lembut                    |
+| `success`       | `#2F7D4F` | Status berhasil, verified, tersedia dipinjam     |
+| `warning`       | `#B7791F` | Peringatan, stok/availability terbatas           |
+| `danger`        | `#B4473A` | Error dan destructive action                     |
 
 ### Usage Rules
 
@@ -104,16 +104,16 @@ Gunakan palet hangat yang mendukung kenyamanan membaca dan tetap memiliki hierar
 
 Dark mode boleh ada, tetapi tetap bookish dan warm. Hindari OLED black murni yang terasa terlalu tech.
 
-| Token | Hex |
-| --- | --- |
-| `dark-background` | `#17120D` |
-| `dark-surface` | `#211911` |
+| Token                | Hex       |
+| -------------------- | --------- |
+| `dark-background`    | `#17120D` |
+| `dark-surface`       | `#211911` |
 | `dark-surface-muted` | `#2C2117` |
-| `dark-primary` | `#8FB89E` |
-| `dark-accent` | `#D69A63` |
-| `dark-text` | `#F5EBDD` |
-| `dark-text-muted` | `#BFAE9C` |
-| `dark-border` | `#3A2C20` |
+| `dark-primary`       | `#8FB89E` |
+| `dark-accent`        | `#D69A63` |
+| `dark-text`          | `#F5EBDD` |
+| `dark-text-muted`    | `#BFAE9C` |
+| `dark-border`        | `#3A2C20` |
 
 ## 4. Typography
 
@@ -121,24 +121,24 @@ Tipografi harus menyeimbangkan rasa editorial dan keterbacaan UI.
 
 ### Font Pairing
 
-| Role | Font | Alasan |
-| --- | --- | --- |
-| Heading | Noto Serif | Memberi rasa editorial, literer, dan bookish |
-| Body/UI | Manrope | Bersih, modern, readable untuk app interface |
-| Numeric/Rating optional | Manrope | Konsisten dan mudah dibaca |
+| Role                    | Font       | Alasan                                       |
+| ----------------------- | ---------- | -------------------------------------------- |
+| Heading                 | Noto Serif | Memberi rasa editorial, literer, dan bookish |
+| Body/UI                 | Manrope    | Bersih, modern, readable untuk app interface |
+| Numeric/Rating optional | Manrope    | Konsisten dan mudah dibaca                   |
 
 ### Type Scale
 
-| Token | Size | Line Height | Weight | Penggunaan |
-| --- | --- | --- | --- | --- |
-| `display` | 48-64px | 1.05 | 600-700 | Landing hero |
-| `h1` | 36-44px | 1.1 | 600-700 | Judul halaman |
-| `h2` | 28-32px | 1.2 | 600 | Section title |
-| `h3` | 22-24px | 1.25 | 600 | Card title besar |
-| `body-lg` | 18px | 1.65 | 400 | Long-form review, intro copy |
-| `body` | 16px | 1.6 | 400 | Teks utama |
-| `body-sm` | 14px | 1.5 | 400-500 | Metadata, helper text |
-| `caption` | 12px | 1.4 | 500 | Label kecil, timestamp |
+| Token     | Size    | Line Height | Weight  | Penggunaan                   |
+| --------- | ------- | ----------- | ------- | ---------------------------- |
+| `display` | 48-64px | 1.05        | 600-700 | Landing hero                 |
+| `h1`      | 36-44px | 1.1         | 600-700 | Judul halaman                |
+| `h2`      | 28-32px | 1.2         | 600     | Section title                |
+| `h3`      | 22-24px | 1.25        | 600     | Card title besar             |
+| `body-lg` | 18px    | 1.65        | 400     | Long-form review, intro copy |
+| `body`    | 16px    | 1.6         | 400     | Teks utama                   |
+| `body-sm` | 14px    | 1.5         | 400-500 | Metadata, helper text        |
+| `caption` | 12px    | 1.4         | 500     | Label kecil, timestamp       |
 
 ### Typography Rules
 
@@ -154,16 +154,16 @@ Tipografi harus menyeimbangkan rasa editorial dan keterbacaan UI.
 
 Gunakan skala spacing konsisten:
 
-| Token | Value | Penggunaan |
-| --- | --- | --- |
-| `xs` | 4px | Icon gap kecil |
-| `sm` | 8px | Gap label, helper, compact controls |
-| `md` | 12px | Internal compact card spacing |
-| `lg` | 16px | Default gap antar elemen |
-| `xl` | 24px | Card padding, section group |
-| `2xl` | 32px | Antar section kecil |
-| `3xl` | 48px | Section spacing desktop |
-| `4xl` | 64px | Hero/major section spacing |
+| Token | Value | Penggunaan                          |
+| ----- | ----- | ----------------------------------- |
+| `xs`  | 4px   | Icon gap kecil                      |
+| `sm`  | 8px   | Gap label, helper, compact controls |
+| `md`  | 12px  | Internal compact card spacing       |
+| `lg`  | 16px  | Default gap antar elemen            |
+| `xl`  | 24px  | Card padding, section group         |
+| `2xl` | 32px  | Antar section kecil                 |
+| `3xl` | 48px  | Section spacing desktop             |
+| `4xl` | 64px  | Hero/major section spacing          |
 
 ### Container
 
@@ -175,13 +175,13 @@ Gunakan skala spacing konsisten:
 
 ### Radius
 
-| Token | Value | Penggunaan |
-| --- | --- | --- |
-| `sm` | 8px | Input kecil, badge |
-| `md` | 12px | Button, tabs |
-| `lg` | 16px | Card standar |
-| `xl` | 24px | Modal, large panel, hero card |
-| `full` | 999px | Avatar, pills |
+| Token  | Value | Penggunaan                    |
+| ------ | ----- | ----------------------------- |
+| `sm`   | 8px   | Input kecil, badge            |
+| `md`   | 12px  | Button, tabs                  |
+| `lg`   | 16px  | Card standar                  |
+| `xl`   | 24px  | Modal, large panel, hero card |
+| `full` | 999px | Avatar, pills                 |
 
 Gunakan rounded yang lembut, bukan bulat berlebihan di semua komponen.
 
@@ -601,3 +601,106 @@ Jika ada keputusan desain yang membingungkan, gunakan pertanyaan ini:
 Apakah desain ini membuat user merasa nyaman membangun kehidupan membaca mereka, menemukan buku baru, dan terhubung dengan pembaca lain tanpa merasa terburu-buru atau kewalahan?
 
 Jika jawabannya tidak, sederhanakan layout, kurangi noise, perjelas hierarchy, dan kembalikan fokus ke buku, review, serta koneksi antar pembaca.
+
+## 17. Dashboard Layout & Sidebar
+
+### Architecture
+
+Dashboard menggunakan pola layout bersarang (nested layout) di Next.js App Router. Sidebar di-render sekali di `src/app/dashboard/layout.tsx` dan tidak re-render saat navigasi antar halaman dashboard.
+
+Komponen utama:
+
+- `DashboardLayout` (Server Component) — shell yang menyediakan `SidebarProvider` dan `TooltipProvider`.
+- `AppSidebar` (Client Component) — sidebar interaktif dengan expand/collapse.
+- `DashboardHeader` (Client Component) — header sticky dengan trigger toggle sidebar.
+- `SidebarInset` — area konten utama yang responsif terhadap state sidebar.
+
+### Sidebar Behavior
+
+Desktop:
+
+- Default expanded (width: 16rem).
+- Collapsible ke icon-only mode (width: 3rem) via rail click, trigger button, atau keyboard shortcut `Ctrl+B`.
+- Transisi width menggunakan `duration-200 ease-linear` untuk smooth animation.
+- Saat collapsed, navigation label tersembunyi dan tooltip muncul on hover.
+
+Mobile (< 768px):
+
+- Sidebar tersembunyi secara default.
+- Muncul sebagai Sheet overlay dari sisi kiri saat trigger ditekan.
+- Sheet memiliki backdrop blur dan animasi slide-in/slide-out.
+- Close otomatis saat navigasi atau klik di luar.
+
+### Sidebar Structure
+
+```
+SidebarHeader    — Logo/brand (sticky top)
+Separator
+SidebarContent   — ScrollArea berisi navigation groups
+  SidebarGroup "Menu"     — Beranda, Jelajahi, Rak Buku, Sedang Dibaca
+  SidebarGroup "Akun"     — Profil, Pengaturan
+Separator
+SidebarFooter    — User info + logout (sticky bottom)
+SidebarRail      — Invisible drag/click area untuk toggle
+```
+
+### Animation Guidelines (Sidebar)
+
+| Interaction           | Duration | Easing      | Property                      |
+| --------------------- | -------- | ----------- | ----------------------------- |
+| Expand/collapse width | 200ms    | ease-linear | width, left/right             |
+| Nav item hover        | 200ms    | ease-out    | background-color, color       |
+| Nav item active state | instant  | —           | background-color, font-weight |
+| Mobile sheet open     | 200ms    | ease-in-out | transform, opacity            |
+| Mobile sheet close    | 200ms    | ease-in-out | transform, opacity            |
+| Tooltip appear        | 150ms    | ease-out    | opacity, scale                |
+
+### Scrollbar
+
+Gunakan `ScrollArea` dari shadcn/ui (Radix ScrollArea) untuk area yang bisa scroll di dalam sidebar. Ini memberikan scrollbar yang konsisten cross-browser dan styled sesuai design system.
+
+### Navigation Active State
+
+- Active item mendapat `bg-sidebar-accent` dan `font-medium`.
+- Matching dilakukan via `usePathname()` — exact match untuk root, prefix match untuk sub-routes.
+- Semua nav item memiliki `cursor-pointer` dan `transition-colors duration-200`.
+
+### Responsive Breakpoints
+
+| Breakpoint | Behavior                                  |
+| ---------- | ----------------------------------------- |
+| < 768px    | Sidebar hidden, Sheet overlay dari kiri   |
+| ≥ 768px    | Sidebar visible, collapsible to icon mode |
+| ≥ 1024px   | Sidebar expanded by default               |
+
+### User Profile Section (Footer)
+
+- Avatar (size sm) + nama + email saat expanded.
+- Hanya avatar saat collapsed.
+- Logout button tersedia di footer.
+- Truncate text panjang dengan `truncate` class.
+
+## 18. User Profile Page
+
+### Structure
+
+Profile page terdiri dari tiga section utama:
+
+1. **ProfileHeader** — Avatar besar, nama, email, lokasi, tanggal bergabung, bio singkat, tombol Edit Profil.
+2. **ProfileStats** — Grid 4 stat cards (Sedang Dibaca, Selesai, Ingin Dibaca, Favorit) + genre favorit dengan progress bars.
+3. **ProfileActivity** — Timeline aktivitas terbaru (review, mulai baca, komentar).
+
+### Design Principles
+
+- Max-width 3xl (48rem) untuk readability.
+- Cards dengan hover shadow transition (200ms).
+- Progress bars menggunakan `transition-all duration-500 ease-out` untuk animasi saat mount.
+- Activity items memiliki hover state subtle (`bg-accent/50`).
+- Semua icon menggunakan Lucide, bukan emoji.
+- Color coding untuk stat icons menggunakan chart color tokens.
+
+### Responsive
+
+- Mobile: stack vertikal, avatar centered.
+- Tablet+: horizontal layout untuk header, 4-column grid untuk stats.
+- Semua card full-width di mobile, grid di desktop.

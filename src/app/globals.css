@@ -131,4 +131,9 @@
   ::selection {
     background: color-mix(in oklab, var(--primary) 22%, transparent);
   }
+
+  .hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
 }
