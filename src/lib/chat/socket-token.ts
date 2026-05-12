@@ -4,7 +4,9 @@ const TOKEN_TTL_MS = 1000 * 60 * 10;
 
 type SocketTokenPayload = {
   userId: string;
+  userName: string | null;
   conversationIds: string[];
+  rooms: Record<string, string[]>;
   exp: number;
 };
 
@@ -20,10 +22,22 @@ function signPayload(payload: string) {
   return crypto.createHmac("sha256", getSecret()).update(payload).digest("base64url");
 }
 
-export function createChatSocketToken(userId: string, conversationIds: string[]) {
+export function createChatSocketToken({
+  conversationIds,
+  rooms,
+  userId,
+  userName,
+}: {
+  userId: string;
+  userName: string | null;
+  conversationIds: string[];
+  rooms: Record<string, string[]>;
+}) {
   const payload: SocketTokenPayload = {
     userId,
+    userName,
     conversationIds,
+    rooms,
     exp: Date.now() + TOKEN_TTL_MS,
   };
   const encoded = toBase64Url(JSON.stringify(payload));

@@ -24,7 +24,9 @@ export type ChatMessageSummary = {
   body: string;
   type: "TEXT" | "IMAGE" | "FILE" | "SYSTEM";
   createdAt: string;
+  clientId?: string;
   pending?: boolean;
+  failed?: boolean;
 };
 
 export type ChatBootstrap = {
@@ -40,6 +42,12 @@ export type ChatSocketEvent =
       type: "message.created";
       conversationId: string;
       message: ChatMessageSummary;
+    }
+  | {
+      type: "message.failed";
+      conversationId: string;
+      clientId: string;
+      reason: string;
     }
   | {
       type: "typing.updated";
@@ -61,6 +69,12 @@ export type ChatSocketEvent =
 
 export type ChatClientSocketEvent =
   | {
+      type: "message.send";
+      conversationId: string;
+      body: string;
+      clientId: string;
+    }
+  | {
       type: "typing.update";
       conversationId: string;
       isTyping: boolean;
@@ -68,9 +82,3 @@ export type ChatClientSocketEvent =
   | {
       type: "ping";
     };
-
-export type SendMessageInput = {
-  conversationId: string;
-  body: string;
-  clientId?: string;
-};

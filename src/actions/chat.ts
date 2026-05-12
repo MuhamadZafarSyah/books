@@ -6,13 +6,10 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
 import {
   broadcastChatEvent,
-  cacheRecentMessage,
   clearUnread,
   getOnlineUserIds,
   getRecentMessages,
   getUnreadCounts,
-  incrementUnread,
-  setTyping,
   setUserOnline,
 } from "@/lib/chat/redis";
 import { createChatSocketToken } from "@/lib/chat/socket-token";
@@ -21,7 +18,6 @@ import type {
   ChatConversationSummary,
   ChatMessageSummary,
   ChatUserSummary,
-  SendMessageInput,
 } from "@/lib/chat/types";
 
 const MESSAGE_LIMIT = 50;
@@ -68,6 +64,7 @@ function serializeMessage(message: {
   senderId: string;
   body: string;
   type: "TEXT" | "IMAGE" | "FILE" | "SYSTEM";
+  clientId?: string | null;
   createdAt: Date;
   sender?: { name: string | null } | null;
 }): ChatMessageSummary {
@@ -79,6 +76,7 @@ function serializeMessage(message: {
     body: message.body,
     type: message.type,
     createdAt: message.createdAt.toISOString(),
+    clientId: message.clientId ?? undefined,
   };
 }
 
@@ -285,75 +283,6 @@ export async function startDirectConversation(targetUserId: string) {
   return conversation.id;
 }
 
-export async function sendChatMessage(
-  input: SendMessageInput,
-): Promise<ChatMessageSummary> {
-  const currentUser = await requireChatUser();
-  const body = input.body.trim();
-
-  if (!body) {
-    throw new Error("Message cannot be empty.");
-  }
-
-  if (body.length > 2000) {
-    throw new Error("Message is too long.");
-  }
-
-  await assertConversationParticipant(input.conversationId, currentUser.id);
-
-  const message = await prisma.$transaction(async (tx) => {
-    const created = await tx.chatMessage.create({
-      data: {
-        conversationId: input.conversationId,
-        senderId: currentUser.id,
-        body,
-        clientId: input.clientId,
-      },
-      include: {
-        sender: { select: { name: true } },
-      },
-    });
-
-    await tx.chatConversation.update({
-      where: { id: input.conversationId },
-      data: { lastMessageAt: created.createdAt },
-    });
-
-    await tx.chatMessageRead.create({
-      data: {
-        messageId: created.id,
-        userId: currentUser.id,
-      },
-    });
-
-    return created;
-  });
-
-  const serialized = serializeMessage(message);
-  const participants = await prisma.chatConversationParticipant.findMany({
-    where: { conversationId: input.conversationId },
-    select: { userId: true },
-  });
-
-  await Promise.all([
-    cacheRecentMessage(serialized),
-    setTyping(input.conversationId, currentUser.id, false),
-    ...participants
-      .filter((participant) => participant.userId !== currentUser.id)
-      .map((participant) =>
-        incrementUnread(participant.userId, input.conversationId),
-      ),
-    broadcastChatEvent({
-      type: "message.created",
-      conversationId: input.conversationId,
-      message: serialized,
-    }),
-  ]);
-
-  revalidatePath("/dashboard/chat");
-  return serialized;
-}
-
 export async function markConversationRead(conversationId: string) {
   const currentUser = await requireChatUser();
   await assertConversationParticipant(conversationId, currentUser.id);
@@ -377,40 +306,42 @@ export async function markConversationRead(conversationId: string) {
   ]);
 }
 
-export async function setChatTyping(conversationId: string, isTyping: boolean) {
-  const currentUser = await requireChatUser();
-  await assertConversationParticipant(conversationId, currentUser.id);
-
-  await Promise.all([
-    setTyping(conversationId, currentUser.id, isTyping),
-    broadcastChatEvent({
-      type: "typing.updated",
-      conversationId,
-      userId: currentUser.id,
-      isTyping,
-    }),
-  ]);
-}
-
 export async function getChatSocketAccess(conversationIds: string[]) {
   const currentUser = await requireChatUser();
   const uniqueConversationIds = [...new Set(conversationIds)].filter(Boolean);
+  const rooms: Record<string, string[]> = {};
 
   if (uniqueConversationIds.length > 0) {
-    const participantCount = await prisma.chatConversationParticipant.count({
+    const currentUserParticipants = await prisma.chatConversationParticipant.findMany({
       where: {
         userId: currentUser.id,
         conversationId: { in: uniqueConversationIds },
       },
+      select: { conversationId: true },
     });
 
-    if (participantCount !== uniqueConversationIds.length) {
+    if (currentUserParticipants.length !== uniqueConversationIds.length) {
       throw new Error("Conversation not found.");
+    }
+
+    const roomParticipants = await prisma.chatConversationParticipant.findMany({
+      where: { conversationId: { in: uniqueConversationIds } },
+      select: { conversationId: true, userId: true },
+    });
+
+    for (const participant of roomParticipants) {
+      rooms[participant.conversationId] ??= [];
+      rooms[participant.conversationId].push(participant.userId);
     }
   }
 
   return {
     socketUrl: process.env.NEXT_PUBLIC_CHAT_WS_URL ?? null,
-    token: createChatSocketToken(currentUser.id, uniqueConversationIds),
+    token: createChatSocketToken({
+      userId: currentUser.id,
+      userName: currentUser.name ?? null,
+      conversationIds: uniqueConversationIds,
+      rooms,
+    }),
   };
 }

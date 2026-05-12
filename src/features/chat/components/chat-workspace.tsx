@@ -8,7 +8,6 @@ import {
   getChatBootstrap,
   getConversationMessages,
   markConversationRead,
-  sendChatMessage,
   startDirectConversation,
 } from "@/actions/chat";
 import { Button } from "@/components/ui/button";
@@ -67,15 +66,48 @@ function appendMessage(
   return { ...current, [conversationId]: [...existing, message] };
 }
 
-function replaceMessage(
+function mergeSocketMessage(
   current: Record<string, ChatMessageSummary[]>,
   conversationId: string,
-  optimisticId: string,
   message: ChatMessageSummary,
 ) {
+  const existing = current[conversationId] ?? [];
+  const optimisticIndex = message.clientId
+    ? existing.findIndex((item) => item.id === message.clientId || item.clientId === message.clientId)
+    : -1;
+
+  if (optimisticIndex >= 0) {
+    const nextMessages = [...existing];
+    nextMessages[optimisticIndex] = message;
+    return { ...current, [conversationId]: nextMessages };
+  }
+
+  if (existing.some((item) => item.id === message.id || (message.clientId && item.clientId === message.clientId))) {
+    return current;
+  }
+
+  return { ...current, [conversationId]: [...existing, message] };
+}
+
+function markMessageFailed(
+  current: Record<string, ChatMessageSummary[]>,
+  conversationId: string,
+  clientId: string,
+) {
+  const messages = current[conversationId] ?? [];
+  let changed = false;
+
+  const nextMessages = messages.map((message) => {
+    if (message.id !== clientId && message.clientId !== clientId) return message;
+    changed = true;
+    return { ...message, pending: false, failed: true };
+  });
+
+  if (!changed) return current;
+
   return {
     ...current,
-    [conversationId]: (current[conversationId] ?? []).map((item) => (item.id === optimisticId ? message : item)),
+    [conversationId]: nextMessages,
   };
 }
 
@@ -98,6 +130,7 @@ function createOptimisticMessage({
     body,
     type: "TEXT",
     createdAt: new Date().toISOString(),
+    clientId,
     pending: true,
   };
 }
@@ -135,8 +168,12 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
 
   const handleSocketEvent = useCallback((event: ChatSocketEvent) => {
     if (event.type === "message.created") {
-      setMessagesByConversation((current) => appendMessage(current, event.conversationId, event.message));
+      setMessagesByConversation((current) => mergeSocketMessage(current, event.conversationId, event.message));
       setConversations((current) => updateConversationPreview(current, event.conversationId, event.message));
+    }
+
+    if (event.type === "message.failed") {
+      setMessagesByConversation((current) => markMessageFailed(current, event.conversationId, event.clientId));
     }
 
     if (event.type === "typing.updated") {
@@ -246,25 +283,25 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   }, []);
 
   const sendMessage = useCallback(() => {
-    if (!activeConversationId || !draft.trim()) return;
+    const body = draft.trim();
+    if (!activeConversationId || !body) return;
 
     const clientId = crypto.randomUUID();
     const optimisticMessage = createOptimisticMessage({
-      body: draft.trim(),
+      body,
       clientId,
       conversationId: activeConversationId,
       currentUser: initialData.currentUser,
     });
 
+    const sent = sendSocketEvent({ type: "message.send", conversationId: activeConversationId, body, clientId });
+    if (!sent) return;
+
     setDraft("");
     syncTypingNow(activeConversationId, false);
     setMessagesByConversation((current) => appendMessage(current, activeConversationId, optimisticMessage));
-
-    startTransition(async () => {
-      const message = await sendChatMessage({ conversationId: activeConversationId, body: optimisticMessage.body, clientId });
-      setMessagesByConversation((current) => replaceMessage(current, activeConversationId, clientId, message));
-    });
-  }, [activeConversationId, draft, initialData.currentUser, syncTypingNow]);
+    setConversations((current) => updateConversationPreview(current, activeConversationId, optimisticMessage));
+  }, [activeConversationId, draft, initialData.currentUser, sendSocketEvent, syncTypingNow]);
 
   const handleDraftChange = (value: string) => {
     setDraft(value);
@@ -274,7 +311,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   };
 
   return (
-    <div className={cn("grid overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-[31rem] grid-rows-[auto_1fr]" : "min-h-[calc(100dvh-9rem)] lg:grid-cols-[20rem_1fr]")}> 
+    <div className={cn("grid overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-[31rem] grid-rows-[auto_1fr]" : "min-h-[calc(100dvh-9rem)] lg:grid-cols-[20rem_1fr]")}>
       <aside className={cn("border-border bg-secondary/35", compact ? "border-b" : "border-b lg:border-b-0 lg:border-r")}>
         <div className="flex items-center justify-between gap-3 border-b border-border p-4">
           <div>
@@ -369,11 +406,12 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                           "max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
                           isMine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-foreground",
                           message.pending && "opacity-60",
+                          message.failed && "border border-destructive/30 bg-destructive/10 text-destructive opacity-100",
                         )}
                       >
                         <p>{message.body}</p>
                         <p className={cn("mt-1 text-[10px]", isMine ? "text-primary-foreground/64" : "text-muted-foreground")}>
-                          {new Date(message.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          {message.failed ? "Gagal terkirim" : new Date(message.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
                     </div>
@@ -406,6 +444,9 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                   placeholder="Tulis pesan..."
                   value={draft}
                 />
+                {/* <Button disabled={!draft.trim() || isPending || socketStatus !== "open"} size="icon" type="submit" className="rounded-2xl">
+                  <Send className="size-4" />
+                </Button> */}
                 <Button disabled={!draft.trim() || isPending} size="icon" type="submit" className="rounded-2xl">
                   <Send className="size-4" />
                 </Button>

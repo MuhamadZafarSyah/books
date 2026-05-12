@@ -10,7 +10,7 @@ type SocketStatus = "disabled" | "connecting" | "open" | "closed";
 function isChatSocketEvent(event: unknown): event is ChatSocketEvent {
   if (!event || typeof event !== "object" || !("type" in event)) return false;
   const type = (event as { type: string }).type;
-  return type === "message.created" || type === "typing.updated" || type === "presence.updated" || type === "conversation.read";
+  return type === "message.created" || type === "message.failed" || type === "typing.updated" || type === "presence.updated" || type === "conversation.read";
 }
 
 export function useChatSocket({
@@ -33,6 +33,7 @@ export function useChatSocket({
     let cancelled = false;
 
     async function connect() {
+      setStatus("connecting");
       const access = await getChatSocketAccess(conversationKey.split("|").filter(Boolean));
 
       if (cancelled || !access.socketUrl) {
