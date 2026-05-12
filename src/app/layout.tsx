@@ -50,7 +50,7 @@ export default function RootLayout({
           defaultTheme="system"
         >
           {children}
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
           <Toaster richColors />
         </ThemeProvider>
       </body>

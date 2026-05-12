@@ -9,6 +9,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/explore": "Jelajahi",
   "/dashboard/shelf": "Rak Buku",
   "/dashboard/reading": "Sedang Dibaca",
+  "/dashboard/chat": "Chat",
   "/dashboard/profile": "Profil",
   "/dashboard/settings": "Pengaturan",
 };

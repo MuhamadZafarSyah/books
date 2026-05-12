@@ -7,6 +7,7 @@ import {
   Home,
   Library,
   LogOut,
+  MessageCircle,
   Search,
   Settings,
   User,
@@ -51,6 +52,11 @@ const mainNavItems = [
     title: "Sedang Dibaca",
     href: "/dashboard/reading",
     icon: BookOpen,
+  },
+  {
+    title: "Chat",
+    href: "/dashboard/chat",
+    icon: MessageCircle,
   },
 ];
 

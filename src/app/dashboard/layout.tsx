@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/features/dashboard/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
+import { ChatQuickDock } from "@/features/chat/components/chat-quick-dock";
 import { requireAuth } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
 }) {
   const user = await requireAuth();
 
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -19,6 +21,7 @@ export default async function DashboardLayout({
         <SidebarInset>
           <DashboardHeader />
           <div className="flex-1 hide-scrollbar  overflow-auto p-4 md:p-6">{children}</div>
+          <ChatQuickDock />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
