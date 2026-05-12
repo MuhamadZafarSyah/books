@@ -5,7 +5,7 @@ import { BookOpen, Sparkles } from "lucide-react";
 
 import { SplineScene } from "@/components/spline";
 
-const SPLINE_SCENE = "https://prod.spline.design/oWb2YJN5ufCpBoa3/scene.splinecode";
+const SPLINE_SCENE = "/3d/opening_book_on_scroll.spline";
 
 export function SplineShowcase() {
   const shellRef = useRef<HTMLDivElement>(null);

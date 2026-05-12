@@ -8,7 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplineScene } from "@/components/spline";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_SPLINE_SCENE = "https://prod.spline.design/oWb2YJN5ufCpBoa3/scene.splinecode";
+const DEFAULT_SPLINE_SCENE = "/3d/opening_book_on_scroll.spline";
 
 const INJECTED_STYLES = `
   .sg-gsap-reveal { visibility: hidden; }

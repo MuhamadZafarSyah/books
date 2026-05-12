@@ -45,7 +45,7 @@ export default function Page() {
                 ctaHeading="Mulai rakmu."
                 metricLabel="buku terkurasi"
                 metricValue={128}
-                splineScene="https://prod.spline.design/oWb2YJN5ufCpBoa3/scene.splinecode"
+                splineScene="/3d/opening_book_on_scroll.spline"
                 tagline1="Baca."
                 tagline2="Review. Pinjam."
             />
