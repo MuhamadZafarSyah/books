@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
-import { BookOpen, MessageCircle, Plus, Search, Send, Users } from "lucide-react";
+import { BookOpen, MessageCircle, Search, Send, Users } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
 
 import {
   getChatBootstrap,
   getConversationMessages,
   markConversationRead,
-  startDirectConversation,
 } from "@/actions/chat";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ChatBootstrap, ChatConversationSummary, ChatMessageSummary, ChatSocketEvent, ChatUserSummary } from "@/lib/chat/types";
 import { useChatSocket } from "@/features/chat/hooks/use-chat-socket";
@@ -36,8 +37,13 @@ function ConversationAvatar({ conversation, currentUserId }: { conversation: Cha
   const user = conversation.participants.find((participant) => participant.id !== currentUserId) ?? conversation.participants[0];
 
   return (
-    <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-[#d0e9d4] font-heading text-sm font-semibold text-primary shadow-sm">
-      {user ? getInitials(user) : <BookOpen aria-hidden="true" className="size-5" />}
+    <div className="relative shrink-0">
+      <Avatar className="size-11 shadow-sm">
+        {user?.image && <AvatarImage alt={user.name ?? user.email ?? "Avatar pembaca"} src={user.image} />}
+        <AvatarFallback className="bg-[#d0e9d4] font-heading text-sm font-semibold text-primary">
+          {user ? getInitials(user) : <BookOpen aria-hidden="true" className="size-5" />}
+        </AvatarFallback>
+      </Avatar>
       {user?.online && <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-card bg-[#2f7d4f]" />}
     </div>
   );
@@ -149,7 +155,6 @@ function updateConversationPreview(
 
 export function ChatWorkspace({ initialData, compact = false }: { initialData: ChatBootstrap; compact?: boolean }) {
   const [conversations, setConversations] = useState(initialData.conversations);
-  const [suggestedUsers, setSuggestedUsers] = useState(initialData.suggestedUsers);
   const [messagesByConversation, setMessagesByConversation] = useState(initialData.messagesByConversation);
   const [activeConversationId, setActiveConversationId] = useState(initialData.conversations[0]?.id ?? "");
   const [loadedConversationIds, setLoadedConversationIds] = useState(() => new Set(Object.keys(initialData.messagesByConversation)));
@@ -194,9 +199,6 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
           ),
         })),
       );
-      setSuggestedUsers((current) =>
-        current.map((user) => (user.id === event.userId ? { ...user, online: event.online } : user)),
-      );
     }
   }, []);
 
@@ -233,7 +235,6 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     startTransition(async () => {
       const data = await getChatBootstrap();
       setConversations(data.conversations);
-      setSuggestedUsers(data.suggestedUsers);
       setMessagesByConversation((current) => ({ ...data.messagesByConversation, ...current }));
       if (!activeConversationId && data.conversations[0]) setActiveConversationId(data.conversations[0].id);
     });
@@ -270,18 +271,6 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     });
   }, [activeConversationId, conversations, loadedConversationIds]);
 
-  const startConversation = useCallback((userId: string) => {
-    startTransition(async () => {
-      const conversationId = await startDirectConversation(userId);
-      const data = await getChatBootstrap();
-      setConversations(data.conversations);
-      setSuggestedUsers(data.suggestedUsers);
-      setMessagesByConversation((current) => ({ ...current, ...data.messagesByConversation }));
-      setLoadedConversationIds((current) => new Set([...current, ...Object.keys(data.messagesByConversation)]));
-      setActiveConversationId(conversationId);
-    });
-  }, []);
-
   const sendMessage = useCallback(() => {
     const body = draft.trim();
     if (!activeConversationId || !body) return;
@@ -311,82 +300,92 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   };
 
   return (
-    <div className={cn("grid overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-[31rem] grid-rows-[auto_1fr]" : "min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]")}>
-      <aside className={cn("min-h-0 border-border bg-secondary/35", compact ? "border-b" : "border-b lg:border-b-0 lg:border-r")}>
-        <div className="flex items-center justify-between gap-3 border-b border-border p-4">
-          <div>
+    <div className={cn("grid min-h-0 overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-full grid-cols-[4.5rem_minmax(0,1fr)]" : "flex-1 grid-cols-[4.75rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)]")}>
+      <aside className="flex min-h-0 flex-col border-r border-border bg-secondary/35">
+        <div className={cn("flex shrink-0 items-center border-b border-border", compact ? "h-14 justify-center p-2" : "h-14 justify-center p-2 lg:h-auto lg:justify-between lg:gap-3 lg:p-4")}>
+          <div className={cn("hidden", !compact && "lg:block")}>
             <p className="font-heading text-2xl font-semibold text-primary">Messages</p>
             <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {socketStatus === "open" ? "Realtime online" : "Realtime standby"}
             </p>
           </div>
-          <Button aria-label="Refresh chat" onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
+          <div className={cn("grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary", !compact && "lg:hidden")}>
+            <MessageCircle aria-hidden="true" className="size-5" />
+          </div>
+          <Button aria-label="Refresh chat" className={cn(compact ? "hidden" : "hidden lg:inline-flex")} onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
             <Search className="size-4" />
           </Button>
         </div>
-        <ScrollArea className={compact ? "h-32" : "h-[18rem] lg:h-[calc(100dvh-15rem)]"} type="hover">
-          <div className="grid gap-1 p-2">
-            {conversations.map((conversation) => (
-              <button
-                className={cn(
-                  "flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:bg-card motion-reduce:transition-none",
-                  activeConversationId === conversation.id && "bg-card shadow-sm",
-                )}
-                key={conversation.id}
-                onClick={() => selectConversation(conversation.id)}
-                type="button"
-              >
-                <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">{conversation.title}</span>
-                  <span className="mt-1 block truncate text-xs text-muted-foreground">
-                    {conversation.lastMessage?.body || conversationSubtitle(conversation, initialData.currentUser.id)}
-                  </span>
-                </span>
-                {conversation.unreadCount > 0 && (
-                  <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {conversation.unreadCount}
-                  </span>
-                )}
-              </button>
-            ))}
+        <ScrollArea className="min-h-0 flex-1" type="hover">
+          <div className={cn("grid gap-2 p-2", !compact && "lg:gap-1")}>
+            {conversations.map((conversation) => {
+              const preview = conversation.lastMessage?.body || conversationSubtitle(conversation, initialData.currentUser.id);
+
+              return (
+                <Tooltip key={conversation.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      aria-label={`Buka chat dengan ${conversation.title}`}
+                      className={cn(
+                        "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:bg-card motion-reduce:transition-none",
+                        compact ? "justify-center p-2" : "justify-center p-2 lg:justify-start lg:gap-3 lg:p-3",
+                        activeConversationId === conversation.id && "bg-card shadow-sm",
+                      )}
+                      onClick={() => selectConversation(conversation.id)}
+                      type="button"
+                    >
+                      <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
+                      <span className={cn("hidden min-w-0 flex-1 ", !compact && "lg:block")}>
+                        <span className="block truncate text-sm font-semibold text-foreground">{conversation.title}</span>
+                        <span className="mt-1 block truncate!  text-xs text-muted-foreground">
+                          {preview}
+                        </span>
+                      </span>
+                      {conversation.unreadCount > 0 && (
+                        <span className={cn("absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground", !compact && "lg:hidden")}>
+                          {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                        </span>
+                      )}
+                      {conversation.unreadCount > 0 && !compact && (
+                        <span className="hidden size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground lg:grid">
+                          {conversation.unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className={cn(
+                      "flex max-w-56 flex-col items-start rounded-2xl bg-[#17120d] px-3 py-2 text-[#fff9f0] shadow-[0_18px_44px_rgba(0,0,0,0.28)]",
+                      !compact && "lg:hidden",
+                    )}
+                    side="right"
+                    sideOffset={10}
+                  >
+                    <span className="text-sm font-semibold leading-5">{conversation.title}</span>
+                    <span className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#fff9f0]/70">
+                      {preview}
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
             {conversations.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                Belum ada percakapan. Mulai dari daftar pembaca di bawah.
+              <div className="grid place-items-center rounded-2xl border border-dashed border-border p-2 text-center text-xs text-muted-foreground lg:p-4 lg:text-sm">
+                <MessageCircle aria-hidden="true" className="mb-2 size-5 text-primary lg:hidden" />
+                <span className="hidden lg:block">Belum ada percakapan. Buka profil pembaca lain lalu tekan Message untuk memulai room baru.</span>
               </div>
             )}
           </div>
         </ScrollArea>
-        {/* {!compact && (
-          <div className="border-t border-border p-3">
-            <p className="px-2 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Mulai chat</p>
-            <div className="mt-2 grid gap-1">
-              {suggestedUsers.slice(0, 4).map((user) => (
-                <button
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl p-2 text-left transition-[background-color,transform] duration-300 ease-out hover:-translate-y-0.5 hover:bg-card motion-reduce:transition-none"
-                  key={user.id}
-                  onClick={() => startConversation(user.id)}
-                  type="button"
-                >
-                  <div className="grid size-9 place-items-center rounded-xl bg-[#d0e9d4] font-heading text-xs font-semibold text-primary">
-                    {getInitials(user)}
-                  </div>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{user.name || user.email}</span>
-                  <Plus className="size-4 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )} */}
       </aside>
 
       <section className="flex min-h-0 flex-col overflow-hidden">
         {activeConversation ? (
           <>
-            <div className="flex shrink-0 items-center gap-3 border-b border-border p-4">
+            <div className="flex shrink-0 items-center gap-3 border-b border-border p-3 sm:p-4">
               <ConversationAvatar conversation={activeConversation} currentUserId={initialData.currentUser.id} />
               <div className="min-w-0 flex-1">
-                <h1 className="truncate font-heading text-xl font-semibold text-primary">{activeConversation.title}</h1>
+                <h1 className="truncate font-heading text-lg font-semibold text-primary sm:text-xl">{activeConversation.title}</h1>
                 <p className="truncate text-xs text-muted-foreground">
                   {typingUsers[activeConversation.id]?.filter((userId) => userId !== initialData.currentUser.id).length
                     ? "Sedang mengetik..."
@@ -396,14 +395,14 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
               <Users aria-hidden="true" className="size-5 text-muted-foreground" />
             </div>
             <ScrollArea className="min-h-0 flex-1 overflow-hidden" type="hover">
-              <div className="grid gap-3 p-4">
+              <div className="grid gap-3 p-3 sm:p-4">
                 {activeMessages.map((message) => {
                   const isMine = message.senderId === initialData.currentUser.id;
                   return (
                     <div className={cn("flex", isMine ? "justify-end" : "justify-start")} key={message.id}>
                       <div
                         className={cn(
-                          "max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+                          "max-w-[86%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none sm:max-w-[78%]",
                           isMine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-foreground",
                           message.pending && "opacity-60",
                           message.failed && "border border-destructive/30 bg-destructive/10 text-destructive opacity-100",
@@ -429,7 +428,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                 {remoteTypingUserIds.length > 0 && <TypingBubble />}
               </div>
             </ScrollArea>
-            <div className="shrink-0 border-t border-border p-3">
+            <div className="shrink-0 border-t border-border p-2 sm:p-3">
               <form
                 className="flex items-end gap-2 rounded-[1.5rem] border border-border bg-background p-2"
                 onSubmit={(event) => {
@@ -438,15 +437,12 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                 }}
               >
                 <textarea
-                  className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+                  className="max-h-28 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-2 text-sm outline-none [scrollbar-color:color-mix(in_srgb,var(--primary)_55%,transparent)_transparent] [scrollbar-width:thin] placeholder:text-muted-foreground sm:min-h-11 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/35 hover:[&::-webkit-scrollbar-thumb]:bg-primary/55 [&::-webkit-scrollbar-track]:bg-transparent"
                   onBlur={() => activeConversationId && syncTypingNow(activeConversationId, false)}
                   onChange={(event) => handleDraftChange(event.target.value)}
                   placeholder="Tulis pesan..."
                   value={draft}
                 />
-                {/* <Button disabled={!draft.trim() || isPending || socketStatus !== "open"} size="icon" type="submit" className="rounded-2xl">
-                  <Send className="size-4" />
-                </Button> */}
                 <Button disabled={!draft.trim() || isPending} size="icon" type="submit" className="rounded-2xl">
                   <Send className="size-4" />
                 </Button>
@@ -459,9 +455,9 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
               <div className="mx-auto grid size-16 place-items-center rounded-3xl bg-primary/10 text-primary">
                 <MessageCircle className="size-8" />
               </div>
-              <h1 className="mt-5 font-heading text-3xl font-semibold text-primary">Realtime chat</h1>
+              <h1 className="mt-5 font-heading text-2xl font-semibold text-primary sm:text-3xl">Realtime chat</h1>
               <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                Pilih pembaca untuk memulai chat. Pesan tersimpan permanen di Neon dan recent messages dicache di Redis.
+                Pilih history chat di kiri. Untuk memulai percakapan baru, buka profil pembaca lain lalu tekan Message.
               </p>
             </div>
           </div>

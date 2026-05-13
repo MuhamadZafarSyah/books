@@ -34,7 +34,7 @@ export function ChatQuickDock() {
     return (
       <Button
         aria-label="Tampilkan quick chat"
-        className="fixed bottom-5 right-5 z-40 rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-1 motion-reduce:transition-none"
+        className="fixed bottom-4 right-4 z-40 rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-1 motion-reduce:transition-none sm:bottom-5 sm:right-5"
         onClick={() => setHidden(false)}
         size="icon-lg"
         type="button"
@@ -43,17 +43,15 @@ export function ChatQuickDock() {
       </Button>
     );
   }
-
-
   return (
-    <div className="fixed bottom-5 right-5 z-40 hidden sm:block">
+    <div className={cn("fixed z-40", open ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5" : "bottom-4 right-4 sm:bottom-5 sm:right-5")}>
       <div
         className={cn(
           "overflow-hidden rounded-[1.75rem] border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-          open ? "h-[36rem] w-[25rem]" : "h-14 w-64",
+          open ? "h-[min(82dvh,42rem)] w-full sm:h-[36rem] sm:w-[30rem]" : "ml-auto h-14 w-[8.5rem] sm:w-[21.5rem]",
         )}
       >
-        <div className="flex h-14 items-center gap-3 border-b border-border/70 px-3">
+        <div className={cn("flex h-14 items-center gap-3 px-3", open && "border-b border-border/70")}>
           <button
             className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
             onClick={open ? () => setOpen(false) : openDock}
@@ -62,29 +60,33 @@ export function ChatQuickDock() {
             <span className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
               <MessageCircle className="size-5" />
             </span>
-            <span className="min-w-0 flex-1">
+            <span className={cn("min-w-0 flex-1", !open && "hidden sm:block")}>
               <span className="block truncate text-sm font-bold text-foreground">Quick Chat</span>
-              <span className="block truncate text-xs text-muted-foreground">Instagram-style dock</span>
+              <span className="block truncate text-xs text-muted-foreground">History chat cepat</span>
             </span>
           </button>
-          <Button aria-label="Buka halaman chat" asChild size="icon-xs" variant="ghost">
-            <Link href="/dashboard/chat">
-              <MessageCircle className="size-3.5" />
-            </Link>
-          </Button>
-          <Button aria-label="Minimize quick chat" onClick={() => setOpen(false)} size="icon-xs" type="button" variant="ghost">
-            <Minus className="size-3.5" />
-          </Button>
-          <Button aria-label="Hide quick chat" onClick={() => setHidden(true)} size="icon-xs" type="button" variant="ghost">
-            <X className="size-3.5" />
-          </Button>
+          {open && (
+            <>
+              <Button aria-label="Buka halaman chat" asChild size="icon-xs" variant="ghost">
+                <Link href="/dashboard/chat">
+                  <MessageCircle className="size-3.5" />
+                </Link>
+              </Button>
+              <Button aria-label="Minimize quick chat" onClick={() => setOpen(false)} size="icon-xs" type="button" variant="ghost">
+                <Minus className="size-3.5" />
+              </Button>
+              <Button aria-label="Hide quick chat" onClick={() => setHidden(true)} size="icon-xs" type="button" variant="ghost">
+                <X className="size-3.5" />
+              </Button>
+            </>
+          )}
         </div>
         {open && (
-          <div className="p-3">
+          <div className="h-[calc(100%-3.5rem)] p-2 sm:p-3">
             {data ? (
               <ChatWorkspace compact initialData={data} />
             ) : (
-              <div className="grid h-[31rem] place-items-center rounded-[1.5rem] border border-dashed border-border text-sm text-muted-foreground">
+              <div className="grid h-full place-items-center rounded-[1.5rem] border border-dashed border-border text-sm text-muted-foreground">
                 {isPending ? "Memuat percakapan..." : "Buka quick chat"}
               </div>
             )}
