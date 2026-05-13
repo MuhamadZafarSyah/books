@@ -15,21 +15,47 @@ import {
 } from "@/components/ui/dialog";
 import { getCroppedImageBlob, type CropArea } from "@/lib/crop-image";
 
-const BANNER_ASPECT = 3 / 1;
-
-type BannerCropDialogProps = {
+export type ImageCropDialogProps = {
+  /** Whether the dialog is open */
   open: boolean;
+  /** Source image URL (object URL or remote) */
   imageSrc: string;
+  /** Close handler */
   onClose: () => void;
+  /** Called with the cropped Blob and a preview object URL */
   onCropComplete: (croppedBlob: Blob, previewUrl: string) => void;
+  /** Dialog title */
+  title?: string;
+  /** Dialog description */
+  description?: string;
+  /** Crop aspect ratio (e.g. 3/1 for banner, 1 for avatar) */
+  aspect?: number;
+  /** Crop shape: "rect" or "round" */
+  cropShape?: "rect" | "round";
+  /** Output width in pixels (default: 1200) */
+  outputWidth?: number;
+  /** Confirm button label */
+  confirmLabel?: string;
+  /** Cancel button label */
+  cancelLabel?: string;
+  /** Whether to show grid lines on the crop area */
+  showGrid?: boolean;
 };
 
-export function BannerCropDialog({
+export function ImageCropDialog({
   open,
   imageSrc,
   onClose,
   onCropComplete,
-}: BannerCropDialogProps) {
+  title = "Sesuaikan Gambar",
+  description = "Geser dan zoom untuk menyesuaikan area gambar.",
+  aspect = 1,
+  cropShape = "rect",
+  outputWidth = 1200,
+  confirmLabel = "Terapkan",
+  cancelLabel = "Batal",
+  showGrid = false,
+}: ImageCropDialogProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(
@@ -37,16 +63,23 @@ export function BannerCropDialog({
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const onCropChange = useCallback((_: unknown, croppedAreaPx: CropArea) => {
-    setCroppedAreaPixels(croppedAreaPx);
-  }, []);
+  const handleCropComplete = useCallback(
+    (_: unknown, croppedAreaPx: CropArea) => {
+      setCroppedAreaPixels(croppedAreaPx);
+    },
+    [],
+  );
 
   const handleConfirm = useCallback(async () => {
     if (!croppedAreaPixels) return;
 
     setIsProcessing(true);
     try {
-      const blob = await getCroppedImageBlob(imageSrc, croppedAreaPixels, 1200);
+      const blob = await getCroppedImageBlob(
+        imageSrc,
+        croppedAreaPixels,
+        outputWidth,
+      );
       const previewUrl = URL.createObjectURL(blob);
       onCropComplete(blob, previewUrl);
     } catch (error) {
@@ -54,23 +87,23 @@ export function BannerCropDialog({
     } finally {
       setIsProcessing(false);
     }
-  }, [imageSrc, croppedAreaPixels, onCropComplete]);
+  }, [imageSrc, croppedAreaPixels, outputWidth, onCropComplete]);
 
   const handleReset = useCallback(() => {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
   }, []);
 
+  const borderRadius = cropShape === "round" ? "50%" : "12px";
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
         <DialogHeader className="px-5 pt-5 pb-3">
           <DialogTitle className="font-heading text-lg normal-case tracking-tight">
-            Sesuaikan Banner
+            {title}
           </DialogTitle>
-          <DialogDescription>
-            Geser dan zoom untuk menyesuaikan area banner profilmu.
-          </DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         {/* Crop area */}
@@ -79,23 +112,23 @@ export function BannerCropDialog({
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={BANNER_ASPECT}
+            aspect={aspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
-            onCropComplete={onCropChange}
-            cropShape="rect"
-            showGrid={false}
+            onCropComplete={handleCropComplete}
+            cropShape={cropShape}
+            showGrid={showGrid}
             style={{
               containerStyle: { borderRadius: 0 },
               cropAreaStyle: {
                 border: "2px solid rgba(255,249,240,0.6)",
-                borderRadius: "12px",
+                borderRadius,
               },
             }}
           />
         </div>
 
-        {/* Controls */}
+        {/* Zoom controls */}
         <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
           <div className="flex items-center gap-2">
             <Button
@@ -152,7 +185,7 @@ export function BannerCropDialog({
             disabled={isProcessing}
             className="cursor-pointer rounded-full"
           >
-            Batal
+            {cancelLabel}
           </Button>
           <Button
             type="button"
@@ -163,7 +196,7 @@ export function BannerCropDialog({
             {isProcessing ? (
               <Loader2 aria-hidden="true" className="size-4 animate-spin" />
             ) : null}
-            {isProcessing ? "Memproses..." : "Terapkan"}
+            {isProcessing ? "Memproses..." : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

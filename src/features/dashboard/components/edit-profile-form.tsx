@@ -2,30 +2,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowLeft,
   AtSign,
+  Camera,
   ImageIcon,
   Loader2,
   MapPin,
   Save,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { toast } from "sonner";
 
 import { updateProfile } from "@/actions/profile";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -33,7 +28,6 @@ import {
   editProfileSchema,
   type EditProfileFormValues,
 } from "@/features/dashboard/schemas/profile-schemas";
-import { BannerUpload } from "@/features/dashboard/components/banner-upload";
 
 type EditableProfileUser = {
   name: string | null;
@@ -45,25 +39,12 @@ type EditableProfileUser = {
   location: string | null;
 };
 
-function getInitials(name?: string | null, email?: string | null) {
-  if (name) {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  return email?.[0]?.toUpperCase() ?? "U";
-}
+// ─── Helpers ────────────────────────────────────────────────
 
-/**
- * Uploads a Blob to /api/upload and returns the Cloudinary URL.
- */
-async function uploadBannerBlob(blob: Blob): Promise<string> {
+async function uploadImageBlob(blob: Blob, folder: string): Promise<string> {
   const formData = new FormData();
-  formData.append("file", blob, "banner.webp");
-  formData.append("folder", "shelfgram/banners");
+  formData.append("file", blob, "image.webp");
+  formData.append("folder", folder);
 
   const response = await fetch("/api/upload", {
     method: "POST",
@@ -72,19 +53,39 @@ async function uploadBannerBlob(blob: Blob): Promise<string> {
 
   if (!response.ok) {
     const data = await response.json();
-    throw new Error(data.error ?? "Gagal mengunggah banner.");
+    throw new Error(data.error ?? "Gagal mengunggah gambar.");
   }
 
   const result = await response.json();
   return result.url as string;
 }
 
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_SIZE = 5 * 1024 * 1024;
+
+function validateImageFile(file: File): string | null {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return "Format tidak didukung. Gunakan JPG, PNG, WebP, atau GIF.";
+  }
+  if (file.size > MAX_SIZE) {
+    return "Ukuran file maksimal 5MB.";
+  }
+  return null;
+}
+
+// ─── Component ──────────────────────────────────────────────
+
 export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // State to hold the cropped banner blob until form submission
+  // Banner crop state
   const [bannerBlob, setBannerBlob] = useState<Blob | null>(null);
+  const [bannerRawSrc, setBannerRawSrc] = useState<string | null>(null);
+  const [bannerCropOpen, setBannerCropOpen] = useState(false);
+  const [bannerError, setBannerError] = useState<string | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const {
     register,
@@ -103,13 +104,46 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
     },
   });
 
-  const watchedName = useWatch({ control, name: "name" }) ?? "";
   const watchedBio = useWatch({ control, name: "bio" }) ?? "";
-  const watchedImage = useWatch({ control, name: "image" }) ?? "";
 
-  const handleBannerFileReady = useCallback((blob: Blob | null) => {
-    setBannerBlob(blob);
+  // ─── Banner handlers ────────────────────────────────────
+
+  const openBannerCropper = useCallback((file: File) => {
+    const error = validateImageFile(file);
+    if (error) {
+      setBannerError(error);
+      return;
+    }
+    setBannerError(null);
+    const url = URL.createObjectURL(file);
+    setBannerRawSrc(url);
+    setBannerCropOpen(true);
   }, []);
+
+  const handleBannerCropComplete = useCallback(
+    (blob: Blob, previewUrl: string, onChange: (url: string) => void) => {
+      setBannerBlob(blob);
+      onChange(previewUrl);
+      setBannerCropOpen(false);
+      if (bannerRawSrc) URL.revokeObjectURL(bannerRawSrc);
+      setBannerRawSrc(null);
+    },
+    [bannerRawSrc],
+  );
+
+  const handleBannerCropClose = useCallback(() => {
+    setBannerCropOpen(false);
+    if (bannerRawSrc) URL.revokeObjectURL(bannerRawSrc);
+    setBannerRawSrc(null);
+  }, [bannerRawSrc]);
+
+  const handleBannerRemove = useCallback((onChange: (url: string) => void) => {
+    onChange("");
+    setBannerBlob(null);
+    setBannerError(null);
+  }, []);
+
+  // ─── Form submit ────────────────────────────────────────
 
   function onSubmit(values: EditProfileFormValues) {
     const pendingBlob = bannerBlob;
@@ -117,9 +151,8 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
       try {
         let bannerUrl = values.banner;
 
-        // Upload banner blob to Cloudinary if user selected a new image
         if (pendingBlob) {
-          bannerUrl = await uploadBannerBlob(pendingBlob);
+          bannerUrl = await uploadImageBlob(pendingBlob, "shelfgram/banners");
           setBannerBlob(null);
         }
 
@@ -143,65 +176,96 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
 
   return (
     <Card className="overflow-hidden rounded-3xl border-border/70 bg-card/95 shadow-xl shadow-primary/5">
-      {/* <CardHeader className="gap-4 border-b border-border/60 px-5 py-6 sm:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Avatar className="size-16 border-4 border-card shadow-md sm:size-20">
-              {watchedImage ? (
-                <AvatarImage src={watchedImage} alt={watchedName || "Avatar"} />
-              ) : null}
-              <AvatarFallback className="text-lg font-bold">
-                {getInitials(watchedName || user.name, user.email)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="font-heading text-xl normal-case tracking-tight sm:text-2xl">
-                Edit Profil
-              </CardTitle>
-              <CardDescription>
-                Perbarui identitas publik yang terlihat di Shelfgram.
-              </CardDescription>
-            </div>
-          </div>
-
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="w-fit rounded-full normal-case tracking-normal"
-          >
-            <Link href="/dashboard/profile">
-              <ArrowLeft aria-hidden="true" className="size-3.5" />
-              Kembali
-            </Link>
-          </Button>
-        </div>
-      </CardHeader> */}
-
       <CardContent className="px-5 py-6 sm:px-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {/* Banner Upload — mirrors profile header banner exactly */}
+          {/* ─── Banner Upload (inline, matches profile header) ─── */}
           <div className="space-y-2">
             <Label>Banner profil</Label>
             <Controller
               control={control}
               name="banner"
               render={({ field }) => (
-                <BannerUpload
-                  value={field.value}
-                  onChange={field.onChange}
-                  onFileReady={handleBannerFileReady}
-                  disabled={isPending}
-                />
+                <>
+                  <BannerDropZone
+                    value={field.value}
+                    isDragging={isDragging}
+                    disabled={isPending}
+                    inputRef={bannerInputRef}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (isPending) return;
+                      const file = e.dataTransfer.files[0];
+                      if (file) openBannerCropper(file);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!isPending) setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onInputChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) openBannerCropper(file);
+                      e.target.value = "";
+                    }}
+                    onClick={() =>
+                      !isPending && bannerInputRef.current?.click()
+                    }
+                  />
+
+                  {bannerError && (
+                    <p className="text-sm font-medium text-destructive">
+                      {bannerError}
+                    </p>
+                  )}
+
+                  {field.value && !isPending && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleBannerRemove(field.onChange)}
+                      className="cursor-pointer gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 aria-hidden="true" className="size-3" />
+                      Hapus banner
+                    </Button>
+                  )}
+
+                  {/* Crop Dialog */}
+                  {bannerRawSrc && (
+                    <ImageCropDialog
+                      open={bannerCropOpen}
+                      imageSrc={bannerRawSrc}
+                      onClose={handleBannerCropClose}
+                      onCropComplete={(blob, previewUrl) =>
+                        handleBannerCropComplete(
+                          blob,
+                          previewUrl,
+                          field.onChange,
+                        )
+                      }
+                      title="Sesuaikan Banner"
+                      description="Geser dan zoom untuk menyesuaikan area banner profilmu."
+                      aspect={3 / 1}
+                      cropShape="rect"
+                      outputWidth={1200}
+                    />
+                  )}
+                </>
               )}
             />
-            {errors.banner ? (
+            {errors.banner && (
               <p className="text-sm font-medium text-destructive">
                 {errors.banner.message}
               </p>
-            ) : null}
+            )}
           </div>
 
+          {/* ─── Text fields ─── */}
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Nama tampilan</Label>
@@ -217,11 +281,11 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                   {...register("name")}
                 />
               </div>
-              {errors.name ? (
+              {errors.name && (
                 <p className="text-sm font-medium text-destructive">
                   {errors.name.message}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="space-y-2">
@@ -263,11 +327,11 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                   {...register("location")}
                 />
               </div>
-              {errors.location ? (
+              {errors.location && (
                 <p className="text-sm font-medium text-destructive">
                   {errors.location.message}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -285,11 +349,11 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                   {...register("image")}
                 />
               </div>
-              {errors.image ? (
+              {errors.image && (
                 <p className="text-sm font-medium text-destructive">
                   {errors.image.message}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -310,14 +374,15 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                 placeholder="Ceritakan selera bacaan, genre favorit, atau buku yang sedang kamu cari."
                 {...register("bio")}
               />
-              {errors.bio ? (
+              {errors.bio && (
                 <p className="text-sm font-medium text-destructive">
                   {errors.bio.message}
                 </p>
-              ) : null}
+              )}
             </div>
           </div>
 
+          {/* ─── Actions ─── */}
           <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
             <Button
               asChild
@@ -342,5 +407,118 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Banner Drop Zone (matches profile header layout) ───────
+
+function BannerDropZone({
+  value,
+  isDragging,
+  disabled,
+  inputRef,
+  onDrop,
+  onDragOver,
+  onDragLeave,
+  onInputChange,
+  onClick,
+}: {
+  value: string;
+  isDragging: boolean;
+  disabled: boolean;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onDrop: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClick: () => void;
+}) {
+  const hasBanner = Boolean(value);
+
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label="Upload banner profil"
+      aria-disabled={disabled}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(
+        "group relative h-32 w-full cursor-pointer overflow-hidden rounded-xl transition-all duration-200 sm:h-40",
+        isDragging
+          ? "ring-2 ring-primary ring-offset-2"
+          : "hover:brightness-90",
+        disabled && "pointer-events-none opacity-50",
+      )}
+    >
+      {/* Background */}
+      {hasBanner ? (
+        <img
+          src={value}
+          alt="Banner preview"
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-accent/30">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTItMjJoMnYyaC0yVjhoMnYyaC0ydi0yem0yIDEwdjJoLTEydi0yaDEyem0tMTIgNGgxMnYySDI0di0yem0xMi04SDI0di0yaDEydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+        </div>
+      )}
+
+      {/* Hover overlay */}
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center justify-center transition-opacity duration-200",
+          hasBanner
+            ? "bg-black/30 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+            : "bg-black/5",
+        )}
+      >
+        <div className="flex flex-col items-center gap-1.5">
+          <Camera
+            aria-hidden="true"
+            className={cn(
+              "size-6",
+              hasBanner ? "text-white" : "text-muted-foreground",
+            )}
+          />
+          <span
+            className={cn(
+              "text-xs font-medium",
+              hasBanner ? "text-white" : "text-muted-foreground",
+            )}
+          >
+            {isDragging
+              ? "Lepaskan untuk upload"
+              : hasBanner
+                ? "Ganti banner"
+                : "Klik atau seret gambar"}
+          </span>
+          {!hasBanner && (
+            <span className="text-[10px] text-muted-foreground/70">
+              JPG, PNG, WebP · Maks 5MB
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={onInputChange}
+        disabled={disabled}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
