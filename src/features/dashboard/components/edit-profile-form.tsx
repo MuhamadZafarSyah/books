@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AtSign,
@@ -81,6 +81,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
 
   // Banner crop state
   const [bannerBlob, setBannerBlob] = useState<Blob | null>(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
   const [bannerRawSrc, setBannerRawSrc] = useState<string | null>(null);
   const [bannerCropOpen, setBannerCropOpen] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -106,6 +107,12 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
 
   const watchedBio = useWatch({ control, name: "bio" }) ?? "";
 
+  useEffect(() => {
+    return () => {
+      if (bannerPreviewUrl) URL.revokeObjectURL(bannerPreviewUrl);
+    };
+  }, [bannerPreviewUrl]);
+
   // ─── Banner handlers ────────────────────────────────────
 
   const openBannerCropper = useCallback((file: File) => {
@@ -121,9 +128,9 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   }, []);
 
   const handleBannerCropComplete = useCallback(
-    (blob: Blob, previewUrl: string, onChange: (url: string) => void) => {
+    (blob: Blob, previewUrl: string) => {
       setBannerBlob(blob);
-      onChange(previewUrl);
+      setBannerPreviewUrl(previewUrl);
       setBannerCropOpen(false);
       if (bannerRawSrc) URL.revokeObjectURL(bannerRawSrc);
       setBannerRawSrc(null);
@@ -140,6 +147,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   const handleBannerRemove = useCallback((onChange: (url: string) => void) => {
     onChange("");
     setBannerBlob(null);
+    setBannerPreviewUrl(null);
     setBannerError(null);
   }, []);
 
@@ -187,7 +195,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
               render={({ field }) => (
                 <>
                   <BannerDropZone
-                    value={field.value}
+                    value={bannerPreviewUrl ?? field.value}
                     isDragging={isDragging}
                     disabled={isPending}
                     inputRef={bannerInputRef}
@@ -242,11 +250,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                       imageSrc={bannerRawSrc}
                       onClose={handleBannerCropClose}
                       onCropComplete={(blob, previewUrl) =>
-                        handleBannerCropComplete(
-                          blob,
-                          previewUrl,
-                          field.onChange,
-                        )
+                        handleBannerCropComplete(blob, previewUrl)
                       }
                       title="Sesuaikan Banner"
                       description="Geser dan zoom untuk menyesuaikan area banner profilmu."

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Edit, BookOpen, Users, Star, ExternalLink, type LucideIcon } from "lucide-react";
 import { profileSlugFor } from "@/lib/public-profile";
+import { formatJoinedAt } from "@/utils/sharedUtils";
 
 type ProfileUser = {
   id?: string | null;
@@ -15,6 +16,7 @@ type ProfileUser = {
   bio?: string | null;
   location?: string | null;
   createdAt?: string | Date | null;
+  banner?: string | null;
 };
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -44,14 +46,6 @@ const defaultProfileStats = [
   { label: "Review", value: "18", icon: Star },
 ];
 
-function formatJoinedAt(value?: string | Date | null) {
-  if (!value) return "Januari 2025";
-
-  return new Intl.DateTimeFormat("id-ID", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
-}
 
 export function ProfileHeader({
   actions,
@@ -64,17 +58,26 @@ export function ProfileHeader({
   stats?: ProfileHeaderStat[];
   user: ProfileUser;
 }) {
+  const banner = user.banner?.trim();
   const publicProfileSlug = profileSlugFor({
     id: user.id ?? user.email ?? "me",
     username: user.username ?? null,
     name: user.name ?? null,
     email: user.email ?? null,
+    banner: user.banner ?? null,
   });
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden mt-0! pt-0!">
       {/* Cover/Banner */}
       <div className="relative h-32 bg-linear-to-br from-primary/20 via-primary/10 to-accent/30 sm:h-40">
+        {banner ? (
+          <img
+            src={banner}
+            alt={`Banner profil ${user.name ?? "pengguna"}`}
+            className="absolute inset-0 size-full object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTItMjJoMnYyaC0yVjhoMnYyaC0ydi0yem0yIDEwdjJoLTEydi0yaDEyem0tMTIgNGgxMnYySDI0di0yem0xMi04SDI0di0yaDEydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
       </div>
 
