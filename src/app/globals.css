@@ -143,3 +143,12 @@
   animation: none;
   mix-blend-mode: normal;
 }
+
+.button-click {
+  cursor: pointer !important;
+  transition: transform 100ms ease-in-out !important;
+}
+
+.button-click:active {
+  transform: scale(0.95) !important;
+}
