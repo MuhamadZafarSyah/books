@@ -210,7 +210,7 @@ export async function loginWithGoogle(): Promise<void> {
 // ── Logout ──────────────────────────────────────────────────
 
 export async function logout(): Promise<void> {
-  await signOut({ redirectTo: "/auth" });
+  await signOut({ redirectTo: "/" });
 }
 
 // ── Resend Verification ─────────────────────────────────────

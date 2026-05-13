@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -183,7 +184,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   }
 
   return (
-    <Card className="overflow-hidden rounded-3xl border-border/70 bg-card/95 shadow-xl shadow-primary/5">
+    <Card className="overflow-hidden pt-0! rounded-3xl border-border/70 bg-card/95 shadow-xl shadow-primary/5">
       <CardContent className="px-5 py-6 sm:px-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {/* ─── Banner Upload (inline, matches profile header) ─── */}
@@ -456,7 +457,7 @@ function BannerDropZone({
         }
       }}
       className={cn(
-        "group relative h-32 w-full cursor-pointer overflow-hidden rounded-xl transition-all duration-200 sm:h-40",
+        "group relative h-32 w-full cursor-pointer overflow-hidden  transition-all duration-200 sm:h-40",
         isDragging
           ? "ring-2 ring-primary ring-offset-2"
           : "hover:brightness-90",
@@ -465,10 +466,13 @@ function BannerDropZone({
     >
       {/* Background */}
       {hasBanner ? (
-        <img
+        <Image
           src={value}
           alt="Banner preview"
-          className="absolute inset-0 size-full object-cover"
+          fill
+          sizes="(max-width: 768px) 100vw, 768px"
+          unoptimized={value.startsWith("blob:")}
+          className="object-cover"
         />
       ) : (
         <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-accent/30">

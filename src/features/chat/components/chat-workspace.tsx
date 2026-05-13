@@ -327,7 +327,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                     <button
                       aria-label={`Buka chat dengan ${conversation.title}`}
                       className={cn(
-                        "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:bg-card motion-reduce:transition-none",
+                        "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out  hover:bg-card motion-reduce:transition-none",
                         compact ? "justify-center p-2" : "justify-center p-2 lg:justify-start lg:gap-3 lg:p-3",
                         activeConversationId === conversation.id && "bg-card shadow-sm",
                       )}
@@ -369,12 +369,12 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                 </Tooltip>
               );
             })}
-            {conversations.length === 0 && (
+            {/* {conversations.length === 0 && (
               <div className="grid place-items-center rounded-2xl border border-dashed border-border p-2 text-center text-xs text-muted-foreground lg:p-4 lg:text-sm">
                 <MessageCircle aria-hidden="true" className="mb-2 size-5 text-primary lg:hidden" />
                 <span className="hidden lg:block">Belum ada percakapan. Buka profil pembaca lain lalu tekan Message untuk memulai room baru.</span>
               </div>
-            )}
+            )} */}
           </div>
         </ScrollArea>
       </aside>

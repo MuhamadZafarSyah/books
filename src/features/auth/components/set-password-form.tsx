@@ -94,7 +94,7 @@ export default function SetPasswordForm({ token }: SetPasswordFormProps) {
 
       reset();
       toast.success("Password set successfully. Please sign in.");
-      router.replace("/auth");
+      router.replace("/login");
     });
   }
 

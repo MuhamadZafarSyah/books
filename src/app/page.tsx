@@ -84,7 +84,7 @@ export default function Page() {
 
               return (
                 <article
-                  className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_12px_32px_rgba(36,26,18,0.06)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-1 hover:border-[#C98348]/60 hover:shadow-[0_18px_44px_rgba(36,26,18,0.1)]"
+                  className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_12px_32px_rgba(36,26,18,0.06)] transition-[border-color,box-shadow,transform] duration-200  hover:border-[#C98348]/60 hover:shadow-[0_18px_44px_rgba(36,26,18,0.1)]"
                   key={feature.title}
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">

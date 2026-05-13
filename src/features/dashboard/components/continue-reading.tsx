@@ -111,7 +111,7 @@ function BookProgressCard({
   book: (typeof currentlyReading)[number];
 }) {
   return (
-    <Card className="group w-[260px] shrink-0 cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:w-[280px]">
+    <Card className="group w-[260px] shrink-0 cursor-pointer overflow-hidden transition-all duration-300  hover:shadow-lg sm:w-[280px]">
       <CardContent className="p-0">
         <div className="flex gap-3 p-4">
           {/* Book Cover */}

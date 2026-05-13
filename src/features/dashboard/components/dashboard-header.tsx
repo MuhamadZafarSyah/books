@@ -24,7 +24,7 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
       <SidebarTrigger className="cursor-pointer" />
-      <Separator orientation="vertical" className="h-5" />
+      {/* <Separator orientation="vertical" className="h-full" /> */}
       <h1 className="font-heading text-base font-semibold tracking-tight text-foreground">
         {title}
       </h1>
