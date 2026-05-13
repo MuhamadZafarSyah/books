@@ -101,12 +101,12 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="p-3">
+      <SidebarHeader className="p-2">
         <Link
           href="/dashboard"
           className="flex items-center gap-2.5 rounded-lg px-1 py-1 transition-colors duration-200 hover:bg-sidebar-accent"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Library aria-hidden="true" className="size-4" />
           </span>
           {!isCollapsed && (
