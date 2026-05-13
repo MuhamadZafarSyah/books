@@ -6,17 +6,21 @@ type ProfileUserRecord = {
   username: string | null;
   name: string | null;
   email: string | null;
+  banner?: string | null;
 };
 
 export function profileSlugFor(user: ProfileUserRecord) {
-  const source = user.username || user.name || user.email?.split("@")[0] || user.id;
+  const source =
+    user.username || user.name || user.email?.split("@")[0] || user.id;
 
-  return source
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || user.id;
+  return (
+    source
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || user.id
+  );
 }
 
 function serializeUserBook(item: {
@@ -99,9 +103,15 @@ export async function getPublicProfileBySlug(slug: string) {
   ] = await Promise.all([
     prisma.userFollow.count({ where: { followingId: profile.id } }),
     prisma.userFollow.count({ where: { followerId: profile.id } }),
-    prisma.userBook.count({ where: { userId: profile.id, visibility: "PUBLIC" } }),
-    prisma.userBook.count({ where: { userId: profile.id, visibility: "PUBLIC", status: "FINISHED" } }),
-    prisma.bookReview.count({ where: { userId: profile.id, visibility: "PUBLIC" } }),
+    prisma.userBook.count({
+      where: { userId: profile.id, visibility: "PUBLIC" },
+    }),
+    prisma.userBook.count({
+      where: { userId: profile.id, visibility: "PUBLIC", status: "FINISHED" },
+    }),
+    prisma.bookReview.count({
+      where: { userId: profile.id, visibility: "PUBLIC" },
+    }),
     currentUserId && !isOwnProfile
       ? prisma.userFollow.findUnique({
           where: {
