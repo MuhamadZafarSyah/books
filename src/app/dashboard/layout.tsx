@@ -16,11 +16,11 @@ export default async function DashboardLayout({
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
+      <SidebarProvider className="h-svh min-h-0 overflow-hidden">
         <AppSidebar user={user} />
-        <SidebarInset>
+        <SidebarInset className="min-h-0 overflow-hidden">
           <DashboardHeader />
-          <div className="flex-1 hide-scrollbar  overflow-auto p-4 md:p-6">{children}</div>
+          <div className="hide-scrollbar min-h-0 flex-1 overflow-auto p-4 md:p-6">{children}</div>
           <ChatQuickDock />
         </SidebarInset>
       </SidebarProvider>

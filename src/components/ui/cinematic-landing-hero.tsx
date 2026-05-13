@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { BookOpen, LibraryBig, MessageCircle, ShieldCheck, Star, Users } from "lucide-react";
+import {
+  BookOpen,
+  LibraryBig,
+  MessageCircle,
+  ShieldCheck,
+  Star,
+  Users,
+} from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -147,9 +154,7 @@ export function CinematicHero({
   tagline2 = "Review. Pinjam.",
   cardHeading = "Buku. Review. Pinjam.",
   cardDescription = (
-    <>
-      Catat buku, tulis review, dan temukan koleksi fisik pembaca lain.
-    </>
+    <>Catat buku, tulis review, dan temukan koleksi fisik pembaca lain.</>
   ),
   metricValue = 128,
   metricLabel = "buku terkurasi",
@@ -168,7 +173,9 @@ export function CinematicHero({
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (reduced) return;
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -181,8 +188,14 @@ export function CinematicHero({
         if (!mainCard || !splineWrap) return;
 
         const rect = mainCard.getBoundingClientRect();
-        mainCard.style.setProperty("--mouse-x", `${event.clientX - rect.left}px`);
-        mainCard.style.setProperty("--mouse-y", `${event.clientY - rect.top}px`);
+        mainCard.style.setProperty(
+          "--mouse-x",
+          `${event.clientX - rect.left}px`,
+        );
+        mainCard.style.setProperty(
+          "--mouse-y",
+          `${event.clientY - rect.top}px`,
+        );
 
         const xVal = (event.clientX / window.innerWidth - 0.5) * 2;
         const yVal = (event.clientY / window.innerHeight - 0.5) * 2;
@@ -208,16 +221,25 @@ export function CinematicHero({
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const container = containerRef.current;
     if (!container) return;
 
     if (reduced) {
-      gsap.set(".sg-gsap-reveal", { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)" });
+      gsap.set(".sg-gsap-reveal", {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+      });
       return;
     }
 
     const isMobile = window.innerWidth < 768;
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    let onSplashDone: (() => void) | undefined;
 
     const ctx = gsap.context(() => {
       gsap.set(".sg-text-track", {
@@ -227,15 +249,29 @@ export function CinematicHero({
         filter: "blur(18px)",
         rotationX: -18,
       });
-      gsap.set(".sg-text-days", { autoAlpha: 1, clipPath: "inset(0 100% 0 0)" });
+      gsap.set(".sg-text-days", {
+        autoAlpha: 1,
+        clipPath: "inset(0 100% 0 0)",
+      });
       gsap.set(".sg-main-card", { y: window.innerHeight + 160, autoAlpha: 1 });
       gsap.set(
-        [".sg-card-left", ".sg-card-right", ".sg-spline-wrapper", ".sg-floating-badge", ".sg-mini-card"],
+        [
+          ".sg-card-left",
+          ".sg-card-right",
+          ".sg-spline-wrapper",
+          ".sg-floating-badge",
+          ".sg-mini-card",
+        ],
         { autoAlpha: 0 },
       );
-      gsap.set(".sg-cta-wrapper", { autoAlpha: 0, scale: 0.82, filter: "blur(26px)" });
+      gsap.set(".sg-cta-wrapper", {
+        autoAlpha: 0,
+        scale: 0.82,
+        filter: "blur(26px)",
+      });
 
-      const introTl = gsap.timeline({ delay: 0.25 });
+      // Intro timeline: paused until splash screen completes
+      const introTl = gsap.timeline({ paused: true });
       introTl
         .to(".sg-text-track", {
           duration: 1.45,
@@ -252,6 +288,29 @@ export function CinematicHero({
           "-=0.85",
         );
 
+      // Coordinate with splash screen: wait for it to finish before revealing hero text
+      const splashAlreadyDone = Boolean(
+        sessionStorage.getItem("shelfgram-splash-shown"),
+      );
+      if (splashAlreadyDone) {
+        // No splash active — play intro after short delay
+        setTimeout(() => introTl.play(), 250);
+      } else {
+        // Wait for splash-done event, then play intro
+        onSplashDone = () => {
+          setTimeout(() => introTl.play(), 300);
+        };
+        window.addEventListener("shelfgram:splash-done", onSplashDone, {
+          once: true,
+        });
+        // Fallback: play after 4s if event never fires
+        fallbackTimer = setTimeout(() => {
+          if (!introTl.isActive() && introTl.progress() === 0) {
+            introTl.play();
+          }
+        }, 4000);
+      }
+
       const scrollTl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
@@ -266,7 +325,13 @@ export function CinematicHero({
       scrollTl
         .to(
           [".sg-hero-text-wrapper", ".sg-bg-grid"],
-          { scale: 1.13, filter: "blur(18px)", opacity: 0.2, ease: "power2.inOut", duration: 2 },
+          {
+            scale: 1.13,
+            filter: "blur(18px)",
+            opacity: 0.2,
+            ease: "power2.inOut",
+            duration: 2,
+          },
           0,
         )
         .to(".sg-main-card", { y: 0, ease: "power3.inOut", duration: 2 }, 0)
@@ -279,38 +344,97 @@ export function CinematicHero({
         })
         .fromTo(
           ".sg-spline-wrapper",
-          { y: 240, z: -420, rotationX: 44, rotationY: -24, autoAlpha: 0, scale: 0.72 },
-          { y: 0, z: 0, rotationX: 0, rotationY: 0, autoAlpha: 1, scale: 1, ease: "expo.out", duration: 2.3 },
+          {
+            y: 240,
+            z: -420,
+            rotationX: 44,
+            rotationY: -24,
+            autoAlpha: 0,
+            scale: 0.72,
+          },
+          {
+            y: 0,
+            z: 0,
+            rotationX: 0,
+            rotationY: 0,
+            autoAlpha: 1,
+            scale: 1,
+            ease: "expo.out",
+            duration: 2.3,
+          },
           "-=0.6",
         )
         .fromTo(
           ".sg-mini-card",
           { y: 30, autoAlpha: 0, scale: 0.95 },
-          { y: 0, autoAlpha: 1, scale: 1, stagger: 0.12, ease: "back.out(1.2)", duration: 1.25 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            scale: 1,
+            stagger: 0.12,
+            ease: "back.out(1.2)",
+            duration: 1.25,
+          },
           "-=1.4",
         )
-        .to(".sg-counter-val", { innerHTML: metricValue, snap: { innerHTML: 1 }, duration: 1.6, ease: "expo.out" }, "-=1.3")
+        .to(
+          ".sg-counter-val",
+          {
+            innerHTML: metricValue,
+            snap: { innerHTML: 1 },
+            duration: 1.6,
+            ease: "expo.out",
+          },
+          "-=1.3",
+        )
         .fromTo(
           ".sg-floating-badge",
           { y: 90, autoAlpha: 0, scale: 0.76, rotationZ: -8 },
-          { y: 0, autoAlpha: 1, scale: 1, rotationZ: 0, ease: "back.out(1.5)", duration: 1.4, stagger: 0.18 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            scale: 1,
+            rotationZ: 0,
+            ease: "back.out(1.5)",
+            duration: 1.4,
+            stagger: 0.18,
+          },
           "-=1.6",
         )
-        .fromTo(".sg-card-left", { x: -46, autoAlpha: 0 }, { x: 0, autoAlpha: 1, ease: "power4.out", duration: 1.3 }, "-=1.2")
-        .fromTo(".sg-card-right", { x: 46, autoAlpha: 0, scale: 0.86 }, { x: 0, autoAlpha: 1, scale: 1, ease: "expo.out", duration: 1.3 }, "<")
+        .fromTo(
+          ".sg-card-left",
+          { x: -46, autoAlpha: 0 },
+          { x: 0, autoAlpha: 1, ease: "power4.out", duration: 1.3 },
+          "-=1.2",
+        )
+        .fromTo(
+          ".sg-card-right",
+          { x: 46, autoAlpha: 0, scale: 0.86 },
+          { x: 0, autoAlpha: 1, scale: 1, ease: "expo.out", duration: 1.3 },
+          "<",
+        )
         .to({}, { duration: 1.8 })
         .set(".sg-hero-text-wrapper", { autoAlpha: 0 })
         .set(".sg-cta-wrapper", { autoAlpha: 1 })
         .to({}, { duration: 0.9 })
-        .to([".sg-spline-wrapper", ".sg-floating-badge", ".sg-card-left", ".sg-card-right", ".sg-mini-card"], {
-          scale: 0.9,
-          y: -34,
-          z: -180,
-          autoAlpha: 0,
-          ease: "power3.in",
-          duration: 1.1,
-          stagger: 0.04,
-        })
+        .to(
+          [
+            ".sg-spline-wrapper",
+            ".sg-floating-badge",
+            ".sg-card-left",
+            ".sg-card-right",
+            ".sg-mini-card",
+          ],
+          {
+            scale: 0.9,
+            y: -34,
+            z: -180,
+            autoAlpha: 0,
+            ease: "power3.in",
+            duration: 1.1,
+            stagger: 0.04,
+          },
+        )
         .to(
           ".sg-main-card",
           {
@@ -322,11 +446,27 @@ export function CinematicHero({
           },
           "sg-pullback",
         )
-        .to(".sg-cta-wrapper", { scale: 1, filter: "blur(0px)", ease: "expo.inOut", duration: 1.65 }, "sg-pullback")
-        .to(".sg-main-card", { y: -window.innerHeight - 220, ease: "power3.in", duration: 1.35 });
+        .to(
+          ".sg-cta-wrapper",
+          { scale: 1, filter: "blur(0px)", ease: "expo.inOut", duration: 1.65 },
+          "sg-pullback",
+        )
+        .to(".sg-main-card", {
+          y: -window.innerHeight - 220,
+          ease: "power3.in",
+          duration: 1.35,
+        });
     }, container);
 
-    return () => ctx.revert();
+    return () => {
+      if (onSplashDone) {
+        window.removeEventListener("shelfgram:splash-done", onSplashDone);
+      }
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
+      ctx.revert();
+    };
   }, [metricValue]);
 
   return (
@@ -341,7 +481,10 @@ export function CinematicHero({
     >
       <style dangerouslySetInnerHTML={{ __html: INJECTED_STYLES }} />
       <div aria-hidden="true" className="sg-film-grain" />
-      <div aria-hidden="true" className="sg-bg-grid absolute inset-0 z-0 pointer-events-none opacity-60" />
+      <div
+        aria-hidden="true"
+        className="sg-bg-grid absolute inset-0 z-0 pointer-events-none opacity-60"
+      />
 
       <div className="sg-hero-text-wrapper sg-transform-3d absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
         <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm backdrop-blur sm:text-sm">
@@ -383,7 +526,10 @@ export function CinematicHero({
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center" style={{ perspective: "1500px" }}>
+      <div
+        className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
+        style={{ perspective: "1500px" }}
+      >
         <div
           ref={mainCardRef}
           className="sg-main-card sg-premium-card sg-gsap-reveal pointer-events-auto relative flex h-[88vh] w-[92vw] items-center justify-center overflow-hidden rounded-[28px] md:h-[84vh] md:w-[86vw] md:rounded-[40px]"
@@ -397,12 +543,18 @@ export function CinematicHero({
               </h2>
             </div>
 
-            <div className="sg-spline-wrapper  sg-gsap-reveal order-2 relative flex h-[min(54vh,31rem)] w-full items-center justify-center sm:h-[min(58vh,36rem)] lg:order-2 lg:h-[min(72vh,42rem)]" style={{ perspective: "1200px" }}>
+            <div
+              className="sg-spline-wrapper  sg-gsap-reveal order-2 relative flex h-[min(54vh,31rem)] w-full items-center justify-center sm:h-[min(58vh,36rem)] lg:order-2 lg:h-[min(72vh,42rem)]"
+              style={{ perspective: "1200px" }}
+            >
               <div
                 ref={splineWrapRef}
                 className="sg-spline-stage sg-transform-3d relative h-full w-full max-w-[42rem] overflow-hidden rounded-[2rem] will-change-transform sm:rounded-[2.5rem]"
               >
-                <SplineScene className="h-full min-h-[24rem] w-full sm:min-h-[32rem]" scene={splineScene} />
+                <SplineScene
+                  className="h-full min-h-[24rem] w-full sm:min-h-[32rem]"
+                  scene={splineScene}
+                />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#17120d]/55 to-transparent" />
               </div>
 
@@ -411,8 +563,12 @@ export function CinematicHero({
                   <Star aria-hidden="true" className="size-5 fill-current" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">Review tersimpan</p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">Rating dan kesan.</p>
+                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
+                    Review tersimpan
+                  </p>
+                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
+                    Rating dan kesan.
+                  </p>
                 </div>
               </div>
 
@@ -421,8 +577,12 @@ export function CinematicHero({
                   <ShieldCheck aria-hidden="true" className="size-5" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">Buku bisa dipinjam</p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">Siap dipinjam.</p>
+                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
+                    Buku bisa dipinjam
+                  </p>
+                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
+                    Siap dipinjam.
+                  </p>
                 </div>
               </div>
             </div>

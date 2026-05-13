@@ -5,8 +5,8 @@ export default async function ChatPage() {
   const data = await getChatBootstrap();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div>
+    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 overflow-hidden">
+      <div className="shrink-0">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8c7861] dark:text-[#d6b28b]">
           Realtime chat
         </p>

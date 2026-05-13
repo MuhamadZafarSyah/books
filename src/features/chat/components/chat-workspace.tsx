@@ -311,8 +311,8 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   };
 
   return (
-    <div className={cn("grid overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-[31rem] grid-rows-[auto_1fr]" : "min-h-[calc(100dvh-9rem)] lg:grid-cols-[20rem_1fr]")}>
-      <aside className={cn("border-border bg-secondary/35", compact ? "border-b" : "border-b lg:border-b-0 lg:border-r")}>
+    <div className={cn("grid overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-[31rem] grid-rows-[auto_1fr]" : "min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]")}>
+      <aside className={cn("min-h-0 border-border bg-secondary/35", compact ? "border-b" : "border-b lg:border-b-0 lg:border-r")}>
         <div className="flex items-center justify-between gap-3 border-b border-border p-4">
           <div>
             <p className="font-heading text-2xl font-semibold text-primary">Messages</p>
@@ -357,7 +357,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
             )}
           </div>
         </ScrollArea>
-        {!compact && (
+        {/* {!compact && (
           <div className="border-t border-border p-3">
             <p className="px-2 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Mulai chat</p>
             <div className="mt-2 grid gap-1">
@@ -377,13 +377,13 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </aside>
 
-      <section className="flex min-h-0 flex-col">
+      <section className="flex min-h-0 flex-col overflow-hidden">
         {activeConversation ? (
           <>
-            <div className="flex items-center gap-3 border-b border-border p-4">
+            <div className="flex shrink-0 items-center gap-3 border-b border-border p-4">
               <ConversationAvatar conversation={activeConversation} currentUserId={initialData.currentUser.id} />
               <div className="min-w-0 flex-1">
                 <h1 className="truncate font-heading text-xl font-semibold text-primary">{activeConversation.title}</h1>
@@ -395,7 +395,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
               </div>
               <Users aria-hidden="true" className="size-5 text-muted-foreground" />
             </div>
-            <ScrollArea className="min-h-0 flex-1" type="hover">
+            <ScrollArea className="min-h-0 flex-1 overflow-hidden" type="hover">
               <div className="grid gap-3 p-4">
                 {activeMessages.map((message) => {
                   const isMine = message.senderId === initialData.currentUser.id;
@@ -429,7 +429,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                 {remoteTypingUserIds.length > 0 && <TypingBubble />}
               </div>
             </ScrollArea>
-            <div className="border-t border-border p-3">
+            <div className="shrink-0 border-t border-border p-3">
               <form
                 className="flex items-end gap-2 rounded-[1.5rem] border border-border bg-background p-2"
                 onSubmit={(event) => {
