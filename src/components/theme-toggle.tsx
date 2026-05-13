@@ -12,7 +12,7 @@ function ThemeToggle() {
   return (
     <Button
       aria-label="Toggle theme"
-      className="fixed right-4 bottom-4 z-50 rounded-full bg-background/80 shadow-lg backdrop-blur"
+      className=" bg-background/80 shadow-lg backdrop-blur"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       size="icon"
       type="button"

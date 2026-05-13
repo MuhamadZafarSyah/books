@@ -101,7 +101,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="p-2">
+      <SidebarHeader className="p-3">
         <Link
           href="/dashboard"
           className="flex items-center gap-2.5 rounded-lg px-1 py-1 transition-colors duration-200 hover:bg-sidebar-accent"
@@ -159,7 +159,8 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {secondaryNavItems.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive =
+                    pathname === item.href || pathname.startsWith(`${item.href}/`);
 
                   return (
                     <SidebarMenuItem key={item.href}>

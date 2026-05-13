@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
+import { prisma } from "./db";
 
 /**
  * Get the current authenticated user, or null if not logged in.
@@ -7,7 +8,30 @@ import { auth } from "./auth";
  */
 export async function getCurrentUser() {
   const session = await auth();
-  return session?.user ?? null;
+  const userId = session?.user?.id;
+
+  if (!userId) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      email: true,
+      image: true,
+      bio: true,
+      location: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) return null;
+
+  return {
+    ...user,
+    createdAt: user.createdAt.toISOString(),
+  };
 }
 
 /**
@@ -15,11 +39,11 @@ export async function getCurrentUser() {
  * Use in Server Components that must be behind auth.
  */
 export async function requireAuth() {
-  const session = await auth();
+  const user = await getCurrentUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/auth");
   }
 
-  return session.user;
+  return user;
 }

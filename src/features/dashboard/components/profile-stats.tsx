@@ -1,7 +1,34 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Star } from "lucide-react";
+import { BookOpen, Star } from "lucide-react";
+
+type ProfileStatsBook = {
+  id: string;
+  title: string;
+  author: string;
+  cover?: string | null;
+  rating?: number | null;
+};
+
+type ProfileStatsGenre = {
+  name: string;
+  count: number;
+  color?: string;
+};
+
+type ProfileStatsMiniStat = {
+  label: string;
+  value: string;
+};
+
+type ProfileStatsProps = {
+  books?: ProfileStatsBook[];
+  booksTitle?: string;
+  genres?: ProfileStatsGenre[];
+  genresTitle?: string;
+  miniStats?: ProfileStatsMiniStat[];
+};
 
 const recentBooks = [
   {
@@ -69,74 +96,88 @@ const readingStats = {
   longestStreak: 21,
 };
 
-export function ProfileStats() {
-  const totalGenreBooks = genres.reduce((sum, g) => sum + g.count, 0);
+const defaultMiniStats = [
+  { label: "Buku Tahun Ini", value: String(readingStats.thisYear) },
+  { label: "Total Halaman", value: readingStats.totalPages.toLocaleString() },
+  { label: "Rata-rata Rating", value: String(readingStats.avgRating) },
+  { label: "Streak Terlama", value: `${readingStats.longestStreak} hari` },
+];
+
+export function ProfileStats({
+  books = recentBooks,
+  booksTitle = "Buku yang Sudah Dibaca",
+  genres: profileGenres = genres,
+  genresTitle = "Genre Favorit",
+  miniStats = defaultMiniStats,
+}: ProfileStatsProps = {}) {
+  const totalGenreBooks = profileGenres.reduce((sum, g) => sum + g.count, 0) || 1;
 
   return (
     <div className="space-y-5">
       {/* Reading Stats Summary */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStat
-          label="Buku Tahun Ini"
-          value={String(readingStats.thisYear)}
-        />
-        <MiniStat
-          label="Total Halaman"
-          value={readingStats.totalPages.toLocaleString()}
-        />
-        <MiniStat
-          label="Rata-rata Rating"
-          value={String(readingStats.avgRating)}
-        />
-        <MiniStat
-          label="Streak Terlama"
-          value={`${readingStats.longestStreak} hari`}
-        />
+        {miniStats.map((stat) => (
+          <MiniStat key={stat.label} label={stat.label} value={stat.value} />
+        ))}
       </div>
 
       {/* Book Shelf Preview */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium normal-case tracking-normal text-muted-foreground">
-            Buku yang Sudah Dibaca
+            {booksTitle}
           </CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
-          <ScrollArea className="w-full">
-            <div className="flex gap-3 pb-2">
-              {recentBooks.map((book) => (
-                <div
-                  key={book.id}
-                  className="group w-[90px] shrink-0 cursor-pointer"
-                >
-                  <div className="relative aspect-2/3 overflow-hidden rounded-md shadow-md transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
-                    <img
-                      src={book.cover}
-                      alt={`Cover ${book.title}`}
-                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    {/* Rating overlay */}
-                    <div className="absolute inset-x-0 bottom-0 flex items-center gap-0.5 bg-linear-to-t from-black/70 to-transparent px-1.5 pb-1.5 pt-4">
-                      <Star
-                        aria-hidden="true"
-                        className="size-2.5 fill-chart-5 text-chart-5"
-                      />
-                      <span className="text-[10px] font-bold text-white">
-                        {book.rating}
-                      </span>
+          {books.length > 0 ? (
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-2">
+                {books.map((book) => (
+                  <div
+                    key={book.id}
+                    className="group w-[90px] shrink-0 cursor-pointer"
+                  >
+                    <div className="relative aspect-2/3 overflow-hidden rounded-md bg-primary/10 shadow-md transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
+                      {book.cover ? (
+                        <img
+                          src={book.cover}
+                          alt={`Cover ${book.title}`}
+                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex size-full flex-col justify-between bg-linear-to-br from-primary to-[#8B6F4E] p-2 text-primary-foreground">
+                          <BookOpen aria-hidden="true" className="size-4 opacity-80" />
+                          <span className="line-clamp-3 font-heading text-xs font-semibold leading-4">{book.title}</span>
+                        </div>
+                      )}
+                      {book.rating !== null && book.rating !== undefined && (
+                        <div className="absolute inset-x-0 bottom-0 flex items-center gap-0.5 bg-linear-to-t from-black/70 to-transparent px-1.5 pb-1.5 pt-4">
+                          <Star
+                            aria-hidden="true"
+                            className="size-2.5 fill-chart-5 text-chart-5"
+                          />
+                          <span className="text-[10px] font-bold text-white">
+                            {book.rating}
+                          </span>
+                        </div>
+                      )}
                     </div>
+                    <p className="mt-1.5 truncate text-xs font-medium">
+                      {book.title}
+                    </p>
+                    <p className="truncate text-[10px] text-muted-foreground">
+                      {book.author}
+                    </p>
                   </div>
-                  <p className="mt-1.5 truncate text-xs font-medium">
-                    {book.title}
-                  </p>
-                  <p className="truncate text-[10px] text-muted-foreground">
-                    {book.author}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+              Belum ada buku publik untuk ditampilkan.
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          )}
         </CardContent>
       </Card>
 
@@ -144,16 +185,16 @@ export function ProfileStats() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium normal-case tracking-normal text-muted-foreground">
-            Genre Favorit
+            {genresTitle}
           </CardTitle>
         </CardHeader>
         <CardContent className="pb-5">
           {/* Visual genre bars */}
           <div className="mb-4 flex h-3 overflow-hidden rounded-full">
-            {genres.map((genre) => (
+            {profileGenres.map((genre, index) => (
               <div
                 key={genre.name}
-                className={`${genre.color} transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full`}
+                className={`${genre.color ?? ["bg-primary", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"][index % 5]} transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full`}
                 style={{ width: `${(genre.count / totalGenreBooks) * 100}%` }}
                 title={`${genre.name}: ${genre.count} buku`}
               />
@@ -162,10 +203,10 @@ export function ProfileStats() {
 
           {/* Legend */}
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            {genres.map((genre) => (
+            {profileGenres.map((genre, index) => (
               <div key={genre.name} className="flex items-center gap-1.5">
                 <span
-                  className={`size-2.5 rounded-full ${genre.color}`}
+                  className={`size-2.5 rounded-full ${genre.color ?? ["bg-primary", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"][index % 5]}`}
                   aria-hidden="true"
                 />
                 <span className="text-xs text-muted-foreground">

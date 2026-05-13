@@ -1,12 +1,20 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Edit, BookOpen, Users, Star } from "lucide-react";
+import { MapPin, Calendar, Edit, BookOpen, Users, Star, ExternalLink, type LucideIcon } from "lucide-react";
+import { profileSlugFor } from "@/lib/public-profile";
 
 type ProfileUser = {
+  id?: string | null;
+  username?: string | null;
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  createdAt?: string | Date | null;
 };
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -24,13 +32,45 @@ function getInitials(name?: string | null, email?: string | null): string {
   return "U";
 }
 
-const profileStats = [
+type ProfileHeaderStat = {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+};
+
+const defaultProfileStats = [
   { label: "Buku Dibaca", value: "42", icon: BookOpen },
   { label: "Pengikut", value: "128", icon: Users },
   { label: "Review", value: "18", icon: Star },
 ];
 
-export function ProfileHeader({ user }: { user: ProfileUser }) {
+function formatJoinedAt(value?: string | Date | null) {
+  if (!value) return "Januari 2025";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+export function ProfileHeader({
+  actions,
+  showPublicProfileLink = true,
+  stats = defaultProfileStats,
+  user,
+}: {
+  actions?: ReactNode;
+  showPublicProfileLink?: boolean;
+  stats?: ProfileHeaderStat[];
+  user: ProfileUser;
+}) {
+  const publicProfileSlug = profileSlugFor({
+    id: user.id ?? user.email ?? "me",
+    username: user.username ?? null,
+    name: user.name ?? null,
+    email: user.email ?? null,
+  });
+
   return (
     <Card className="overflow-hidden">
       {/* Cover/Banner */}
@@ -50,14 +90,34 @@ export function ProfileHeader({ user }: { user: ProfileUser }) {
             </AvatarFallback>
           </Avatar>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="cursor-pointer gap-1.5 rounded-full transition-all duration-200 hover:shadow-sm"
-          >
-            <Edit aria-hidden="true" className="size-3.5" />
-            Edit Profil
-          </Button>
+          {actions ?? (
+            <div className="flex flex-wrap justify-end gap-2">
+              {showPublicProfileLink && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer gap-1.5 rounded-full normal-case tracking-normal transition-all duration-200 hover:shadow-sm"
+                >
+                  <Link href={`/u/${publicProfileSlug}`}>
+                    <ExternalLink aria-hidden="true" className="size-3.5" />
+                    Profil Publik
+                  </Link>
+                </Button>
+              )}
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="cursor-pointer gap-1.5 rounded-full normal-case tracking-normal transition-all duration-200 hover:shadow-sm"
+              >
+                <Link href="/dashboard/profile/edit">
+                  <Edit aria-hidden="true" className="size-3.5" />
+                  Edit Profil
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* User Info */}
@@ -70,25 +130,23 @@ export function ProfileHeader({ user }: { user: ProfileUser }) {
           </div>
 
           <p className="max-w-lg text-sm leading-relaxed text-foreground/80">
-            Pecinta sastra Indonesia dan buku-buku non-fiksi. Selalu mencari
-            cerita yang menginspirasi dan membuka perspektif baru. Senang
-            berbagi rekomendasi bacaan.
+            {user.bio ?? "Pecinta sastra Indonesia dan buku-buku non-fiksi. Selalu mencari cerita yang menginspirasi dan membuka perspektif baru. Senang berbagi rekomendasi bacaan."}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <MapPin aria-hidden="true" className="size-3" />
-              Jakarta, Indonesia
+              {user.location ?? "Jakarta, Indonesia"}
             </span>
             <span className="inline-flex items-center gap-1">
               <Calendar aria-hidden="true" className="size-3" />
-              Bergabung Januari 2025
+              Bergabung {formatJoinedAt(user.createdAt)}
             </span>
           </div>
 
           {/* Quick Stats */}
           <div className="flex items-center gap-6 border-t border-border/50 pt-4">
-            {profileStats.map((stat) => (
+            {stats.map((stat) => (
               <div key={stat.label} className="flex items-center gap-2 text-sm">
                 <stat.icon
                   aria-hidden="true"

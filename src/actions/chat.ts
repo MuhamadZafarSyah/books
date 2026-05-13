@@ -165,7 +165,7 @@ async function assertConversationParticipant(
   }
 }
 
-export async function getChatBootstrap(): Promise<ChatBootstrap> {
+export async function getChatBootstrap(activeConversationId?: string): Promise<ChatBootstrap> {
   const currentUser = await requireChatUser();
   const currentUserId = currentUser.id;
 
@@ -193,7 +193,9 @@ export async function getChatBootstrap(): Promise<ChatBootstrap> {
   }
 
   const onlineUserIds = await getOnlineUserIds([...allUserIds]);
-  const activeConversation = conversations[0];
+  const activeConversation = activeConversationId
+    ? conversations.find((conversation) => conversation.id === activeConversationId) ?? conversations[0]
+    : conversations[0];
   const initialMessages = activeConversation
     ? await getConversationMessages(activeConversation.id)
     : [];
@@ -208,6 +210,7 @@ export async function getChatBootstrap(): Promise<ChatBootstrap> {
       },
       onlineUserIds,
     ),
+    activeConversationId: activeConversation?.id ?? null,
     conversations: conversations.map((conversation) =>
       serializeConversation(
         conversation,

@@ -137,3 +137,9 @@
     -ms-overflow-style: none; /* Internet Explorer 10+ */
   }
 }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

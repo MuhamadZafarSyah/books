@@ -1,8 +1,13 @@
 import { getChatBootstrap } from "@/actions/chat";
 import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
 
-export default async function ChatPage() {
-  const data = await getChatBootstrap();
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ conversation?: string }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const data = await getChatBootstrap(resolvedSearchParams?.conversation);
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 overflow-hidden sm:gap-6">

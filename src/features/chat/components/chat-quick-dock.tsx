@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { MessageCircle, Minus, X } from "lucide-react";
 
@@ -11,14 +11,35 @@ import type { ChatBootstrap } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
+const DOCK_TRANSITION_MS = 300;
+
 export function ChatQuickDock() {
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [data, setData] = useState<ChatBootstrap | null>(null);
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dockOpen = open && !hidden;
+  const dockTransitioning = dockOpen || closing;
+  const dockContentVisible = dockOpen || closing;
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
 
   const openDock = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setHidden(false);
+    setClosing(false);
     setOpen(true);
     if (!data) {
       startTransition(async () => {
@@ -26,63 +47,73 @@ export function ChatQuickDock() {
       });
     }
   };
+
+  const closeDock = (hideAfterClose = false) => {
+    setOpen(false);
+    setClosing(true);
+
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = setTimeout(() => {
+      setClosing(false);
+      setHidden(hideAfterClose);
+      closeTimerRef.current = null;
+    }, DOCK_TRANSITION_MS);
+  };
+
   if (pathname === "/dashboard/chat") {
     return null;
   }
 
-  if (hidden) {
-    return (
-      <Button
-        aria-label="Tampilkan quick chat"
-        className="fixed bottom-4 right-4 z-40 rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-1 motion-reduce:transition-none sm:bottom-5 sm:right-5"
-        onClick={() => setHidden(false)}
-        size="icon-lg"
-        type="button"
-      >
-        <MessageCircle className="size-5" />
-      </Button>
-    );
-  }
   return (
-    <div className={cn("fixed z-40", open ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5" : "bottom-4 right-4 sm:bottom-5 sm:right-5")}>
+    <div className={cn("fixed z-40", dockTransitioning ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5" : "bottom-4 right-4 sm:bottom-5 sm:right-5")}>
       <div
         className={cn(
-          "overflow-hidden   border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-          open ? "h-[min(82dvh,42rem)] w-full sm:h-[36rem] sm:w-[30rem]" : "ml-auto h-14 w-[8.5rem] sm:w-64",
+          "overflow-hidden transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+          dockOpen
+            ? "h-[min(82dvh,42rem)] w-full border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl sm:h-[36rem] sm:w-[30rem]"
+            : "ml-auto size-11 rounded-full",
         )}
       >
-        <div className={cn("flex h-14 items-center gap-3 px-3", open && "border-b border-border/70")}>
-          <button
-            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
-            onClick={open ? () => setOpen(false) : openDock}
+        {!dockContentVisible && (
+          <Button
+            aria-label="Tampilkan quick chat"
+            className="rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out motion-reduce:transition-none"
+            onClick={openDock}
+            size="icon-lg"
             type="button"
           >
-            <span className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
-              <MessageCircle className="size-5" />
-            </span>
-            <span className={cn("min-w-0 flex-1", !open && "hidden sm:block")}>
-              <span className="block truncate text-sm font-bold text-foreground">Quick Chat</span>
-              <span className="block truncate text-xs text-muted-foreground">History chat cepat</span>
-            </span>
-          </button>
-          {open && (
-            <>
-              <Button aria-label="Buka halaman chat" asChild size="icon-xs" variant="ghost">
-                <Link href="/dashboard/chat">
-                  <MessageCircle className="size-3.5" />
-                </Link>
-              </Button>
-              <Button aria-label="Minimize quick chat" onClick={() => setOpen(false)} size="icon-xs" type="button" variant="ghost">
-                <Minus className="size-3.5" />
-              </Button>
-              <Button aria-label="Hide quick chat" onClick={() => setHidden(true)} size="icon-xs" type="button" variant="ghost">
-                <X className="size-3.5" />
-              </Button>
-            </>
-          )}
-        </div>
-        {open && (
-          <div className="h-[calc(100%-3.5rem)] p-2 sm:p-3">
+            <MessageCircle className="size-5" />
+          </Button>
+        )}
+        {dockContentVisible && (
+          <div className={cn("flex h-14 items-center gap-3 border-b border-border/70 px-3 transition-opacity duration-200", closing && "opacity-0")}>
+            <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
+              <span className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
+                <MessageCircle className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-foreground">Quick Chat</span>
+                <span className="block truncate text-xs text-muted-foreground">History chat cepat</span>
+              </span>
+            </div>
+            <Button aria-label="Buka halaman chat" asChild size="icon-xs" variant="ghost">
+              <Link href="/dashboard/chat">
+                <MessageCircle className="size-3.5" />
+              </Link>
+            </Button>
+            <Button aria-label="Minimize quick chat" onClick={() => closeDock()} size="icon-xs" type="button" variant="ghost">
+              <Minus className="size-3.5" />
+            </Button>
+            <Button aria-label="Hide quick chat" onClick={() => closeDock(true)} size="icon-xs" type="button" variant="ghost">
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        )}
+        {dockContentVisible && (
+          <div className={cn("h-[calc(100%-3.5rem)] p-2 transition-opacity duration-200 sm:p-3", closing && "opacity-0")}>
             {data ? (
               <ChatWorkspace compact initialData={data} />
             ) : (

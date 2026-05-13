@@ -156,7 +156,7 @@ function updateConversationPreview(
 export function ChatWorkspace({ initialData, compact = false }: { initialData: ChatBootstrap; compact?: boolean }) {
   const [conversations, setConversations] = useState(initialData.conversations);
   const [messagesByConversation, setMessagesByConversation] = useState(initialData.messagesByConversation);
-  const [activeConversationId, setActiveConversationId] = useState(initialData.conversations[0]?.id ?? "");
+  const [activeConversationId, setActiveConversationId] = useState(initialData.activeConversationId ?? initialData.conversations[0]?.id ?? "");
   const [loadedConversationIds, setLoadedConversationIds] = useState(() => new Set(Object.keys(initialData.messagesByConversation)));
   const [draft, setDraft] = useState("");
   const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
