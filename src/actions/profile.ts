@@ -84,6 +84,7 @@ export async function updateProfile(
       bio: emptyToNull(parsed.data.bio),
       location: emptyToNull(parsed.data.location),
       image: emptyToNull(parsed.data.image),
+      banner: emptyToNull(parsed.data.banner),
     },
   });
 

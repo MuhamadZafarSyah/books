@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
@@ -13,7 +13,7 @@ import {
   Save,
   UserRound,
 } from "lucide-react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { toast } from "sonner";
 
 import { updateProfile } from "@/actions/profile";
@@ -33,12 +33,14 @@ import {
   editProfileSchema,
   type EditProfileFormValues,
 } from "@/features/dashboard/schemas/profile-schemas";
+import { BannerUpload } from "@/features/dashboard/components/banner-upload";
 
 type EditableProfileUser = {
   name: string | null;
   username: string | null;
   email: string;
   image: string | null;
+  banner: string | null;
   bio: string | null;
   location: string | null;
 };
@@ -52,13 +54,38 @@ function getInitials(name?: string | null, email?: string | null) {
       .toUpperCase()
       .slice(0, 2);
   }
-
   return email?.[0]?.toUpperCase() ?? "U";
+}
+
+/**
+ * Uploads a Blob to /api/upload and returns the Cloudinary URL.
+ */
+async function uploadBannerBlob(blob: Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", blob, "banner.webp");
+  formData.append("folder", "shelfgram/banners");
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error ?? "Gagal mengunggah banner.");
+  }
+
+  const result = await response.json();
+  return result.url as string;
 }
 
 export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // State to hold the cropped banner blob until form submission
+  const [bannerBlob, setBannerBlob] = useState<Blob | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -72,6 +99,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
       bio: user.bio ?? "",
       location: user.location ?? "",
       image: user.image ?? "",
+      banner: user.banner ?? "",
     },
   });
 
@@ -79,24 +107,43 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   const watchedBio = useWatch({ control, name: "bio" }) ?? "";
   const watchedImage = useWatch({ control, name: "image" }) ?? "";
 
+  const handleBannerFileReady = useCallback((blob: Blob | null) => {
+    setBannerBlob(blob);
+  }, []);
+
   function onSubmit(values: EditProfileFormValues) {
+    const pendingBlob = bannerBlob;
     startTransition(async () => {
-      const result = await updateProfile(values);
+      try {
+        let bannerUrl = values.banner;
 
-      if (!result.success) {
-        toast.error(result.error ?? "Profil gagal diperbarui.");
-        return;
+        // Upload banner blob to Cloudinary if user selected a new image
+        if (pendingBlob) {
+          bannerUrl = await uploadBannerBlob(pendingBlob);
+          setBannerBlob(null);
+        }
+
+        const result = await updateProfile({ ...values, banner: bannerUrl });
+
+        if (!result.success) {
+          toast.error(result.error ?? "Profil gagal diperbarui.");
+          return;
+        }
+
+        toast.success("Profil berhasil diperbarui.");
+        router.push("/dashboard/profile");
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Terjadi kesalahan.",
+        );
       }
-
-      toast.success("Profil berhasil diperbarui.");
-      router.push("/dashboard/profile");
-      router.refresh();
     });
   }
 
   return (
     <Card className="overflow-hidden rounded-3xl border-border/70 bg-card/95 shadow-xl shadow-primary/5">
-      <CardHeader className="gap-4 border-b border-border/60 bg-linear-to-br from-primary/10 via-card to-accent/20 px-5 py-6 sm:px-8">
+      {/* <CardHeader className="gap-4 border-b border-border/60 px-5 py-6 sm:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar className="size-16 border-4 border-card shadow-md sm:size-20">
@@ -129,10 +176,32 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
             </Link>
           </Button>
         </div>
-      </CardHeader>
+      </CardHeader> */}
 
       <CardContent className="px-5 py-6 sm:px-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          {/* Banner Upload — mirrors profile header banner exactly */}
+          <div className="space-y-2">
+            <Label>Banner profil</Label>
+            <Controller
+              control={control}
+              name="banner"
+              render={({ field }) => (
+                <BannerUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  onFileReady={handleBannerFileReady}
+                  disabled={isPending}
+                />
+              )}
+            />
+            {errors.banner ? (
+              <p className="text-sm font-medium text-destructive">
+                {errors.banner.message}
+              </p>
+            ) : null}
+          </div>
+
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Nama tampilan</Label>

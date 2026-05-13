@@ -36,6 +36,14 @@ export const editProfileSchema = z.object({
     .trim()
     .max(500, "URL foto terlalu panjang.")
     .refine(isBlankOrHttpUrl, "URL foto harus diawali http:// atau https://."),
+  banner: z
+    .string()
+    .trim()
+    .max(500, "URL banner terlalu panjang.")
+    .refine(
+      isBlankOrHttpUrl,
+      "URL banner harus diawali http:// atau https://.",
+    ),
 });
 
 export type EditProfileFormValues = z.infer<typeof editProfileSchema>;
