@@ -31,6 +31,7 @@ export type ChatMessageSummary = {
 
 export type ChatBootstrap = {
   currentUser: ChatUserSummary;
+  activeConversationId: string | null;
   conversations: ChatConversationSummary[];
   suggestedUsers: ChatUserSummary[];
   messagesByConversation: Record<string, ChatMessageSummary[]>;
