@@ -47,8 +47,8 @@ export function ChatQuickDock() {
     <div className={cn("fixed z-40", open ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5" : "bottom-4 right-4 sm:bottom-5 sm:right-5")}>
       <div
         className={cn(
-          "overflow-hidden  border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-          open ? "h-[min(82dvh,42rem)] w-full sm:h-[36rem] sm:w-[30rem]" : "ml-auto h-14 w-[8.5rem] sm:w-[21.5rem]",
+          "overflow-hidden   border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+          open ? "h-[min(82dvh,42rem)] w-full sm:h-[36rem] sm:w-[30rem]" : "ml-auto h-14 w-[8.5rem] sm:w-64",
         )}
       >
         <div className={cn("flex h-14 items-center gap-3 px-3", open && "border-b border-border/70")}>
