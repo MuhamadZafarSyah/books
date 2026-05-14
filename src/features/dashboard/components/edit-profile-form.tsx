@@ -184,7 +184,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
   }
 
   return (
-    <Card className="overflow-hidden pt-0! rounded-3xl border-border/70 bg-card/95 shadow-xl shadow-primary/5">
+    <Card className="overflow-hidden pt-0! border-border/70 bg-card/95 ">
       <CardContent className="px-5 py-6 sm:px-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {/* ─── Banner Upload (inline, matches profile header) ─── */}
