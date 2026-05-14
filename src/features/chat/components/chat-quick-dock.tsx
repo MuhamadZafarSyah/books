@@ -24,6 +24,7 @@ export function ChatQuickDock() {
   const dockOpen = open && !hidden;
   const dockTransitioning = dockOpen || closing;
   const dockContentVisible = dockOpen || closing;
+  const dockSurfaceVisible = dockOpen || closing;
 
   useEffect(() => {
     return () => {
@@ -71,16 +72,15 @@ export function ChatQuickDock() {
     <div className={cn("fixed z-40", dockTransitioning ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5" : "bottom-4 right-4 sm:bottom-5 sm:right-5")}>
       <div
         className={cn(
-          "overflow-hidden transition-[width,height,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-          dockOpen
-            ? "h-[min(82dvh,42rem)] w-full border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl sm:h-[36rem] sm:w-[30rem]"
-            : "ml-auto size-11 rounded-full",
+          "ml-auto origin-bottom-right overflow-hidden transition-[width,height,border-radius,box-shadow,background-color,border-color,opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+          dockOpen ? "h-[min(82dvh,42rem)] w-full rounded-[1.75rem] sm:h-[36rem] sm:w-[30rem]" : "size-11 ",
+          dockSurfaceVisible && "border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl",
         )}
       >
         {!dockContentVisible && (
           <Button
             aria-label="Tampilkan quick chat"
-            className="rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out motion-reduce:transition-none"
+            className="rounded-full z-50! shadow-[0_18px_44px_rgba(31,77,58,0.24)] transition-[box-shadow,transform] duration-300 ease-out motion-reduce:transition-none"
             onClick={openDock}
             size="icon-lg"
             type="button"

@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import type { ChatBootstrap, ChatConversationSummary, ChatMessageSummary, ChatSocketEvent, ChatUserSummary } from "@/lib/chat/types";
 import { useChatSocket } from "@/features/chat/hooks/use-chat-socket";
+import { toast } from "sonner";
 
 const TYPING_DEBOUNCE_MS = 600;
 
@@ -294,7 +295,10 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     });
 
     const sent = sendSocketEvent({ type: "message.send", conversationId: activeConversationId, body, clientId });
-    if (!sent) return;
+    if (!sent) {
+      toast.error("Gagal mengirim pesan.");
+      return;
+    }
 
     setDraft("");
     syncTypingNow(activeConversationId, false);
@@ -310,7 +314,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   };
 
   return (
-    <div className={cn("grid min-h-0 overflow-hidden  border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-full grid-cols-[4.5rem_minmax(0,1fr)]" : "flex-1 grid-cols-[4.75rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)]")}>
+    <div className={cn("grid min-h-0 rounded-lg overflow-hidden  border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-full grid-cols-[4.5rem_minmax(0,1fr)]" : "flex-1 grid-cols-[4.75rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)]")}>
       <aside className="flex min-h-0 flex-col border-r border-border bg-secondary/35">
         <div className={cn("flex shrink-0 items-center border-b border-border", compact ? "h-14 justify-center p-2" : "h-14 justify-center p-2 lg:h-auto lg:justify-between lg:gap-3 lg:p-3")}>
           <div className={cn("hidden", !compact && "lg:block")}>
