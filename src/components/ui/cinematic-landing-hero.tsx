@@ -288,28 +288,19 @@ export function CinematicHero({
           "-=0.85",
         );
 
-      // Coordinate with splash screen: wait for it to finish before revealing hero text
-      const splashAlreadyDone = Boolean(
-        sessionStorage.getItem("shelfgram-splash-shown"),
-      );
-      if (splashAlreadyDone) {
-        // No splash active — play intro after short delay
-        setTimeout(() => introTl.play(), 250);
-      } else {
-        // Wait for splash-done event, then play intro
-        onSplashDone = () => {
-          setTimeout(() => introTl.play(), 300);
-        };
-        window.addEventListener("shelfgram:splash-done", onSplashDone, {
-          once: true,
-        });
-        // Fallback: play after 4s if event never fires
-        fallbackTimer = setTimeout(() => {
-          if (!introTl.isActive() && introTl.progress() === 0) {
-            introTl.play();
-          }
-        }, 4000);
-      }
+      // Coordinate with splash screen: wait for it to finish before revealing hero text.
+      onSplashDone = () => {
+        setTimeout(() => introTl.play(), 300);
+      };
+      window.addEventListener("shelfgram:splash-done", onSplashDone, {
+        once: true,
+      });
+      // Fallback: play after 4s if event never fires.
+      fallbackTimer = setTimeout(() => {
+        if (!introTl.isActive() && introTl.progress() === 0) {
+          introTl.play();
+        }
+      }, 4000);
 
       const scrollTl = gsap.timeline({
         scrollTrigger: {

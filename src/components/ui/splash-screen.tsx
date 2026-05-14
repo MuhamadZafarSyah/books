@@ -11,11 +11,10 @@ import { cn } from "@/lib/utils";
  * - Subtle progress line
  * - Smooth curtain-exit with clip-path
  * - Respects prefers-reduced-motion
- * - Only shows once per session (sessionStorage)
  */
 
 // useSyncExternalStore subscriptions for hydration-safe client detection
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
@@ -29,15 +28,9 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
     getServerSnapshot,
   );
 
-  // const shouldSkip = isClient
-  //   ? Boolean(sessionStorage.getItem("shelfgram-splash-shown")) ||
-  //     window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  //   : false;
-
   const [phase, setPhase] = useState<Phase>("idle");
 
   useEffect(() => {
-    // if (!isClient || shouldSkip) return;
     if (!isClient) return;
 
     // All setState calls are inside timer callbacks (async), not synchronous
@@ -50,7 +43,6 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
     timers.push(
       setTimeout(() => {
         setPhase("done");
-        sessionStorage.setItem("shelfgram-splash-shown", "1");
         // Signal to other components that splash is complete
         window.dispatchEvent(new CustomEvent("shelfgram:splash-done"));
       }, 3200),

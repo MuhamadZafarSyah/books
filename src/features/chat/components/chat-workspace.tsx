@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { BookOpen, MessageCircle, Search, Send, Users } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
 
@@ -163,6 +163,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   const [isPending, startTransition] = useTransition();
   const lastTypingStateRef = useRef<{ conversationId: string; isTyping: boolean } | null>(null);
   const loadingConversationIdsRef = useRef(new Set<string>());
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) ?? null;
   const activeMessages = activeConversationId ? messagesByConversation[activeConversationId] ?? [] : [];
@@ -170,6 +171,15 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   const remoteTypingUserIds = activeConversationId
     ? (typingUsers[activeConversationId] ?? []).filter((userId) => userId !== initialData.currentUser.id)
     : [];
+  const latestMessageId = activeMessages[activeMessages.length - 1]?.id ?? "";
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [activeConversationId, latestMessageId, activeMessages.length, remoteTypingUserIds.length]);
 
   const handleSocketEvent = useCallback((event: ChatSocketEvent) => {
     if (event.type === "message.created") {
@@ -426,6 +436,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                   </div>
                 )}
                 {remoteTypingUserIds.length > 0 && <TypingBubble />}
+                <div ref={messagesEndRef} aria-hidden="true" />
               </div>
             </ScrollArea>
             <div className="shrink-0 border-t border-border p-2 sm:p-3">
