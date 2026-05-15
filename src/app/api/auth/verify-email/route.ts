@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyEmailToken } from "@/actions/auth";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
 /**
  * GET /api/auth/verify-email?token=xxx
  *
@@ -11,12 +9,14 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
  * On failure: redirects to /auth/login?error=invalid_token
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
+  const origin = requestUrl.origin;
   const token = searchParams.get("token");
 
   if (!token) {
     return NextResponse.redirect(
-      new URL("/auth/login?error=missing_token", APP_URL),
+      new URL("/auth/login?error=missing_token", origin),
     );
   }
 
@@ -24,11 +24,11 @@ export async function GET(request: NextRequest) {
 
   if (result.success && result.setPasswordToken) {
     return NextResponse.redirect(
-      new URL(`/auth/set-password?token=${result.setPasswordToken}`, APP_URL),
+      new URL(`/auth/set-password?token=${result.setPasswordToken}`, origin),
     );
   }
 
   return NextResponse.redirect(
-    new URL("/auth/login?error=invalid_token", APP_URL),
+    new URL("/auth/login?error=invalid_token", origin),
   );
 }

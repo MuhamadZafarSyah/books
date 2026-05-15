@@ -33,31 +33,44 @@ export function useChatSocket({
     let cancelled = false;
 
     async function connect() {
-      setStatus("connecting");
-      const access = await getChatSocketAccess(conversationKey.split("|").filter(Boolean));
+      try {
+        setStatus("connecting");
+        const access = await getChatSocketAccess(
+          conversationKey.split("|").filter(Boolean),
+        );
 
-      if (cancelled || !access.socketUrl) {
-        return;
-      }
-
-      const url = new URL(access.socketUrl);
-      url.searchParams.set("token", access.token);
-
-      socket = new WebSocket(url.toString());
-      socketRef.current = socket;
-      socket.onopen = () => setStatus("open");
-      socket.onclose = () => setStatus("closed");
-      socket.onerror = () => setStatus("closed");
-      socket.onmessage = (message) => {
-        try {
-          const event = JSON.parse(message.data) as unknown;
-          if (isChatSocketEvent(event)) {
-            onEvent(event);
-          }
-        } catch {
-          // Ignore malformed socket payloads.
+        if (cancelled) {
+          return;
         }
-      };
+
+        if (!access.socketUrl) {
+          setStatus("disabled");
+          return;
+        }
+
+        const url = new URL(access.socketUrl);
+        url.searchParams.set("token", access.token);
+
+        socket = new WebSocket(url.toString());
+        socketRef.current = socket;
+        socket.onopen = () => setStatus("open");
+        socket.onclose = () => setStatus("closed");
+        socket.onerror = () => setStatus("closed");
+        socket.onmessage = (message) => {
+          try {
+            const event = JSON.parse(message.data) as unknown;
+            if (isChatSocketEvent(event)) {
+              onEvent(event);
+            }
+          } catch {
+            // Ignore malformed socket payloads.
+          }
+        };
+      } catch {
+        if (!cancelled) {
+          setStatus("closed");
+        }
+      }
     }
 
     void connect();

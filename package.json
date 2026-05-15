@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:chat": "node scripts/chat-websocket-server.mjs",
-    "build": "next build",
+    "build": "npm run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",

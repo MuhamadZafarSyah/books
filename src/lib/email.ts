@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { getAppUrl } from "@/lib/app-url";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -38,7 +38,8 @@ export async function sendVerificationEmail(
   email: string,
   token: string,
 ): Promise<void> {
-  const verificationUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
+  const appUrl = getAppUrl();
+  const verificationUrl = `${appUrl}/api/auth/verify-email?token=${token}`;
   const transporter = createTransporter();
   const from = process.env.EMAIL_FROM || requireEnv("SMTP_USER");
 

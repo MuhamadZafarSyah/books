@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
@@ -22,9 +23,29 @@ import type {
 
 const MESSAGE_LIMIT = 50;
 
-type ConversationWithDetails = Awaited<
-  ReturnType<typeof getUserConversations>
->[number];
+const conversationDetailsArgs = {
+  include: {
+    participants: {
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+      },
+    },
+    messages: {
+      orderBy: { createdAt: "desc" },
+      take: 1,
+      include: {
+        sender: { select: { name: true } },
+      },
+    },
+  },
+} satisfies Prisma.ChatConversationDefaultArgs;
+
+type ConversationWithDetails = Prisma.ChatConversationGetPayload<
+  typeof conversationDetailsArgs
+>;
+type ConversationParticipantWithUser = ConversationWithDetails["participants"][number];
 
 async function requireChatUser() {
   const user = await requireAuth();
@@ -87,9 +108,12 @@ function conversationTitle(
   if (conversation.title) return conversation.title;
 
   const otherParticipants = conversation.participants
-    .filter((participant) => participant.userId !== currentUserId)
+    .filter(
+      (participant: ConversationParticipantWithUser) =>
+        participant.userId !== currentUserId,
+    )
     .map(
-      (participant) =>
+      (participant: ConversationParticipantWithUser) =>
         participant.user.name ||
         participant.user.email?.split("@")[0] ||
         "Pembaca",
@@ -131,22 +155,7 @@ async function getUserConversations(userId: string) {
       },
     },
     orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
-    include: {
-      participants: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-        },
-      },
-      messages: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        include: {
-          sender: { select: { name: true } },
-        },
-      },
-    },
+    ...conversationDetailsArgs,
   });
 }
 
