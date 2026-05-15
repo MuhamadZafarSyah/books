@@ -35,7 +35,6 @@ export type ChatBootstrap = {
   conversations: ChatConversationSummary[];
   suggestedUsers: ChatUserSummary[];
   messagesByConversation: Record<string, ChatMessageSummary[]>;
-  socketUrl: string | null;
 };
 
 export type ChatSocketEvent =

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { BookOpen, MessageCircle, Search, Send, Users } from "lucide-react";
 import { useDebounceCallback } from "usehooks-ts";
+import gsap from "gsap";
 
 import {
   getChatBootstrap,
@@ -51,12 +52,44 @@ function ConversationAvatar({ conversation, currentUserId }: { conversation: Cha
 }
 
 function TypingBubble() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        node,
+        { scale: 0.6, opacity: 0, y: 8, transformOrigin: "0% 100%" },
+        { scale: 1, opacity: 1, y: 0, duration: 0.32, ease: "back.out(1.6)" },
+      );
+
+      const dots = node.querySelectorAll<HTMLSpanElement>("[data-typing-dot]");
+      if (dots.length > 0) {
+        gsap.to(dots, {
+          y: -3,
+          duration: 0.45,
+          ease: "sine.inOut",
+          stagger: { each: 0.12, repeat: -1, yoyo: true },
+          repeat: -1,
+          yoyo: true,
+        });
+      }
+    }, node);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1 rounded-[1.35rem] rounded-bl-md bg-secondary px-4 py-3 shadow-sm">
-        <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0ms]" />
-        <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:140ms]" />
-        <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:280ms]" />
+      <div
+        ref={containerRef}
+        className="flex items-center gap-1.5 rounded-[1.35rem] rounded-bl-md bg-secondary px-4 py-3 shadow-sm"
+      >
+        <span data-typing-dot className="size-1.5 rounded-full bg-muted-foreground" />
+        <span data-typing-dot className="size-1.5 rounded-full bg-muted-foreground" />
+        <span data-typing-dot className="size-1.5 rounded-full bg-muted-foreground" />
         <span className="sr-only">User sedang mengetik</span>
       </div>
     </div>
@@ -174,6 +207,18 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     : [];
   const latestMessageId = activeMessages[activeMessages.length - 1]?.id ?? "";
 
+  const refreshBootstrap = useCallback(() => {
+    startTransition(async () => {
+      const data = await getChatBootstrap(activeConversationId || undefined);
+      setConversations(data.conversations);
+      setMessagesByConversation((current) => ({ ...data.messagesByConversation, ...current }));
+
+      if (!activeConversationId && data.conversations[0]) {
+        setActiveConversationId(data.conversations[0].id);
+      }
+    });
+  }, [activeConversationId]);
+
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
@@ -213,7 +258,12 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     }
   }, []);
 
-  const { send: sendSocketEvent, status: socketStatus } = useChatSocket({ conversationIds, onEvent: handleSocketEvent });
+  const { send: sendSocketEvent, status: socketStatus } = useChatSocket({
+    conversationIds,
+    currentUserId: initialData.currentUser.id,
+    onEvent: handleSocketEvent,
+    onBootstrapInvalidated: refreshBootstrap,
+  });
 
   const syncTypingState = useCallback(
     (conversationId: string, isTyping: boolean) => {
@@ -241,15 +291,6 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     },
     [debouncedSyncTyping, syncTypingState],
   );
-
-  const refreshBootstrap = useCallback(() => {
-    startTransition(async () => {
-      const data = await getChatBootstrap();
-      setConversations(data.conversations);
-      setMessagesByConversation((current) => ({ ...data.messagesByConversation, ...current }));
-      if (!activeConversationId && data.conversations[0]) setActiveConversationId(data.conversations[0].id);
-    });
-  }, [activeConversationId]);
 
   const selectConversation = useCallback((conversationId: string) => {
     if (conversationId === activeConversationId) return;
@@ -409,20 +450,20 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
               <Users aria-hidden="true" className="size-4 text-muted-foreground" />
             </div>
             <ScrollArea className="min-h-0 flex-1 overflow-hidden" type="hover">
-              <div className="grid gap-3 p-3 sm:p-4">
+              <div className="grid min-w-0 gap-3 p-3 sm:p-4">
                 {activeMessages.map((message) => {
                   const isMine = message.senderId === initialData.currentUser.id;
                   return (
-                    <div className={cn("flex", isMine ? "justify-end" : "justify-start")} key={message.id}>
+                    <div className={cn("flex min-w-0", isMine ? "justify-end" : "justify-start")} key={message.id}>
                       <div
                         className={cn(
-                          "max-w-[86%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none sm:max-w-[78%]",
+                          "max-w-[86%] min-w-0 break-words whitespace-pre-wrap [overflow-wrap:anywhere] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none sm:max-w-[78%]",
                           isMine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-secondary text-foreground",
                           message.pending && "opacity-60",
                           message.failed && "border border-destructive/30 bg-destructive/10 text-destructive opacity-100",
                         )}
                       >
-                        <p>{message.body}</p>
+                        <p className="break-words [overflow-wrap:anywhere]">{message.body}</p>
                         <p className={cn("mt-1 text-[10px]", isMine ? "text-primary-foreground/64" : "text-muted-foreground")}>
                           {message.failed ? "Gagal terkirim" : new Date(message.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                         </p>

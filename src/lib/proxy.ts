@@ -53,11 +53,13 @@ export const config = {
     /*
      * Match all request paths except:
      * - api/auth (NextAuth routes)
+     * - api/pusher (Pusher channel auth — must respond with JSON, never redirect)
+     * - api/books (public-ish book search/detail routes also auth-gated inside)
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      * - static assets (svg, png, jpg, etc.)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|api/pusher|api/books|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

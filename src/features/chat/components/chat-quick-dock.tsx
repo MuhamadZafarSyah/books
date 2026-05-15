@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { MessageCircle, Minus, X } from "lucide-react";
 
 import { getChatBootstrap } from "@/actions/chat";
 import { Button } from "@/components/ui/button";
 import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
+import { useChatSocket } from "@/features/chat/hooks/use-chat-socket";
 import type { ChatBootstrap } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
@@ -20,6 +21,7 @@ export function ChatQuickDock() {
   const [data, setData] = useState<ChatBootstrap | null>(null);
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const enableBackgroundRealtime = pathname !== "/dashboard/chat";
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dockOpen = open && !hidden;
   const dockTransitioning = dockOpen || closing;
@@ -27,12 +29,40 @@ export function ChatQuickDock() {
   const dockSurfaceVisible = dockOpen || closing;
 
   useEffect(() => {
+    if (!enableBackgroundRealtime) {
+      return;
+    }
+
+    startTransition(async () => {
+      setData(await getChatBootstrap());
+    });
+
     return () => {
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
       }
     };
+  }, [enableBackgroundRealtime]);
+
+  const conversationIds = useMemo(
+    () => data?.conversations.map((conversation) => conversation.id) ?? [],
+    [data],
+  );
+
+  const refreshDockBootstrap = useCallback(() => {
+    startTransition(async () => {
+      setData(await getChatBootstrap());
+    });
   }, []);
+
+  useChatSocket({
+    conversationIds: enableBackgroundRealtime ? conversationIds : [],
+    currentUserId: enableBackgroundRealtime ? data?.currentUser.id : undefined,
+    onEvent: () => {},
+    onBootstrapInvalidated: enableBackgroundRealtime
+      ? refreshDockBootstrap
+      : undefined,
+  });
 
   const openDock = () => {
     if (closeTimerRef.current) {
@@ -64,7 +94,7 @@ export function ChatQuickDock() {
     }, DOCK_TRANSITION_MS);
   };
 
-  if (pathname === "/dashboard/chat") {
+  if (!enableBackgroundRealtime) {
     return null;
   }
 

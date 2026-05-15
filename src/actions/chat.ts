@@ -6,14 +6,20 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
 import {
-  broadcastChatEvent,
+  cacheRecentMessage,
   clearUnread,
   getOnlineUserIds,
   getRecentMessages,
   getUnreadCounts,
+  incrementUnread,
+  markConversationActive,
   setUserOnline,
 } from "@/lib/chat/redis";
-import { createChatSocketToken } from "@/lib/chat/socket-token";
+import {
+  triggerConversationEvent,
+  triggerUserInboxInvalidation,
+  triggerUserInboxMessage,
+} from "@/lib/chat/pusher-server";
 import type {
   ChatBootstrap,
   ChatConversationSummary,
@@ -22,6 +28,8 @@ import type {
 } from "@/lib/chat/types";
 
 const MESSAGE_LIMIT = 50;
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_CLIENT_ID_LENGTH = 100;
 
 const conversationDetailsArgs = {
   include: {
@@ -234,7 +242,6 @@ export async function getChatBootstrap(activeConversationId?: string): Promise<C
     messagesByConversation: activeConversation
       ? { [activeConversation.id]: initialMessages }
       : {},
-    socketUrl: process.env.NEXT_PUBLIC_CHAT_WS_URL ?? null,
   };
 }
 
@@ -301,59 +308,135 @@ export async function markConversationRead(conversationId: string) {
 
   const readAt = new Date();
 
-  await Promise.all([
-    prisma.chatConversationParticipant.update({
-      where: {
-        conversationId_userId: { conversationId, userId: currentUser.id },
-      },
-      data: { lastReadAt: readAt },
-    }),
-    clearUnread(currentUser.id, conversationId),
-    broadcastChatEvent({
-      type: "conversation.read",
-      conversationId,
-      userId: currentUser.id,
-      readAt: readAt.toISOString(),
-    }),
-  ]);
+  await prisma.chatConversationParticipant.update({
+    where: {
+      conversationId_userId: { conversationId, userId: currentUser.id },
+    },
+    data: { lastReadAt: readAt },
+  });
+  await clearUnread(currentUser.id, conversationId);
+
+  await triggerConversationEvent(conversationId, {
+    type: "conversation.read",
+    conversationId,
+    userId: currentUser.id,
+    readAt: readAt.toISOString(),
+  });
 }
 
-export async function getChatSocketAccess(conversationIds: string[]) {
+export type SendConversationMessageResult =
+  | { ok: true; message: ChatMessageSummary }
+  | { ok: false; error: string };
+
+/**
+ * Persist a chat message to the database, update unread counts and recent
+ * cache, then broadcast `message.created` via Pusher. The optimistic
+ * `clientId` survives the round trip so the client can reconcile.
+ */
+export async function sendConversationMessage(
+  conversationId: string,
+  body: string,
+  clientId: string,
+): Promise<SendConversationMessageResult> {
   const currentUser = await requireChatUser();
-  const uniqueConversationIds = [...new Set(conversationIds)].filter(Boolean);
-  const rooms: Record<string, string[]> = {};
 
-  if (uniqueConversationIds.length > 0) {
-    const currentUserParticipants = await prisma.chatConversationParticipant.findMany({
-      where: {
-        userId: currentUser.id,
-        conversationId: { in: uniqueConversationIds },
-      },
-      select: { conversationId: true },
-    });
+  const trimmedBody = typeof body === "string" ? body.trim() : "";
+  const trimmedClientId = typeof clientId === "string" ? clientId.trim() : "";
 
-    if (currentUserParticipants.length !== uniqueConversationIds.length) {
-      throw new Error("Conversation not found.");
-    }
-
-    const roomParticipants = await prisma.chatConversationParticipant.findMany({
-      where: { conversationId: { in: uniqueConversationIds } },
-      select: { conversationId: true, userId: true },
-    });
-
-    for (const participant of roomParticipants) {
-      rooms[participant.conversationId] ??= [];
-      rooms[participant.conversationId].push(participant.userId);
-    }
+  if (!trimmedBody) {
+    return { ok: false, error: "Pesan tidak boleh kosong." };
+  }
+  if (trimmedBody.length > MAX_MESSAGE_LENGTH) {
+    return { ok: false, error: "Pesan terlalu panjang." };
+  }
+  if (!trimmedClientId || trimmedClientId.length > MAX_CLIENT_ID_LENGTH) {
+    return { ok: false, error: "ID pesan tidak valid." };
   }
 
-  return {
-    socketUrl: process.env.NEXT_PUBLIC_CHAT_WS_URL ?? null,
-    token: createChatSocketToken({
-      userId: currentUser.id,
-      userName: currentUser.name ?? null,
-      conversationIds: uniqueConversationIds,
-      rooms,
+  const participants = await prisma.chatConversationParticipant.findMany({
+    where: { conversationId },
+    select: { userId: true },
+  });
+
+  if (!participants.some((participant) => participant.userId === currentUser.id)) {
+    return { ok: false, error: "Conversation tidak ditemukan." };
+  }
+
+  // Already-persisted optimistic message? Return the existing record so the
+  // client can dedupe via clientId.
+  const existing = await prisma.chatMessage.findUnique({
+    where: { clientId: trimmedClientId },
+    include: { sender: { select: { name: true } } },
+  });
+  if (existing) {
+    return { ok: true, message: serializeMessage(existing) };
+  }
+
+  let persisted;
+  try {
+    persisted = await prisma.$transaction(async (tx) => {
+      const created = await tx.chatMessage.create({
+        data: {
+          conversationId,
+          senderId: currentUser.id,
+          body: trimmedBody,
+          clientId: trimmedClientId,
+        },
+        include: { sender: { select: { name: true } } },
+      });
+
+      await tx.chatMessageRead.upsert({
+        where: {
+          messageId_userId: { messageId: created.id, userId: currentUser.id },
+        },
+        update: {},
+        create: { messageId: created.id, userId: currentUser.id },
+      });
+
+      await tx.chatConversation.updateMany({
+        where: {
+          id: conversationId,
+          OR: [{ lastMessageAt: null }, { lastMessageAt: { lt: created.createdAt } }],
+        },
+        data: { lastMessageAt: created.createdAt },
+      });
+
+      return created;
+    });
+  } catch (error) {
+    console.error("sendConversationMessage failed", error);
+    return { ok: false, error: "Gagal mengirim pesan." };
+  }
+
+  const message = serializeMessage(persisted);
+
+  // Side effects after successful DB write. Failures here only log.
+  const otherParticipantIds = participants
+    .map((participant) => participant.userId)
+    .filter((userId) => userId !== currentUser.id);
+
+  await Promise.allSettled([
+    cacheRecentMessage(message),
+    markConversationActive(conversationId, persisted.createdAt),
+    ...otherParticipantIds.map((userId) =>
+      incrementUnread(userId, conversationId),
+    ),
+    triggerConversationEvent(conversationId, {
+      type: "message.created",
+      conversationId,
+      message,
     }),
-  };
+    // Also broadcast to every participant's private inbox channel so the
+    // message reaches receivers who have not subscribed to this specific
+    // conversation channel yet (e.g. they have the chat list open but not
+    // the conversation itself).
+    triggerUserInboxMessage(participants.map((p) => p.userId), {
+      type: "message.created",
+      conversationId,
+      message,
+    }),
+    triggerUserInboxInvalidation(otherParticipantIds),
+  ]);
+
+  return { ok: true, message };
 }

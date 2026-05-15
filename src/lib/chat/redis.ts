@@ -1,10 +1,9 @@
 import { Redis } from "@upstash/redis";
 
-import type { ChatMessageSummary, ChatSocketEvent } from "@/lib/chat/types";
+import type { ChatMessageSummary } from "@/lib/chat/types";
 
 const RECENT_MESSAGE_LIMIT = 50;
 const ONLINE_TTL_SECONDS = 90;
-const TYPING_TTL_SECONDS = 8;
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -26,8 +25,8 @@ function keyUserUnread(userId: string) {
   return `chat:user:${userId}:unread`;
 }
 
-function keyTyping(conversationId: string, userId: string) {
-  return `chat:conversation:${conversationId}:typing:${userId}`;
+function keyActiveConversations() {
+  return "chat:conversations:active";
 }
 
 export async function cacheRecentMessage(message: ChatMessageSummary) {
@@ -86,21 +85,6 @@ export async function getOnlineUserIds(userIds: string[]) {
   }
 }
 
-export async function setTyping(conversationId: string, userId: string, isTyping: boolean) {
-  if (!redis) return;
-
-  try {
-    const key = keyTyping(conversationId, userId);
-    if (isTyping) {
-      await redis.set(key, "1", { ex: TYPING_TTL_SECONDS });
-    } else {
-      await redis.del(key);
-    }
-  } catch (error) {
-    console.error("setTyping failed", error);
-  }
-}
-
 export async function incrementUnread(userId: string, conversationId: string) {
   if (!redis) return;
 
@@ -137,23 +121,14 @@ export async function getUnreadCounts(userId: string): Promise<Record<string, nu
   }
 }
 
-export async function broadcastChatEvent(event: ChatSocketEvent) {
-  const internalUrl = process.env.CHAT_WS_INTERNAL_URL;
-  const secret = process.env.CHAT_WS_INTERNAL_SECRET;
-
-  if (!internalUrl || !secret) return;
+export async function markConversationActive(conversationId: string, lastMessageAt: Date) {
+  if (!redis) return;
 
   try {
-    await fetch(`${internalUrl.replace(/\/$/, "")}/broadcast`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-chat-secret": secret,
-      },
-      body: JSON.stringify(event),
-      cache: "no-store",
-    });
+    const key = keyActiveConversations();
+    await redis.zadd(key, { score: lastMessageAt.getTime(), member: conversationId });
+    await redis.expire(key, 60 * 60 * 24 * 7);
   } catch (error) {
-    console.error("broadcastChatEvent failed", error);
+    console.error("markConversationActive failed", error);
   }
 }

@@ -29,7 +29,7 @@ export function DashboardHeader() {
         {title}
       </h1>
       <div className="flex-1 flex justify-end">
-        <AnimatedThemeToggler />
+        <AnimatedThemeToggler className="button-click" />
       </div>
     </header>
   );
