@@ -24,7 +24,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Frontend Standards
 
 - UI must be responsive across mobile, tablet, and desktop; review layouts with small-screen-first Tailwind classes before finalizing.
-- Prefer existing shadcn UI components from `src/components/ui` for buttons, inputs, labels, cards, separators, toasts, and similar primitives; only use raw HTML when no matching component exists or the component would be inappropriate.
+- Always use existing shadcn UI components from `src/components/ui` as the default for interface primitives: buttons, inputs, labels, cards, dialogs, sheets, scroll areas, separators, toasts, avatars, tooltips, and similar elements. Do not use raw/default HTML tags for these controls when a matching shadcn component exists; raw HTML is only acceptable when no suitable shadcn primitive exists or the shadcn component would be semantically inappropriate.
 - Prefer Server Components for App Router `page.tsx` files and static layout/marketing UI. For interactive screens, compose a server shell with focused Client Component islands instead of making the whole page client-side.
 - For auth routes, keep static page structure in `*-shell.tsx` Server Components and form behavior in `*-form.tsx` Client Components, e.g. `LoginShell` + `LoginForm`, `RegisterShell` + `RegisterForm`, and `SetPasswordShell` + `SetPasswordForm`.
 - Before importing a component, hook, icon, or framework API, verify it exists in this repo/dependency version; do not leave speculative imports or imports from packages that are not installed.
