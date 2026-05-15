@@ -1,15 +1,15 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import Google from "next-auth/providers/google"
-import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcrypt"
-import { prisma } from "@/lib/db"
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
+import { prisma } from "@/lib/db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/auth",
+    signIn: "/auth/login",
   },
   providers: [
     Google({
@@ -23,29 +23,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email = credentials.email as string
-        const password = credentials.password as string
+        const email = credentials.email as string;
+        const password = credentials.password as string;
 
-        if (!email || !password) return null
+        if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({
           where: { email },
-        })
+        });
 
-        if (!user || !user.password) return null
+        if (!user || !user.password) return null;
 
         // Block login if email is not verified
-        if (!user.emailVerified) return null
+        if (!user.emailVerified) return null;
 
-        const isValid = await bcrypt.compare(password, user.password)
-        if (!isValid) return null
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) return null;
 
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
-        }
+        };
       },
     }),
   ],
@@ -55,27 +55,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === "google" && user.email) {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
-        })
+        });
         if (existingUser && !existingUser.emailVerified) {
           await prisma.user.update({
             where: { id: existingUser.id },
             data: { emailVerified: new Date() },
-          })
+          });
         }
       }
-      return true
+      return true;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
+        token.id = user.id;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token.id) {
-        session.user.id = token.id as string
+        session.user.id = token.id as string;
       }
-      return session
+      return session;
     },
   },
-})
+});

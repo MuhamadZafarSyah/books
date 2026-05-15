@@ -27,7 +27,11 @@ import {
   type LoginFormValues,
 } from "@/features/auth/schemas/auth-schemas";
 
-export default function LoginForm() {
+type LoginFormProps = {
+  callbackUrl: string;
+};
+
+export default function LoginForm({ callbackUrl }: LoginFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const {
@@ -52,7 +56,7 @@ export default function LoginForm() {
       }
 
       toast.success("Signed in successfully.");
-      router.replace("/dashboard");
+      router.replace(callbackUrl);
       router.refresh();
     });
   }
@@ -141,6 +145,7 @@ export default function LoginForm() {
         </div>
 
         <form action={loginWithGoogle} className="w-full">
+          <input name="callbackUrl" type="hidden" value={callbackUrl} />
           <Button
             type="submit"
             variant="outline"
@@ -176,7 +181,7 @@ export default function LoginForm() {
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
-            href="/register"
+            href="/auth/register"
             className="font-semibold text-primary underline-offset-4 transition-colors hover:underline"
           >
             Sign Up

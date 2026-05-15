@@ -36,14 +36,14 @@ export async function getCurrentUser() {
 }
 
 /**
- * Require authentication. Redirects to /auth if not logged in.
+ * Require authentication. Redirects to /auth/login if not logged in.
  * Use in Server Components that must be behind auth.
  */
 export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/auth");
+    redirect("/auth/login");
   }
 
   return user;

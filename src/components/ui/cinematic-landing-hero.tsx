@@ -501,7 +501,7 @@ export function CinematicHero({
           <a
             aria-label="Daftar Shelfgram"
             className="sg-btn-dark inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
-            href="/register"
+            href="/auth/register"
           >
             <BookOpen aria-hidden="true" className="size-5" />
             Mulai rak bacaan
@@ -509,7 +509,7 @@ export function CinematicHero({
           <a
             aria-label="Masuk ke Shelfgram"
             className="sg-btn-light inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
-            href="/login"
+            href="/auth/login"
           >
             <Users aria-hidden="true" className="size-5" />
             Masuk komunitas

@@ -23,7 +23,7 @@ async function requireActionUser() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect("/auth/login");
   }
 
   return session.user.id;

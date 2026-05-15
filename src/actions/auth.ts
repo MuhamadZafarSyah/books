@@ -10,6 +10,18 @@ import { AuthError } from "next-auth";
 
 type ActionResult = { success: boolean; error?: string };
 
+function getSafeRedirectPath(value: FormDataEntryValue | string | null | undefined) {
+  if (typeof value !== "string") {
+    return "/dashboard";
+  }
+
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  return value;
+}
+
 // ── Flow 2: Register by Email ───────────────────────────────
 
 export async function registerByEmail(email: string): Promise<ActionResult> {
@@ -203,8 +215,9 @@ export async function loginWithCredentials(
 
 // ── Flow 1: Login with Google ───────────────────────────────
 
-export async function loginWithGoogle(): Promise<void> {
-  await signIn("google", { redirectTo: "/dashboard" });
+export async function loginWithGoogle(formData: FormData): Promise<void> {
+  const callbackUrl = getSafeRedirectPath(formData.get("callbackUrl"));
+  await signIn("google", { redirectTo: callbackUrl });
 }
 
 // ── Logout ──────────────────────────────────────────────────

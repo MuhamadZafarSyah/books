@@ -122,7 +122,7 @@ export default function RegisterForm() {
         <Separator className="bg-[#c3c8c1]/30" />
         <div className="flex flex-col items-center gap-6 text-center">
           <Link
-            href="/login"
+            href="/auth/login"
             className="inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#434843] transition-colors hover:text-[#061b0e]"
           >
             <ArrowLeft className="size-4" />

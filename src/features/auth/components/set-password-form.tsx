@@ -94,7 +94,7 @@ export default function SetPasswordForm({ token }: SetPasswordFormProps) {
 
       reset();
       toast.success("Password set successfully. Please sign in.");
-      router.replace("/login");
+      router.replace("/auth/login");
     });
   }
 
@@ -181,9 +181,9 @@ export default function SetPasswordForm({ token }: SetPasswordFormProps) {
           <p className="text-center text-sm leading-6 text-[#434843]">
             Need help?{" "}
             <Link
-              href="/auth"
-              className="font-semibold text-[#6e5c2c] underline-offset-4 hover:underline"
-            >
+               href="/auth/login"
+               className="font-semibold text-[#6e5c2c] underline-offset-4 hover:underline"
+             >
               Return to login
             </Link>
           </p>

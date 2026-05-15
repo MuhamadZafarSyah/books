@@ -38,7 +38,7 @@ export async function sendVerificationEmail(
   email: string,
   token: string,
 ): Promise<void> {
-  const verificationUrl = `${APP_URL}/api/verify-email?token=${token}`;
+  const verificationUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
   const transporter = createTransporter();
   const from = process.env.EMAIL_FROM || requireEnv("SMTP_USER");
 

@@ -11,6 +11,7 @@ import {
 
 import { CinematicHero } from "@/components/ui/cinematic-landing-hero";
 import { CinematicReadingFlow } from "@/components/ui/cinematic-reading-flow";
+import { CinematicStorytelling } from "@/components/ui/cinematic-storytelling";
 import { SplashScreen } from "@/components/ui/splash-screen";
 
 const featureCards = [
@@ -59,6 +60,8 @@ export default function Page() {
           tagline1="Baca."
           tagline2="Review. Pinjam."
         />
+
+        {/* <CinematicStorytelling /> */}
 
         <CinematicReadingFlow />
 
@@ -170,7 +173,7 @@ export default function Page() {
               </ul>
               <Link
                 className="mt-8 inline-flex min-h-12 items-center justify-center rounded-2xl bg-primary px-6 text-sm font-bold text-primary-foreground shadow-[0_12px_30px_rgba(31,77,58,0.2)] transition-colors duration-200 hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-                href="/register"
+                href="/auth/register"
               >
                 Mulai sekarang
               </Link>

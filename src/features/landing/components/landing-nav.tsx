@@ -76,14 +76,14 @@ export function LandingNav() {
             size="sm"
             variant="ghost"
           >
-            <Link href="/login">Masuk</Link>
+            <Link href="/auth/login">Masuk</Link>
           </Button>
           <Button
             asChild
             className="rounded-full px-4 normal-case tracking-normal shadow-[0_8px_20px_rgba(31,77,58,0.18)] sm:px-5"
             size="sm"
           >
-            <Link href="/register">Mulai</Link>
+            <Link href="/auth/register">Mulai</Link>
           </Button>
           <button
             aria-controls="mobile-nav"
@@ -127,7 +127,7 @@ export function LandingNav() {
             <li>
               <Link
                 className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-accent sm:hidden"
-                href="/login"
+                href="/auth/login"
                 onClick={() => setOpen(false)}
               >
                 Masuk

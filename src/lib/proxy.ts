@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
   if (!isLoggedIn) {
     const callbackUrl = encodeURIComponent(nextUrl.pathname + nextUrl.search);
     return NextResponse.redirect(
-      new URL(`/auth?callbackUrl=${callbackUrl}`, nextUrl),
+      new URL(`/auth/login?callbackUrl=${callbackUrl}`, nextUrl),
     );
   }
 
