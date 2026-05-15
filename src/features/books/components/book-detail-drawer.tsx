@@ -103,8 +103,8 @@ function DetailBody({ book }: { book: BookResult }) {
       <Separator />
 
       <div className="hide-scrollbar flex-1 overflow-y-auto px-6 py-6">
-        <div className="flex gap-4">
-          <div className="w-32 shrink-0">
+        <div className="flex gap-4 flex-col sm:flex-row">
+          <div className="w-32 shrink-0 mx-auto sm:mx-0">
             <BookCover src={detail.coverUrl} title={detail.title} rounded="md" />
           </div>
           <dl className="flex flex-col gap-2.5 text-xs">
@@ -112,7 +112,7 @@ function DetailBody({ book }: { book: BookResult }) {
               <DetailLine icon={Calendar} label="Terbit pertama">
                 {detail.firstPublishYear}
                 {detail.publishDate &&
-                detail.publishDate !== String(detail.firstPublishYear)
+                  detail.publishDate !== String(detail.firstPublishYear)
                   ? ` · ${detail.publishDate}`
                   : ""}
               </DetailLine>

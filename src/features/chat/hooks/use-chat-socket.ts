@@ -17,9 +17,7 @@ import type {
 type SocketStatus = "disabled" | "connecting" | "open" | "closed";
 
 const TYPING_EVENT = "client-typing";
-const BOOTSTRAP_INVALIDATED_EVENT = "chat.bootstrap.invalidated";
 const MESSAGE_CREATED_EVENT = "message.created";
-const CONVERSATION_READ_EVENT = "conversation.read";
 
 function conversationChannelName(conversationId: string) {
   return `presence-conversation-${conversationId}`;
@@ -54,21 +52,19 @@ type SubscriptionError = {
 };
 
 /**
- * Realtime hook backed by Pusher Channels. The public API is intentionally
- * preserved from the previous WebSocket implementation so the chat UI can
- * keep its existing event handling and `Realtime online` / `Realtime standby`
- * status labels.
+ * Realtime hook backed by Pusher Channels.
  *
- * Each user always subscribes to:
- * - their `private-user-<id>` inbox channel (catch-all for new messages,
- *   read receipts, and bootstrap invalidations from any conversation)
- * - one `presence-conversation-<id>` per conversation (presence membership +
- *   client-side typing events)
+ * Channel responsibilities are split to keep Pusher event volume minimal:
  *
- * The dual subscription is deliberate: the inbox channel guarantees a user
- * receives messages for any of their conversations even before they open
- * that specific room, while the conversation channel powers presence and
- * typing indicators.
+ * - `private-user-<id>` (always-on inbox)
+ *     Receives every `message.created` event for any conversation the user
+ *     participates in. This is the single broadcast path so receivers get
+ *     new messages whether or not they have the conversation open.
+ *
+ * - `presence-conversation-<id>` (per-conversation presence)
+ *     Used only for transient state: presence membership (online/offline)
+ *     and `client-typing` events. No DB-backed events run here, so each
+ *     trigger costs just one Pusher message.
  */
 export function useChatSocket({
   conversationIds,
@@ -79,6 +75,11 @@ export function useChatSocket({
   conversationIds: string[];
   currentUserId?: string;
   onEvent: (event: ChatSocketEvent) => void;
+  /**
+   * Reserved for callers that want to refetch chat bootstrap when realtime
+   * tells them their cached state is stale. Currently unused — the new
+   * single-broadcast model keeps state in sync via `message.created` only.
+   */
   onBootstrapInvalidated?: () => void;
 }) {
   const conversationKey = useMemo(
@@ -199,27 +200,6 @@ export function useChatSocket({
       });
     };
 
-    const handleConversationRead = (payload: unknown) => {
-      if (!payload || typeof payload !== "object") return;
-      const data = payload as {
-        conversationId?: unknown;
-        userId?: unknown;
-        readAt?: unknown;
-      };
-      if (
-        typeof data.conversationId !== "string" ||
-        typeof data.userId !== "string" ||
-        typeof data.readAt !== "string"
-      )
-        return;
-      emit({
-        type: "conversation.read",
-        conversationId: data.conversationId,
-        userId: data.userId,
-        readAt: data.readAt,
-      });
-    };
-
     const handleTyping = (conversationId: string, payload: unknown) => {
       if (!payload || typeof payload !== "object") return;
       const data = payload as TypingPayload;
@@ -232,13 +212,7 @@ export function useChatSocket({
       });
     };
 
-    const handleBootstrapInvalidated = () => {
-      onBootstrapInvalidatedRef.current?.();
-    };
-
-    // Always-on inbox channel: receives `message.created` and
-    // `conversation.read` for every conversation the current user belongs
-    // to, plus bootstrap invalidations.
+    // 1) Always-on inbox channel: single source of truth for `message.created`.
     let userChannel: Channel | null = null;
     if (userChannelKey) {
       userChannel = pusher.subscribe(userChannelKey);
@@ -246,15 +220,11 @@ export function useChatSocket({
         logSubscriptionError(userChannelKey, error),
       );
       userChannel.bind(MESSAGE_CREATED_EVENT, handleMessageCreated);
-      userChannel.bind(CONVERSATION_READ_EVENT, handleConversationRead);
-      userChannel.bind(BOOTSTRAP_INVALIDATED_EVENT, handleBootstrapInvalidated);
     }
 
-    // Per-conversation presence channels: presence members + typing.
+    // 2) Per-conversation presence channels: presence + typing only.
     for (const conversationId of ids) {
       const name = conversationChannelName(conversationId);
-      // Subscribing twice to the same channel is a no-op in pusher-js but
-      // returns the existing instance, so we just call subscribe.
       const channel = pusher.subscribe(name) as PresenceChannel;
       channelsMap.set(conversationId, channel);
 
@@ -270,10 +240,6 @@ export function useChatSocket({
       channel.bind("pusher:member_removed", (member: PresenceMember) =>
         handleMemberRemoved(conversationId, member),
       );
-
-      // Conversation-scoped events (also delivered for redundancy).
-      channel.bind(MESSAGE_CREATED_EVENT, handleMessageCreated);
-      channel.bind(CONVERSATION_READ_EVENT, handleConversationRead);
       channel.bind(TYPING_EVENT, (payload: unknown) =>
         handleTyping(conversationId, payload),
       );
@@ -308,10 +274,6 @@ export function useChatSocket({
       const senderUserId = userKeyRef.current;
       if (!senderUserId) return false;
       try {
-        // Include sender userId so receivers can attribute the typing
-        // state. Pusher rejects client events on receivers' side anyway
-        // (only members of the presence channel can trigger), so we trust
-        // the value here.
         return channel.trigger(TYPING_EVENT, {
           conversationId: event.conversationId,
           userId: senderUserId,
@@ -328,9 +290,8 @@ export function useChatSocket({
       sendConversationMessage(conversationId, body, clientId)
         .then((result) => {
           if (result.ok) {
-            // Make sure the optimistic bubble is reconciled even when the
-            // realtime broadcast did not reach this tab (e.g. Pusher
-            // disabled or transient network drop).
+            // Reconcile the optimistic bubble even if the realtime broadcast
+            // did not reach this tab (e.g. Pusher disabled, network blip).
             onEventRef.current({
               type: "message.created",
               conversationId,

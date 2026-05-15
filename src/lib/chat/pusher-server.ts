@@ -83,75 +83,14 @@ export function authorizePrivateChannel(socketId: string, channelName: string) {
 }
 
 /**
- * Trigger a Pusher event scoped to a single conversation channel. Failures
- * are logged but never propagated so DB writes that already succeeded are
- * not rolled back by transient broadcast errors.
- */
-export async function triggerConversationEvent(
-  conversationId: string,
-  event: ChatSocketEvent,
-) {
-  const pusher = getPusherServer();
-  if (!pusher) return;
-
-  const channel = conversationChannelName(conversationId);
-  try {
-    await pusher.trigger(channel, event.type, event);
-  } catch (error) {
-    console.error(`[pusher] triggerConversationEvent failed (${channel})`, error);
-  }
-}
-
-/**
- * Trigger an event on every conversation channel in the list. Used for
- * app-wide updates (e.g. presence) that should reach all open chat rooms.
- */
-export async function triggerUserConversations(
-  conversationIds: string[],
-  event: ChatSocketEvent,
-) {
-  const pusher = getPusherServer();
-  if (!pusher) return;
-
-  const channels = [...new Set(conversationIds)]
-    .filter(Boolean)
-    .map(conversationChannelName);
-  if (channels.length === 0) return;
-
-  try {
-    await pusher.trigger(channels, event.type, event);
-  } catch (error) {
-    console.error("[pusher] triggerUserConversations failed", error);
-  }
-}
-
-/**
- * Notify each user's private inbox channel that a new message arrived for
- * one of their conversations, even if they have not yet opened that room.
- * This is the safety net that keeps unread counts and previews in sync when
- * the receiver has not subscribed to the conversation channel yet.
- */
-export async function triggerUserInboxInvalidation(userIds: string[]) {
-  const pusher = getPusherServer();
-  if (!pusher) return;
-
-  const channels = [...new Set(userIds)]
-    .filter(Boolean)
-    .map(userChannelName);
-  if (channels.length === 0) return;
-
-  try {
-    await pusher.trigger(channels, "chat.bootstrap.invalidated", { ts: Date.now() });
-  } catch (error) {
-    console.error("[pusher] triggerUserInboxInvalidation failed", error);
-  }
-}
-
-/**
- * Push the full message payload to every participant's private inbox
- * channel. This complements the conversation-scoped broadcast: if the
- * receiver has not yet subscribed to `presence-conversation-<id>` they will
- * still get the message via their always-on `private-user-<id>` channel.
+ * Push the given event to every participant's private inbox channel
+ * (`private-user-<id>`). This is the single broadcast path for chat events
+ * that all participants should receive — it works even when a participant
+ * has not subscribed to the conversation's presence channel yet (e.g. they
+ * have the chat list open but not the specific room).
+ *
+ * Conversation-level presence channels are reserved for transient state:
+ * presence membership and `client-typing` events.
  */
 export async function triggerUserInboxMessage(
   userIds: string[],

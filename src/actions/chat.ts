@@ -16,8 +16,6 @@ import {
   setUserOnline,
 } from "@/lib/chat/redis";
 import {
-  triggerConversationEvent,
-  triggerUserInboxInvalidation,
   triggerUserInboxMessage,
 } from "@/lib/chat/pusher-server";
 import type {
@@ -316,12 +314,8 @@ export async function markConversationRead(conversationId: string) {
   });
   await clearUnread(currentUser.id, conversationId);
 
-  await triggerConversationEvent(conversationId, {
-    type: "conversation.read",
-    conversationId,
-    userId: currentUser.id,
-    readAt: readAt.toISOString(),
-  });
+  // No Pusher broadcast: read receipts are not consumed by the UI and would
+  // double the realtime traffic for every conversation switch.
 }
 
 export type SendConversationMessageResult =
@@ -421,21 +415,18 @@ export async function sendConversationMessage(
     ...otherParticipantIds.map((userId) =>
       incrementUnread(userId, conversationId),
     ),
-    triggerConversationEvent(conversationId, {
-      type: "message.created",
-      conversationId,
-      message,
-    }),
-    // Also broadcast to every participant's private inbox channel so the
-    // message reaches receivers who have not subscribed to this specific
-    // conversation channel yet (e.g. they have the chat list open but not
-    // the conversation itself).
-    triggerUserInboxMessage(participants.map((p) => p.userId), {
-      type: "message.created",
-      conversationId,
-      message,
-    }),
-    triggerUserInboxInvalidation(otherParticipantIds),
+    // Single broadcast path: each participant has an always-on
+    // `private-user-<id>` channel, so one trigger reaches sender + every
+    // receiver regardless of whether they have the conversation open.
+    // Conversation channels stay reserved for typing + presence.
+    triggerUserInboxMessage(
+      participants.map((participant) => participant.userId),
+      {
+        type: "message.created",
+        conversationId,
+        message,
+      },
+    ),
   ]);
 
   return { ok: true, message };

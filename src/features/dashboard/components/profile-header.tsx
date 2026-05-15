@@ -47,7 +47,6 @@ const defaultProfileStats = [
   { label: "Review", value: "18", icon: Star },
 ];
 
-
 export function ProfileHeader({
   actions,
   showPublicProfileLink = true,
@@ -68,6 +67,34 @@ export function ProfileHeader({
     banner: user.banner ?? null,
   });
 
+  const headerActions = actions ?? (
+    <div className="flex flex-wrap items-center gap-2">
+      {showPublicProfileLink && (
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="cursor-pointer gap-1.5 rounded-full border-border bg-card/85 normal-case tracking-normal shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-card"
+        >
+          <Link href={`/u/${publicProfileSlug}`}>
+            <ExternalLink aria-hidden="true" className="size-3.5" />
+            Profil Publik
+          </Link>
+        </Button>
+      )}
+      <Button
+        asChild
+        size="sm"
+        className="cursor-pointer gap-1.5 rounded-full normal-case tracking-normal shadow-sm transition-colors duration-200"
+      >
+        <Link href="/dashboard/profile/edit">
+          <Edit aria-hidden="true" className="size-3.5" />
+          Edit Profil
+        </Link>
+      </Button>
+    </div>
+  );
+
   return (
     <Card className="overflow-hidden mt-0! pt-0!">
       {/* Cover/Banner */}
@@ -82,11 +109,14 @@ export function ProfileHeader({
           />
         ) : null}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTItMjJoMnYyaC0yVjhoMnYyaC0ydi0yem0yIDEwdjJoLTEydi0yaDEyem0tMTIgNGgxMnYySDI0di0yem0xMi04SDI0di0yaDEydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+
+        {/* Action buttons — desktop: floating top-right of banner */}
+        <div className="absolute right-4 top-4 hidden sm:flex">{headerActions}</div>
       </div>
 
       <CardContent className="relative px-5 pb-5 sm:px-6">
-        {/* Avatar - overlapping banner */}
-        <div className="-mt-12 mb-4 flex items-end justify-between sm:-mt-14">
+        {/* Avatar + mobile actions row */}
+        <div className="-mt-12 mb-4 flex items-end justify-between gap-3 sm:-mt-14">
           <Avatar className="size-20 border-4 border-card shadow-lg sm:size-24">
             {user.image && (
               <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
@@ -96,34 +126,8 @@ export function ProfileHeader({
             </AvatarFallback>
           </Avatar>
 
-          {actions ?? (
-            <div className="flex flex-wrap justify-end gap-2">
-              {showPublicProfileLink && (
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer gap-1.5 rounded-full normal-case tracking-normal transition-all duration-200 hover:shadow-sm"
-                >
-                  <Link href={`/u/${publicProfileSlug}`}>
-                    <ExternalLink aria-hidden="true" className="size-3.5" />
-                    Profil Publik
-                  </Link>
-                </Button>
-              )}
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="cursor-pointer gap-1.5 rounded-full normal-case tracking-normal transition-all duration-200 hover:shadow-sm"
-              >
-                <Link href="/dashboard/profile/edit">
-                  <Edit aria-hidden="true" className="size-3.5" />
-                  Edit Profil
-                </Link>
-              </Button>
-            </div>
-          )}
+          {/* Mobile: actions below avatar baseline */}
+          <div className="flex pb-1 sm:hidden">{headerActions}</div>
         </div>
 
         {/* User Info */}
@@ -151,7 +155,7 @@ export function ProfileHeader({
           </div>
 
           {/* Quick Stats */}
-          <div className="flex items-center gap-6 border-t border-border/50 pt-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border/50 pt-4">
             {stats.map((stat) => (
               <div key={stat.label} className="flex items-center gap-2 text-sm">
                 <stat.icon
