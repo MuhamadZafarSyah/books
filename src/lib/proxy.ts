@@ -4,10 +4,17 @@ import { auth } from "./auth";
 
 const authRoutes = ["/auth"];
 const publicRoutes = ["/", "/api"];
+const PUBLIC_FILE_PATTERN = /\.[^/]+$/;
 
 export async function proxy(request: NextRequest) {
-  const session = await auth();
   const { nextUrl } = request;
+
+  // Let requests for assets in /public pass through untouched.
+  if (PUBLIC_FILE_PATTERN.test(nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
+  const session = await auth();
   const isLoggedIn = !!session?.user;
 
   const isAuthRoute = authRoutes.some(
