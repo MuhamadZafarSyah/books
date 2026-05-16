@@ -3,18 +3,26 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import type { BookContextSnapshot } from "@/features/book-ai-chat/types";
+import { BookAiChatHistoryDrawer } from "@/features/book-ai-chat/components/book-ai-chat-history-drawer";
+import type {
+  BookAiConversationSummary,
+  BookContextSnapshot,
+} from "@/features/book-ai-chat/types";
 
 type BookAiChatHeaderProps = {
   title: string;
   context: BookContextSnapshot;
   openLibraryUrl: string | null;
+  history: BookAiConversationSummary[];
+  activeConversationId: string;
 };
 
 export function BookAiChatHeader({
   title,
   context,
   openLibraryUrl,
+  history,
+  activeConversationId,
 }: BookAiChatHeaderProps) {
   const meta = [
     context.firstPublishYear ? `${context.firstPublishYear}` : null,
@@ -23,7 +31,9 @@ export function BookAiChatHeader({
   ].filter((value): value is string => Boolean(value));
 
   return (
-    <header className="flex items-start gap-4 border-b border-border bg-card px-5 py-4 sm:px-6">
+    <header className="flex items-start gap-3 border-b border-border bg-card px-4 py-4 sm:gap-4 sm:px-6">
+
+
       <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm sm:h-24 sm:w-16">
         {context.coverUrl ? (
           <Image
@@ -47,10 +57,18 @@ export function BookAiChatHeader({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
-          <Sparkles aria-hidden="true" className="size-3" />
-          Diskusi AI
-        </span>
+        <div className="flex relative justify-between items-center">
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+            <Sparkles aria-hidden="true" className="size-3" />
+            Diskusi AI
+          </span>
+          <div className="absolute -top-2 -right-2">
+            <BookAiChatHistoryDrawer
+              history={history}
+              activeConversationId={activeConversationId}
+            />
+          </div>
+        </div>
         <h1 className="font-heading text-base font-semibold leading-tight tracking-tight text-foreground sm:text-lg">
           {title}
         </h1>

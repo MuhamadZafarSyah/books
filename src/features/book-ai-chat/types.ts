@@ -49,6 +49,15 @@ export type BookAiConversationDetail = BookAiConversationSummary & {
 };
 
 export type BookAiBootstrap = {
+  conversation: BookAiConversationDetail | null;
+  history: BookAiConversationSummary[];
+};
+
+/**
+ * Variant returned by `getBookAiConversationPageData` for the dynamic
+ * room route, where the conversation is guaranteed to exist when found.
+ */
+export type BookAiConversationPageData = {
   conversation: BookAiConversationDetail;
   history: BookAiConversationSummary[];
 };

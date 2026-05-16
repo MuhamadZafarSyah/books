@@ -5,10 +5,12 @@ import { Separator } from "@/components/ui/separator";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { QuickChatToggleButton } from "@/features/chat/components/quick-chat-toggle-button";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Beranda",
   "/dashboard/explore": "Jelajahi",
+  "/dashboard/explore/discussions": "Diskusi AI",
   "/dashboard/shelf": "Rak Buku",
   "/dashboard/reading": "Sedang Dibaca",
   "/dashboard/chat": "Chat",
@@ -19,7 +21,16 @@ const pageTitles: Record<string, string> = {
 
 export function DashboardHeader() {
   const pathname = usePathname();
-  const title = pathname.startsWith("/u/") ? "Profil Pembaca" : pageTitles[pathname] ?? "Dashboard";
+  let title = "Dashboard";
+  if (pathname.startsWith("/u/")) title = "Profil Pembaca";
+  else if (
+    pathname.startsWith("/dashboard/explore/discussions/") &&
+    pathname !== "/dashboard/explore/discussions"
+  ) {
+    title = "Diskusi AI";
+  } else {
+    title = pageTitles[pathname] ?? "Dashboard";
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
@@ -28,7 +39,8 @@ export function DashboardHeader() {
       <h1 className="font-heading text-base font-semibold tracking-tight text-foreground">
         {title}
       </h1>
-      <div className="flex-1 flex justify-end">
+      <div className="flex flex-1 items-center justify-end gap-1">
+        <QuickChatToggleButton />
         <AnimatedThemeToggler className="button-click" />
       </div>
     </header>

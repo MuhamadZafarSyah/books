@@ -9,7 +9,7 @@ import {
   serializeBookAiConversationSummary,
 } from "@/features/book-ai-chat/lib/serializers";
 import type {
-  BookAiBootstrap,
+  BookAiConversationPageData,
   BookAiConversationSummary,
   BookContextSnapshot,
 } from "@/features/book-ai-chat/types";
@@ -46,9 +46,12 @@ function snapshotFromBook(book: BookResult): BookContextSnapshot {
 }
 
 /**
- * Create a fresh AI discussion room for the given book, or reuse the most
- * recent empty room for the same book/user (avoids creating chains of empty
- * rooms when the user clicks the CTA repeatedly).
+ * Get or create an AI discussion room for the given book.
+ *
+ * If the user already has any room (empty or active) tied to the same book
+ * (matched by `workKey` or `editionKey`), the most recent one is reused so
+ * the user lands back into the existing conversation instead of starting a
+ * fresh thread every time they click the CTA.
  */
 export async function createBookAiConversation(book: BookResult): Promise<{
   conversationId: string;
@@ -60,25 +63,21 @@ export async function createBookAiConversation(book: BookResult): Promise<{
   const userId = await requireUserId();
   const snapshot = snapshotFromBook(book);
   const title = `Diskusi: ${snapshot.title}`;
-  const matchKey = snapshot.workKey ?? snapshot.editionKey ?? snapshot.id ?? null;
 
-  if (matchKey) {
-    const existingEmpty = await prisma.bookAiConversation.findFirst({
-      where: {
-        userId,
-        OR: [
-          { workKey: matchKey },
-          { editionKey: matchKey },
-        ],
-        messages: { none: {} },
-      },
-      orderBy: { createdAt: "desc" },
+  const matchClauses: { workKey?: string; editionKey?: string }[] = [];
+  if (snapshot.workKey) matchClauses.push({ workKey: snapshot.workKey });
+  if (snapshot.editionKey) matchClauses.push({ editionKey: snapshot.editionKey });
+
+  if (matchClauses.length > 0) {
+    const existing = await prisma.bookAiConversation.findFirst({
+      where: { userId, OR: matchClauses },
+      orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
       select: { id: true },
     });
 
-    if (existingEmpty) {
+    if (existing) {
       revalidatePath("/dashboard/explore");
-      return { conversationId: existingEmpty.id };
+      return { conversationId: existing.id };
     }
   }
 
@@ -115,7 +114,7 @@ async function loadConversationOwned(conversationId: string, userId: string) {
 
 export async function getBookAiConversationPageData(
   conversationId: string,
-): Promise<BookAiBootstrap | null> {
+): Promise<BookAiConversationPageData | null> {
   const userId = await requireUserId();
 
   const [conversation, history] = await Promise.all([

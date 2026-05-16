@@ -11,7 +11,7 @@ import type { BookAiConversationSummary } from "@/features/book-ai-chat/types";
 
 type BookAiChatSidebarProps = {
   history: BookAiConversationSummary[];
-  activeConversationId: string;
+  activeConversationId: string | null;
 };
 
 function formatRelative(value: string | null) {
@@ -79,7 +79,7 @@ export function BookAiChatSidebar({
                       : "hover:border-border hover:bg-secondary/60",
                   )}
                 >
-                  <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                  {/* <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
                     {item.bookCoverUrl ? (
                       <Image
                         src={item.bookCoverUrl}
@@ -93,7 +93,7 @@ export function BookAiChatSidebar({
                         <BookOpen aria-hidden="true" className="size-4" />
                       </span>
                     )}
-                  </div>
+                  </div> */}
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-1 text-xs font-semibold text-foreground">
                       {item.title}

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChatQuickDock } from "@/features/chat/components/chat-quick-dock";
+import { QuickChatVisibilityProvider } from "@/features/chat/components/quick-chat-visibility";
 import { AppSidebar } from "@/features/dashboard/components/app-sidebar";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { PublicProfileActions } from "@/features/public-profile/components/public-profile-actions";
@@ -80,11 +81,12 @@ export default async function PublicUserProfilePage({
 
   return (
     <TooltipProvider>
-      <SidebarProvider className="h-svh min-h-0 overflow-hidden">
-        <AppSidebar user={currentUser} />
-        <SidebarInset className="min-h-0 overflow-hidden">
-          <DashboardHeader />
-          <div className="hide-scrollbar min-h-0 flex-1 overflow-auto p-4 md:p-6">
+      <QuickChatVisibilityProvider>
+        <SidebarProvider className="h-svh min-h-0 overflow-hidden">
+          <AppSidebar user={currentUser} />
+          <SidebarInset className="min-h-0 overflow-hidden">
+            <DashboardHeader />
+            <div className="hide-scrollbar min-h-0 flex-1 overflow-auto p-4 md:p-6">
             <div className="mx-auto max-w-3xl space-y-6">
               <ProfileHeader
                 actions={
@@ -146,9 +148,10 @@ export default async function PublicUserProfilePage({
               <ProfileActivity />
             </div>
           </div>
-          <ChatQuickDock />
-        </SidebarInset>
-      </SidebarProvider>
+            <ChatQuickDock />
+          </SidebarInset>
+        </SidebarProvider>
+      </QuickChatVisibilityProvider>
     </TooltipProvider>
   );
 }

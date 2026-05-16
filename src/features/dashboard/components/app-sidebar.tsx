@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Search,
   Settings,
+  Sparkles,
   User,
 } from "lucide-react";
 
@@ -52,6 +53,11 @@ const mainNavItems = [
     title: "Sedang Dibaca",
     href: "/dashboard/reading",
     icon: BookOpen,
+  },
+  {
+    title: "Diskusi AI",
+    href: "/dashboard/explore/discussions",
+    icon: Sparkles,
   },
   {
     title: "Chat",
@@ -99,6 +105,26 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
+  /**
+   * For each nav item, compute whether this exact href is the most
+   * specific prefix match for the current pathname. This prevents
+   * `/dashboard/explore` from staying highlighted when the user is on
+   * `/dashboard/explore/discussions`, since the latter is a longer match.
+   */
+  const allHrefs = [...mainNavItems, ...secondaryNavItems].map((item) => item.href);
+
+  const matchHref = (() => {
+    let best: string | null = null;
+    for (const href of allHrefs) {
+      const matches =
+        pathname === href ||
+        (href !== "/dashboard" && pathname.startsWith(`${href}/`));
+      if (!matches) continue;
+      if (best === null || href.length > best.length) best = href;
+    }
+    return best;
+  })();
+
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-3">
@@ -126,10 +152,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {mainNavItems.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" &&
-                      pathname.startsWith(item.href));
+                  const isActive = matchHref === item.href;
 
                   return (
                     <SidebarMenuItem key={item.href}>
@@ -159,8 +182,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {secondaryNavItems.map((item) => {
-                  const isActive =
-                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const isActive = matchHref === item.href;
 
                   return (
                     <SidebarMenuItem key={item.href}>

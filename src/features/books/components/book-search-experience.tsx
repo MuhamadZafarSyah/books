@@ -335,7 +335,7 @@ function Header({
             aria-label="Cari buku di Open Library"
             className="h-11 rounded-full border border-border bg-card pl-10 pr-10 text-sm shadow-sm transition-colors duration-200 focus-visible:border-b-border"
           />
-          {query.length > 0 && (
+          {/* {query.length > 0 && (
             <button
               type="button"
               onClick={onClearQuery}
@@ -344,23 +344,24 @@ function Header({
             >
               <X aria-hidden="true" className="size-3.5" />
             </button>
-          )}
+          )} */}
           {loading && (
             <Loader2
               aria-hidden="true"
               className="absolute right-9 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
             />
           )}
+          <FiltersDrawer
+            open={filtersOpen}
+            onOpenChange={onFiltersOpenChange}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onReset={onResetFilters}
+            filterCount={filterCount}
+          />
         </div>
 
-        <FiltersDrawer
-          open={filtersOpen}
-          onOpenChange={onFiltersOpenChange}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onReset={onResetFilters}
-          filterCount={filterCount}
-        />
+
       </div>
     </section>
   );
@@ -386,15 +387,15 @@ function FiltersDrawer({
       <DrawerTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="link"
           size="sm"
-          className="relative h-11 cursor-pointer rounded-full px-5"
+          className="absolute  border-l-border right-0 top-1/2 size-4 -translate-y-1/2 h-11 cursor-pointer  "
           aria-label={`Buka filter${filterCount > 0 ? `, ${filterCount} aktif` : ""}`}
         >
-          <SlidersHorizontal aria-hidden="true" className="size-3.5" />
-          Filter
+          <SlidersHorizontal aria-hidden="true" className="size-3.5 text-muted-foreground!" />
+          {/* Filter */}
           {filterCount > 0 && (
-            <span className="ml-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+            <span className="ml-1 absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
               {filterCount}
             </span>
           )}

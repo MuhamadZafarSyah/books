@@ -9,6 +9,7 @@ import { getChatBootstrap } from "@/actions/chat";
 import { Button } from "@/components/ui/button";
 import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
 import { useChatSocket } from "@/features/chat/hooks/use-chat-socket";
+import { useQuickChatVisibility } from "@/features/chat/components/quick-chat-visibility";
 import type { ChatBootstrap } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
@@ -18,9 +19,9 @@ type DockPhase = "idle" | "opening" | "open" | "closing";
 export function ChatQuickDock() {
   const pathname = usePathname();
   const onChatPage = pathname === "/dashboard/chat";
+  const { visible: globallyVisible } = useQuickChatVisibility();
 
   const [phase, setPhase] = useState<DockPhase>("idle");
-  const [hidden, setHidden] = useState(false);
   const [data, setData] = useState<ChatBootstrap | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -56,7 +57,7 @@ export function ChatQuickDock() {
 
   // Animate the floating action button in when it (re)appears.
   useEffect(() => {
-    if (dockMounted || hidden) return;
+    if (dockMounted || !globallyVisible) return;
     const node = buttonRef.current;
     if (!node) return;
 
@@ -69,7 +70,7 @@ export function ChatQuickDock() {
     }, node);
 
     return () => ctx.revert();
-  }, [dockMounted, hidden]);
+  }, [dockMounted, globallyVisible]);
 
   // Animate the dock card when it appears.
   useEffect(() => {
@@ -105,7 +106,6 @@ export function ChatQuickDock() {
 
   const openDock = useCallback(() => {
     if (phase !== "idle" && phase !== "closing") return;
-    setHidden(false);
     setPhase("opening");
     if (!data) {
       startTransition(async () => {
@@ -114,32 +114,33 @@ export function ChatQuickDock() {
     }
   }, [phase, data]);
 
-  const closeDock = useCallback(
-    (hideAfterClose = false) => {
-      const node = cardRef.current;
-      if (!node) {
-        setPhase("idle");
-        if (hideAfterClose) setHidden(true);
-        return;
-      }
+  const closeDock = useCallback(() => {
+    const node = cardRef.current;
+    if (!node) {
+      setPhase("idle");
+      return;
+    }
 
-      setPhase("closing");
-      gsap.to(node, {
-        scale: 0.6,
-        opacity: 0,
-        y: 28,
-        duration: 0.24,
-        ease: "power2.in",
-        onComplete: () => {
-          setPhase("idle");
-          if (hideAfterClose) setHidden(true);
-        },
-      });
-    },
-    [],
-  );
+    setPhase("closing");
+    gsap.to(node, {
+      scale: 0.6,
+      opacity: 0,
+      y: 28,
+      duration: 0.24,
+      ease: "power2.in",
+      onComplete: () => setPhase("idle"),
+    });
+  }, []);
+
+  // Auto-close the dock when the user toggles "hide quick chat" globally.
+  useEffect(() => {
+    if (!globallyVisible && phase !== "idle") {
+      closeDock();
+    }
+  }, [globallyVisible, phase, closeDock]);
 
   if (onChatPage) return null;
+  if (!globallyVisible && !dockMounted) return null;
 
   return (
     <div
@@ -151,7 +152,7 @@ export function ChatQuickDock() {
       )}
     >
       {/* Floating action button */}
-      {!dockMounted && !hidden && (
+      {!dockMounted && globallyVisible && (
         <Button
           ref={buttonRef}
           aria-label="Buka quick chat"
@@ -191,7 +192,7 @@ export function ChatQuickDock() {
             </div>
             <Button
               aria-label="Tutup quick chat"
-              onClick={() => closeDock(false)}
+              onClick={() => closeDock()}
               size="icon-xs"
               type="button"
               variant="ghost"
