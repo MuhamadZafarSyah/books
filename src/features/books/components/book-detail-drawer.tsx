@@ -7,14 +7,17 @@ import {
   BookText,
   Building2,
   Calendar,
+  Ellipsis,
   ExternalLink,
   Globe2,
   Hash,
   Loader2,
   Sparkles,
+  Star,
 } from "lucide-react";
 
 import { createBookAiConversation } from "@/actions/book-ai-chat";
+import { ensureLocalBookFromResult } from "@/actions/book-reviews";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -23,11 +26,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookCover } from "@/features/books/components/book-cover";
 import { CreateCircleDialog } from "@/features/reading-circle/components/create-circle-dialog";
 import type { BookResult } from "@/features/books/types";
+import { cn } from "@/lib/utils";
 
 type BookDetailDrawerProps = {
   book: BookResult | null;
@@ -170,31 +179,67 @@ function DetailBody({ book }: { book: BookResult }) {
       <Separator />
 
       <div className="px-6 py-4">
-        <DiscussCta book={detail} />
-        <div className="mt-2">
-          <CreateCircleDialog book={detail} />
+        <div className="grid gap-2">
+          <DiscussCta book={detail} />
+          <DetailActions book={detail} />
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="mt-2 w-full cursor-pointer rounded-full"
-          size="sm"
-        >
-          <a
-            href={detail.openLibraryUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Buka ${detail.title} di Open Library`}
-          >
-            <ExternalLink aria-hidden="true" className="size-3.5" />
-            Buka di Open Library
-          </a>
-        </Button>
-        {/* <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Data dari Open Library, ditampilkan ulang oleh Shelfgram.
-        </p> */}
       </div>
     </div>
+  );
+}
+
+function DetailActions({ book }: { book: BookResult }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full cursor-pointer justify-between rounded-full"
+          size="sm"
+        >
+          <span>Actions</span>
+          <Ellipsis aria-hidden="true" className="size-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[min(18rem,calc(100vw-3rem))] p-1.5">
+        <div className="grid gap-1">
+          <CreateCircleDialog
+            book={book}
+            buttonClassName="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+            buttonLabel="Buat circle"
+            buttonVariant="ghost"
+            onTriggerClick={() => setOpen(false)}
+          />
+          <ReviewsCta
+            book={book}
+            className="justify-start rounded-[1rem] px-3"
+            label="Lihat review"
+            onAction={() => setOpen(false)}
+            variant="ghost"
+          />
+          <Button
+            asChild
+            variant="ghost"
+            className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+            size="sm"
+          >
+            <a
+              href={book.openLibraryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Buka ${book.title} di Open Library`}
+              onClick={() => setOpen(false)}
+            >
+              <ExternalLink aria-hidden="true" className="size-3.5" />
+              Buka di Open Library
+            </a>
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -228,6 +273,54 @@ function DiscussCta({ book }: { book: BookResult }) {
         <Sparkles aria-hidden="true" className="size-3.5" />
       )}
       {pending ? "Membuka diskusi..." : "Diskusi buku ini"}
+    </Button>
+  );
+}
+
+function ReviewsCta({
+  book,
+  className,
+  label = "Lihat review dan rating",
+  onAction,
+  variant = "outline",
+}: {
+  book: BookResult;
+  className?: string;
+  label?: string;
+  onAction?: () => void;
+  variant?: React.ComponentProps<typeof Button>["variant"];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const handleClick = () => {
+    onAction?.();
+    startTransition(async () => {
+      try {
+        const { bookId } = await ensureLocalBookFromResult(book);
+        router.push(`/dashboard/explore/books/${bookId}/reviews`);
+      } catch (error) {
+        console.error("[book-reviews] open reviews failed", error);
+        toast.error("Gagal membuka halaman review. Coba lagi sebentar.");
+      }
+    });
+  };
+
+  return (
+    <Button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      variant={variant}
+      className={cn("w-full cursor-pointer rounded-full", className)}
+      size="sm"
+    >
+      {pending ? (
+        <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+      ) : (
+        <Star aria-hidden="true" className="size-3.5" />
+      )}
+      {pending ? "Membuka..." : label}
     </Button>
   );
 }

@@ -32,9 +32,19 @@ import type { ReadingCirclePrivacy } from "@/features/reading-circle/types";
 
 type CreateCircleDialogProps = {
   book: BookResult;
+  buttonClassName?: string;
+  buttonLabel?: string;
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+  onTriggerClick?: () => void;
 };
 
-export function CreateCircleDialog({ book }: CreateCircleDialogProps) {
+export function CreateCircleDialog({
+  book,
+  buttonClassName,
+  buttonLabel = "Buat Circle",
+  buttonVariant = "outline",
+  onTriggerClick,
+}: CreateCircleDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(() => `Diskusi ${book.title}`.slice(0, 120));
   const [description, setDescription] = useState("");
@@ -86,12 +96,15 @@ export function CreateCircleDialog({ book }: CreateCircleDialogProps) {
       <Button
         type="button"
         size="sm"
-        variant="outline"
-        className="w-full cursor-pointer rounded-full"
-        onClick={() => handleOpenChange(true)}
+        variant={buttonVariant}
+        className={buttonClassName ?? "w-full cursor-pointer rounded-full"}
+        onClick={() => {
+          onTriggerClick?.();
+          handleOpenChange(true);
+        }}
       >
         <Users aria-hidden="true" className="size-3.5" />
-        Buat Circle
+        {buttonLabel}
       </Button>
       <DialogContent className="max-w-md">
         <DialogHeader>
