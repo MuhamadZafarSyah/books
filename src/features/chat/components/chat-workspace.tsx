@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { BookOpen, MessageCircle, Search, Send, Users } from "lucide-react";
-import { useDebounceCallback } from "usehooks-ts";
+import { useDebounceCallback, useMediaQuery } from "usehooks-ts";
 import gsap from "gsap";
 
 import {
@@ -20,6 +20,7 @@ import { useChatSocket } from "@/features/chat/hooks/use-chat-socket";
 import { toast } from "sonner";
 
 const TYPING_DEBOUNCE_MS = 600;
+const LAPTOP_QUERY = "(min-width: 1024px)";
 
 function getInitials(user: Pick<ChatUserSummary, "name" | "email">) {
   const source = user.name || user.email?.split("@")[0] || "SG";
@@ -188,6 +189,10 @@ function updateConversationPreview(
 }
 
 export function ChatWorkspace({ initialData, compact = false }: { initialData: ChatBootstrap; compact?: boolean }) {
+  const isLaptopUp = useMediaQuery(LAPTOP_QUERY, {
+    defaultValue: false,
+    initializeWithValue: false,
+  });
   const [conversations, setConversations] = useState(initialData.conversations);
   const [messagesByConversation, setMessagesByConversation] = useState(initialData.messagesByConversation);
   const [activeConversationId, setActiveConversationId] = useState(initialData.activeConversationId ?? initialData.conversations[0]?.id ?? "");
@@ -375,38 +380,46 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
           <div className={cn("grid gap-1.5 p-1.5", !compact && "lg:gap-1 lg:p-2")}>
             {conversations.map((conversation) => {
               const preview = conversation.lastMessage?.body || conversationSubtitle(conversation, initialData.currentUser.id);
+              const conversationButton = (
+                <button
+                  key={conversation.id}
+                  aria-label={`Buka chat dengan ${conversation.title}`}
+                  className={cn(
+                    "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out  hover:bg-card motion-reduce:transition-none",
+                    compact ? "justify-center p-1.5" : "justify-center p-1.5 lg:justify-start lg:gap-2 lg:p-2",
+                    activeConversationId === conversation.id && "bg-card shadow-sm",
+                  )}
+                  onClick={() => selectConversation(conversation.id)}
+                  type="button"
+                >
+                  <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
+                  <span className={cn("hidden min-w-0 flex-1 ", !compact && "lg:block")}>
+                    <span className="block truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
+                    <span className="block truncate! text-[11px] leading-4 text-muted-foreground">
+                      {preview}
+                    </span>
+                  </span>
+                  {conversation.unreadCount > 0 && (
+                    <span className={cn("absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground", !compact && "lg:hidden")}>
+                      {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                    </span>
+                  )}
+                  {conversation.unreadCount > 0 && !compact && (
+                    <span className="hidden size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground lg:grid">
+                      {conversation.unreadCount}
+                    </span>
+                  )}
+                </button>
+              );
+
+              if (!isLaptopUp) {
+                return conversationButton;
+              }
 
               return (
                 <Tooltip key={conversation.id}>
                   <TooltipTrigger asChild>
-                    <button
-                      aria-label={`Buka chat dengan ${conversation.title}`}
-                      className={cn(
-                        "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out  hover:bg-card motion-reduce:transition-none",
-                        compact ? "justify-center p-1.5" : "justify-center p-1.5 lg:justify-start lg:gap-2 lg:p-2",
-                        activeConversationId === conversation.id && "bg-card shadow-sm",
-                      )}
-                      onClick={() => selectConversation(conversation.id)}
-                      type="button"
-                    >
-                      <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
-                      <span className={cn("hidden min-w-0 flex-1 ", !compact && "lg:block")}>
-                        <span className="block truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
-                        <span className="block truncate! text-[11px] leading-4 text-muted-foreground">
-                          {preview}
-                        </span>
-                      </span>
-                      {conversation.unreadCount > 0 && (
-                        <span className={cn("absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground", !compact && "lg:hidden")}>
-                          {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
-                        </span>
-                      )}
-                      {conversation.unreadCount > 0 && !compact && (
-                        <span className="hidden size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground lg:grid">
-                          {conversation.unreadCount}
-                        </span>
-                      )}
-                    </button>
+                    {conversationButton}
                   </TooltipTrigger>
                   <TooltipContent
                     className={cn(

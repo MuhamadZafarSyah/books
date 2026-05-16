@@ -50,7 +50,7 @@ export function BookAiChatSidebar({
             Diskusi AI
           </p>
         </div>
-        <Button
+        {/* <Button
           asChild
           size="icon-sm"
           variant="ghost"
@@ -60,7 +60,7 @@ export function BookAiChatSidebar({
           <Link href="/dashboard/explore">
             <ArrowLeft className="size-4" />
           </Link>
-        </Button>
+        </Button> */}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
