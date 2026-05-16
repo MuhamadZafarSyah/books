@@ -26,6 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookCover } from "@/features/books/components/book-cover";
+import { CreateCircleDialog } from "@/features/reading-circle/components/create-circle-dialog";
 import type { BookResult } from "@/features/books/types";
 
 type BookDetailDrawerProps = {
@@ -170,6 +171,9 @@ function DetailBody({ book }: { book: BookResult }) {
 
       <div className="px-6 py-4">
         <DiscussCta book={detail} />
+        <div className="mt-2">
+          <CreateCircleDialog book={detail} />
+        </div>
         <Button
           asChild
           variant="outline"
@@ -186,9 +190,9 @@ function DetailBody({ book }: { book: BookResult }) {
             Buka di Open Library
           </a>
         </Button>
-        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+        {/* <p className="mt-2 text-center text-[10px] text-muted-foreground">
           Data dari Open Library, ditampilkan ulang oleh Shelfgram.
-        </p>
+        </p> */}
       </div>
     </div>
   );

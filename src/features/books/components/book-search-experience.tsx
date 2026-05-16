@@ -237,7 +237,7 @@ export function BookSearchExperience() {
     }));
   }, []);
 
-  const hasMore = results.length < total && status === "success";
+  const hasMore = results.length < total;
 
   return (
     <div className="space-y-8">
@@ -603,13 +603,14 @@ function ResultsBody({
         ))}
       </div>
 
-      {hasMore && (
+      {(hasMore || loadingMore) && (
         <div className="flex justify-center pt-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onLoadMore}
+            aria-busy={loadingMore}
             disabled={loadingMore}
             className="cursor-pointer rounded-full px-6"
           >

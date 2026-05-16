@@ -37,6 +37,10 @@ model User {
   books UserBook[]
   reviews BookReview[]
   bookAiConversations BookAiConversation[]
+  readingCirclesOwned       ReadingCircle[]
+  readingCircleMemberships  ReadingCircleMember[]
+  readingCirclePosts        ReadingCirclePost[]
+  readingCircleComments     ReadingCircleComment[]
 }
 
 model UserFollow {
@@ -253,6 +257,119 @@ model PendingRegistration {
   token     String   @unique
   expires   DateTime
   createdAt DateTime @default(now())
+}
+
+// ── Reading Circle (Buddy Read / Community Discussion) ──────
+
+enum ReadingCirclePrivacy {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+enum ReadingCircleRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum ReadingCirclePostType {
+  DISCUSSION
+  CHECKPOINT
+  QUESTION
+  ANNOUNCEMENT
+  SYSTEM
+}
+
+enum ReadingCircleSpoilerLevel {
+  NONE
+  CHAPTER_RANGE
+  MAJOR
+  ENDING
+}
+
+model ReadingCircle {
+  id                  String                @id @default(cuid())
+  ownerId             String
+  title               String
+  description         String?               @db.Text
+  privacy             ReadingCirclePrivacy  @default(PUBLIC)
+  bookTitle           String
+  bookAuthor          String
+  bookCoverUrl        String?
+  workKey             String?
+  editionKey          String?
+  openLibraryUrl      String?
+  contextJson         Json
+  targetLabel         String?
+  targetChapterFrom   Int?
+  targetChapterTo     Int?
+  currentChapterFocus String?
+  memberCount         Int                   @default(1)
+  lastActivityAt      DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  owner   User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members ReadingCircleMember[]
+  posts   ReadingCirclePost[]
+
+  @@index([ownerId, updatedAt])
+  @@index([privacy, lastActivityAt])
+  @@index([workKey])
+  @@index([editionKey])
+}
+
+model ReadingCircleMember {
+  id         String            @id @default(cuid())
+  circleId   String
+  userId     String
+  role       ReadingCircleRole @default(MEMBER)
+  joinedAt   DateTime          @default(now())
+  lastSeenAt DateTime?
+
+  circle ReadingCircle @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([circleId, userId])
+  @@index([userId, joinedAt])
+}
+
+model ReadingCirclePost {
+  id                 String                    @id @default(cuid())
+  circleId           String
+  authorId           String
+  type               ReadingCirclePostType     @default(DISCUSSION)
+  title              String?
+  body               String                    @db.Text
+  spoilerLevel       ReadingCircleSpoilerLevel @default(NONE)
+  spoilerFromChapter Int?
+  spoilerToChapter   Int?
+  commentCount       Int                       @default(0)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  circle   ReadingCircle          @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  author   User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments ReadingCircleComment[]
+
+  @@index([circleId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model ReadingCircleComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   ReadingCirclePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId, createdAt])
 }
 
 // ── Book AI Discussions ─────────────────────────────────────

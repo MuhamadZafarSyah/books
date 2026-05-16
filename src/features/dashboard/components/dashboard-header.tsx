@@ -11,6 +11,8 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Beranda",
   "/dashboard/explore": "Jelajahi",
   "/dashboard/explore/discussions": "Diskusi AI",
+  "/dashboard/circles": "Circle Baca",
+  "/dashboard/circles/discover": "Discover Circle",
   "/dashboard/shelf": "Rak Buku",
   "/dashboard/reading": "Sedang Dibaca",
   "/dashboard/chat": "Chat",
@@ -28,6 +30,12 @@ export function DashboardHeader() {
     pathname !== "/dashboard/explore/discussions"
   ) {
     title = "Diskusi AI";
+  } else if (
+    pathname.startsWith("/dashboard/circles/") &&
+    pathname !== "/dashboard/circles" &&
+    pathname !== "/dashboard/circles/discover"
+  ) {
+    title = "Circle Baca";
   } else {
     title = pageTitles[pathname] ?? "Dashboard";
   }

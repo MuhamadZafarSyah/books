@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   User,
+  Users,
 } from "lucide-react";
 
 import {
@@ -58,6 +59,11 @@ const mainNavItems = [
     title: "Diskusi AI",
     href: "/dashboard/explore/discussions",
     icon: Sparkles,
+  },
+  {
+    title: "Circle Baca",
+    href: "/dashboard/circles",
+    icon: Users,
   },
   {
     title: "Chat",
