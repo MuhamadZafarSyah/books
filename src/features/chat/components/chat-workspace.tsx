@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { BookOpen, MessageCircle, Search, Send, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, MessageCircle, PanelLeftIcon, Search, Send, Users } from "lucide-react";
 import { useDebounceCallback, useMediaQuery } from "usehooks-ts";
 import gsap from "gsap";
 
@@ -193,6 +193,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     defaultValue: false,
     initializeWithValue: false,
   });
+  const [isConversationListOpen, setIsConversationListOpen] = useState(false);
   const [conversations, setConversations] = useState(initialData.conversations);
   const [messagesByConversation, setMessagesByConversation] = useState(initialData.messagesByConversation);
   const [activeConversationId, setActiveConversationId] = useState(initialData.activeConversationId ?? initialData.conversations[0]?.id ?? "");
@@ -211,6 +212,10 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     ? (typingUsers[activeConversationId] ?? []).filter((userId) => userId !== initialData.currentUser.id)
     : [];
   const latestMessageId = activeMessages[activeMessages.length - 1]?.id ?? "";
+  const usesInPlaceConversationDrawer = compact || !isLaptopUp;
+  const showConversationDrawerToggle = compact || !isLaptopUp;
+  const showConversationHeaderToggle = !compact && !isLaptopUp;
+  const showConversationListDetails = compact ? isConversationListOpen : isLaptopUp || isConversationListOpen;
 
   const refreshBootstrap = useCallback(() => {
     startTransition(async () => {
@@ -298,6 +303,10 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   );
 
   const selectConversation = useCallback((conversationId: string) => {
+    if (usesInPlaceConversationDrawer) {
+      setIsConversationListOpen(false);
+    }
+
     if (conversationId === activeConversationId) return;
 
     setActiveConversationId(conversationId);
@@ -326,7 +335,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
         loadingConversationIdsRef.current.delete(conversationId);
       }
     });
-  }, [activeConversationId, conversations, loadedConversationIds]);
+  }, [activeConversationId, conversations, loadedConversationIds, usesInPlaceConversationDrawer]);
 
   const sendMessage = useCallback(() => {
     const body = draft.trim();
@@ -360,97 +369,161 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
   };
 
   return (
-    <div className={cn("grid min-h-0 rounded-lg overflow-hidden  border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]", compact ? "h-full grid-cols-[4rem_minmax(0,1fr)]" : "flex-1 grid-cols-[4.25rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)]")}>
-      <aside className="flex min-h-0 flex-col border-r border-border bg-secondary/35">
-        <div className={cn("flex shrink-0 items-center border-b border-border", compact ? "h-12 justify-center p-1.5" : "h-12 justify-center p-1.5 lg:h-auto lg:justify-between lg:gap-2 lg:p-2.5")}>
-          <div className={cn("hidden", !compact && "lg:block")}>
-            <p className="font-heading text-xl font-semibold text-primary">Messages</p>
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {socketStatus === "open" ? "Realtime online" : "Realtime standby"}
-            </p>
-          </div>
-          <div className={cn("grid size-9 place-items-center rounded-xl bg-primary/10 text-primary", !compact && "lg:hidden")}>
-            <MessageCircle aria-hidden="true" className="size-4" />
-          </div>
-          <Button aria-label="Refresh chat" className={cn(compact ? "hidden" : "hidden lg:inline-flex")} onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
-            <Search className="size-4" />
-          </Button>
-        </div>
-        <ScrollArea className="min-h-0 flex-1" type="hover">
-          <div className={cn("grid gap-1.5 p-1.5", !compact && "lg:gap-1 lg:p-2")}>
-            {conversations.map((conversation) => {
-              const preview = conversation.lastMessage?.body || conversationSubtitle(conversation, initialData.currentUser.id);
-              const conversationButton = (
-                <button
-                  key={conversation.id}
-                  aria-label={`Buka chat dengan ${conversation.title}`}
-                  className={cn(
-                    "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out  hover:bg-card motion-reduce:transition-none",
-                    compact ? "justify-center p-1.5" : "justify-center p-1.5 lg:justify-start lg:gap-2 lg:p-2",
-                    activeConversationId === conversation.id && "bg-card shadow-sm",
-                  )}
-                  onClick={() => selectConversation(conversation.id)}
-                  type="button"
-                >
-                  <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
-                  <span className={cn("hidden min-w-0 flex-1 ", !compact && "lg:block")}>
-                    <span className="block truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
-                    <span className="block truncate! text-[11px] leading-4 text-muted-foreground">
-                      {preview}
-                    </span>
-                  </span>
-                  {conversation.unreadCount > 0 && (
-                    <span className={cn("absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground", !compact && "lg:hidden")}>
-                      {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
-                    </span>
-                  )}
-                  {conversation.unreadCount > 0 && !compact && (
-                    <span className="hidden size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground lg:grid">
-                      {conversation.unreadCount}
-                    </span>
-                  )}
-                </button>
-              );
-
-              if (!isLaptopUp) {
-                return conversationButton;
-              }
-
-              return (
-                <Tooltip key={conversation.id}>
-                  <TooltipTrigger asChild>
-                    {conversationButton}
-                  </TooltipTrigger>
-                  <TooltipContent
-                    className={cn(
-                      "flex max-w-56 flex-col items-start rounded-2xl bg-[#17120d] px-3 py-2 text-[#fff9f0] shadow-[0_18px_44px_rgba(0,0,0,0.28)]",
-                      !compact && "lg:hidden",
-                    )}
-                    side="right"
-                    sideOffset={10}
-                  >
-                    <span className="text-sm font-semibold leading-5">{conversation.title}</span>
-                    <span className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#fff9f0]/70">
-                      {preview}
-                    </span>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-            {/* {conversations.length === 0 && (
-              <div className="grid place-items-center rounded-2xl border border-dashed border-border p-2 text-center text-xs text-muted-foreground lg:p-4 lg:text-sm">
-                <MessageCircle aria-hidden="true" className="mb-2 size-5 text-primary lg:hidden" />
-                <span className="hidden lg:block">Belum ada percakapan. Buka profil pembaca lain lalu tekan Message untuk memulai room baru.</span>
+    <div
+      className={cn(
+        "grid min-h-0 rounded-lg overflow-hidden border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)] transition-[grid-template-columns] duration-300 ease-out",
+        compact
+          ? cn("h-full", showConversationListDetails ? "grid-cols-[16rem_minmax(0,1fr)]" : "grid-cols-[4rem_minmax(0,1fr)]")
+          : cn(
+            "flex-1 lg:grid-cols-[16rem_minmax(0,1fr)]",
+            isConversationListOpen ? "grid-cols-[16rem_minmax(0,1fr)]" : "grid-cols-[0rem_minmax(0,1fr)]",
+          ),
+      )}
+    >
+      <aside className="min-h-0 overflow-hidden">
+        <div
+          className={cn(
+            "flex h-full flex-col border-r border-border bg-secondary/35 transition-[width,transform] duration-300 ease-out",
+            compact ? (showConversationListDetails ? "w-64" : "w-16") : "w-64 lg:w-auto",
+            !compact && (showConversationListDetails ? "translate-x-0" : "-translate-x-full lg:translate-x-0"),
+          )}
+        >
+          <div
+            className={cn(
+              "flex shrink-0 items-center border-b border-border",
+              compact ? "h-12 justify-center p-1.5" : "h-12 justify-center p-1.5 lg:h-auto lg:justify-between lg:gap-2 lg:p-2.5",
+              showConversationListDetails && "justify-between gap-2 p-2.5",
+            )}
+          >
+            <div className={cn("hidden", !compact && "lg:block", showConversationListDetails && "block")}>
+              <p className="font-heading text-xl font-semibold text-primary">Messages</p>
+              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {socketStatus === "open" ? "Realtime online" : "Realtime standby"}
+              </p>
+            </div>
+            {compact ? (
+              <Button
+                aria-expanded={isConversationListOpen}
+                aria-label={isConversationListOpen ? "Tutup daftar chat" : "Buka daftar chat"}
+                className={cn("grid size-9 place-items-center rounded-xl bg-primary/10 text-primary hover:bg-primary/15", showConversationListDetails && "hidden")}
+                onClick={() => setIsConversationListOpen((current) => !current)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <MessageCircle aria-hidden="true" className="size-4" />
+              </Button>
+            ) : (
+              <div className={cn("grid size-9 place-items-center rounded-xl bg-primary/10 text-primary", !compact && "lg:hidden", showConversationListDetails && "hidden")}>
+                <MessageCircle aria-hidden="true" className="size-4" />
               </div>
-            )} */}
+            )}
+            <Button aria-label="Refresh chat" className={cn(compact ? "hidden" : "hidden lg:inline-flex")} onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
+              <Search className="size-4" />
+            </Button>
+            {showConversationDrawerToggle && (
+              <Button
+                aria-label="Tutup daftar chat"
+                className={cn("hidden", showConversationListDetails && "inline-flex")}
+                onClick={() => setIsConversationListOpen(false)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+            )}
           </div>
-        </ScrollArea>
+          <ScrollArea className="min-h-0 flex-1" type="hover">
+            <div className={cn("grid gap-1.5 p-1.5", !compact && "lg:gap-1 lg:p-2", showConversationListDetails && "gap-1 p-2")}>
+              {conversations.map((conversation) => {
+                const preview = conversation.lastMessage?.body || conversationSubtitle(conversation, initialData.currentUser.id);
+                const conversationButton = (
+                  <button
+                    key={conversation.id}
+                    aria-label={`Buka chat dengan ${conversation.title}`}
+                    className={cn(
+                      "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:bg-card motion-reduce:transition-none",
+                      compact ? "justify-center p-1.5" : "justify-center p-1.5 lg:justify-start lg:gap-2 lg:p-2",
+                      showConversationListDetails && "justify-start gap-2 p-2",
+                      activeConversationId === conversation.id && "bg-card shadow-sm",
+                    )}
+                    onClick={() => selectConversation(conversation.id)}
+                    type="button"
+                  >
+                    <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
+                    <span className={cn("hidden min-w-0 flex-1", !compact && "lg:block", showConversationListDetails && "block")}>
+                      <span className="block truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
+                      <span className="block truncate! text-[11px] leading-4 text-muted-foreground">
+                        {preview}
+                      </span>
+                    </span>
+                    {conversation.unreadCount > 0 && (
+                      <span className={cn("absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground", !compact && "lg:hidden", showConversationListDetails && "hidden")}>
+                        {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                      </span>
+                    )}
+                    {conversation.unreadCount > 0 && (
+                      <span className={cn("hidden size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground", !compact && "lg:grid", showConversationListDetails && "grid")}>
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </button>
+                );
+
+                if (showConversationListDetails || !isLaptopUp) {
+                  return conversationButton;
+                }
+
+                return (
+                  <Tooltip key={conversation.id}>
+                    <TooltipTrigger asChild>
+                      {conversationButton}
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className={cn(
+                        "flex max-w-56 flex-col items-start rounded-2xl bg-[#17120d] px-3 py-2 text-[#fff9f0] shadow-[0_18px_44px_rgba(0,0,0,0.28)]",
+                        !compact && "lg:hidden",
+                      )}
+                      side="right"
+                      sideOffset={10}
+                    >
+                      <span className="text-sm font-semibold leading-5">{conversation.title}</span>
+                      <span className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#fff9f0]/70">
+                        {preview}
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+              {/* {conversations.length === 0 && (
+                <div className="grid place-items-center rounded-2xl border border-dashed border-border p-2 text-center text-xs text-muted-foreground lg:p-4 lg:text-sm">
+                  <MessageCircle aria-hidden="true" className="mb-2 size-5 text-primary lg:hidden" />
+                  <span className="hidden lg:block">Belum ada percakapan. Buka profil pembaca lain lalu tekan Message untuk memulai room baru.</span>
+                </div>
+              )} */}
+            </div>
+          </ScrollArea>
+        </div>
       </aside>
 
       <section className="flex min-h-0 flex-col overflow-hidden">
         {activeConversation ? (
           <>
             <div className="flex shrink-0 items-center gap-2.5 border-b border-border p-2.5 sm:p-3">
+              {showConversationHeaderToggle && (
+                <Button
+                  aria-expanded={isConversationListOpen}
+                  aria-label={isConversationListOpen ? "Tutup daftar chat" : "Buka daftar chat"}
+                  className="lg:hidden"
+                  onClick={() => setIsConversationListOpen((current) => !current)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <PanelLeftIcon className={cn("size-4 transition-transform duration-300", isConversationListOpen && "scale-x-[-1]")} />
+                </Button>
+              )}
               <ConversationAvatar conversation={activeConversation} currentUserId={initialData.currentUser.id} />
               <div className="min-w-0 flex-1">
                 <h1 className="truncate font-heading text-base font-semibold text-primary sm:text-lg">{activeConversation.title}</h1>
@@ -460,7 +533,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                     : conversationSubtitle(activeConversation, initialData.currentUser.id)}
                 </p>
               </div>
-              <Users aria-hidden="true" className="size-4 text-muted-foreground" />
+              <Users aria-hidden="true" className="hidden size-4 text-muted-foreground lg:block" />
             </div>
             <ScrollArea className="min-h-0 flex-1 overflow-hidden" type="hover">
               <div className="grid min-w-0 gap-3 p-3 sm:p-4">
