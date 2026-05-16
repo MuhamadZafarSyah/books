@@ -14,10 +14,8 @@ export function QuickChatToggleButton({ className }: { className?: string }) {
   const { visible, toggle } = useQuickChatVisibility();
 
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      size="icon-sm"
       onClick={toggle}
       aria-pressed={!visible}
       aria-label={
@@ -31,6 +29,6 @@ export function QuickChatToggleButton({ className }: { className?: string }) {
       ) : (
         <MessageCircleOff />
       )}
-    </Button>
+    </button>
   );
 }

@@ -39,7 +39,7 @@ export function DashboardHeader() {
       <h1 className="font-heading text-base font-semibold tracking-tight text-foreground">
         {title}
       </h1>
-      <div className="flex flex-1 items-center justify-end gap-1">
+      <div className="flex flex-1 gap-4 items-center justify-end ">
         <QuickChatToggleButton />
         <AnimatedThemeToggler className="button-click" />
       </div>

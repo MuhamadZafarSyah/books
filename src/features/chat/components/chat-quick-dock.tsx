@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import { MessageCircle, X } from "lucide-react";
 import gsap from "gsap";
@@ -16,6 +16,26 @@ import { usePathname } from "next/navigation";
 
 type DockPhase = "idle" | "opening" | "open" | "closing";
 
+type FloatingButtonPosition = {
+  x: number;
+  y: number;
+};
+
+type DragState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  originX: number;
+  originY: number;
+  width: number;
+  height: number;
+  hasMoved: boolean;
+};
+
+const DASHBOARD_HEADER_HEIGHT = 56;
+const DRAG_THRESHOLD_PX = 6;
+const FALLBACK_BUTTON_SIZE = 44;
+
 export function ChatQuickDock() {
   const pathname = usePathname();
   const onChatPage = pathname === "/dashboard/chat";
@@ -23,12 +43,44 @@ export function ChatQuickDock() {
 
   const [phase, setPhase] = useState<DockPhase>("idle");
   const [data, setData] = useState<ChatBootstrap | null>(null);
+  const [fabPosition, setFabPosition] = useState<FloatingButtonPosition | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const dragStateRef = useRef<DragState | null>(null);
+  const suppressNextClickRef = useRef(false);
 
   const dockMounted = phase !== "idle";
+
+  const getScreenMargin = useCallback(() => (window.innerWidth >= 640 ? 20 : 16), []);
+
+  const clampFabPosition = useCallback((x: number, y: number, width: number, height: number) => {
+    const margin = getScreenMargin();
+    const minX = margin;
+    const maxX = Math.max(margin, window.innerWidth - width - margin);
+    const minY = DASHBOARD_HEADER_HEIGHT + margin;
+    const maxY = Math.max(minY, window.innerHeight - height - margin);
+
+    return {
+      x: Math.min(Math.max(x, minX), maxX),
+      y: Math.min(Math.max(y, minY), maxY),
+    };
+  }, [getScreenMargin]);
+
+  const snapFabToEdge = useCallback((x: number, y: number, width: number, height: number) => {
+    const clamped = clampFabPosition(x, y, width, height);
+    const margin = getScreenMargin();
+
+    return {
+      x: clamped.x + width / 2 < window.innerWidth / 2 ? margin : window.innerWidth - width - margin,
+      y: clamped.y,
+    };
+  }, [clampFabPosition, getScreenMargin]);
+
+  const resetFabPosition = useCallback(() => {
+    setFabPosition(null);
+  }, []);
 
   // Load bootstrap + subscribe to Pusher only after the dock has been opened
   // at least once. This keeps every other dashboard page free of Pusher
@@ -117,6 +169,7 @@ export function ChatQuickDock() {
   const closeDock = useCallback(() => {
     const node = cardRef.current;
     if (!node) {
+      resetFabPosition();
       setPhase("idle");
       return;
     }
@@ -128,9 +181,105 @@ export function ChatQuickDock() {
       y: 28,
       duration: 0.24,
       ease: "power2.in",
-      onComplete: () => setPhase("idle"),
+      onComplete: () => {
+        resetFabPosition();
+        setPhase("idle");
+      },
     });
+  }, [resetFabPosition]);
+
+  const handleFabPointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+      width: rect.width || FALLBACK_BUTTON_SIZE,
+      height: rect.height || FALLBACK_BUTTON_SIZE,
+      hasMoved: false,
+    };
+    suppressNextClickRef.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
   }, []);
+
+  const handleFabPointerMove = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+
+    if (!dragState.hasMoved && Math.hypot(deltaX, deltaY) < DRAG_THRESHOLD_PX) return;
+
+    dragState.hasMoved = true;
+    setFabPosition(clampFabPosition(dragState.originX + deltaX, dragState.originY + deltaY, dragState.width, dragState.height));
+  }, [clampFabPosition]);
+
+  const handleFabPointerUp = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (dragState.hasMoved) {
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+
+      setFabPosition(snapFabToEdge(dragState.originX + deltaX, dragState.originY + deltaY, dragState.width, dragState.height));
+      suppressNextClickRef.current = true;
+    }
+
+    dragStateRef.current = null;
+  }, [snapFabToEdge]);
+
+  const handleFabPointerCancel = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (dragState.hasMoved) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setFabPosition(snapFabToEdge(rect.left, rect.top, dragState.width, dragState.height));
+      suppressNextClickRef.current = true;
+    }
+
+    dragStateRef.current = null;
+  }, [snapFabToEdge]);
+
+  const handleFabClick = useCallback((event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      event.preventDefault();
+      return;
+    }
+
+    openDock();
+  }, [openDock]);
+
+  useEffect(() => {
+    if (fabPosition === null) return;
+
+    const handleResize = () => {
+      const node = buttonRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+
+      setFabPosition((current) => current
+        ? clampFabPosition(current.x, current.y, rect.width || FALLBACK_BUTTON_SIZE, rect.height || FALLBACK_BUTTON_SIZE)
+        : current);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [clampFabPosition, fabPosition]);
 
   // Auto-close the dock when the user toggles "hide quick chat" globally.
   useEffect(() => {
@@ -143,22 +292,23 @@ export function ChatQuickDock() {
   if (!globallyVisible && !dockMounted) return null;
 
   return (
-    <div
-      className={cn(
-        "pointer-events-none fixed z-40",
-        dockMounted
-          ? "inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5"
-          : "bottom-4 right-4 sm:bottom-5 sm:right-5",
-      )}
-    >
+    <div className="pointer-events-none fixed inset-0 z-40">
       {/* Floating action button */}
       {!dockMounted && globallyVisible && (
         <Button
           ref={buttonRef}
           aria-label="Buka quick chat"
-          className="pointer-events-auto rounded-full z-50! shadow-[0_18px_44px_rgba(31,77,58,0.24)]"
-          onClick={openDock}
+          className={cn(
+            "pointer-events-auto absolute rounded-full shadow-[0_18px_44px_rgba(31,77,58,0.24)] touch-none select-none cursor-grab active:cursor-grabbing",
+            fabPosition === null && "bottom-4 right-4 sm:bottom-5 sm:right-5",
+          )}
+          onClick={handleFabClick}
+          onPointerCancel={handleFabPointerCancel}
+          onPointerDown={handleFabPointerDown}
+          onPointerMove={handleFabPointerMove}
+          onPointerUp={handleFabPointerUp}
           size="icon-lg"
+          style={fabPosition ? { left: fabPosition.x, top: fabPosition.y } : undefined}
           type="button"
         >
           <MessageCircle className="size-5" />
@@ -170,7 +320,7 @@ export function ChatQuickDock() {
         <div
           ref={cardRef}
           className={cn(
-            "pointer-events-auto ml-auto origin-bottom-right overflow-hidden border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl",
+            "pointer-events-auto absolute inset-x-3 bottom-3 origin-bottom-right overflow-hidden border border-border bg-card/96 shadow-[0_24px_70px_rgba(36,26,18,0.18)] backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:right-5",
             "h-[min(82dvh,42rem)] w-full rounded-[1.75rem] sm:h-[36rem] sm:w-[30rem]",
           )}
         >
