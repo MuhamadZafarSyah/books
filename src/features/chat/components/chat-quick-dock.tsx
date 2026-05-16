@@ -78,10 +78,6 @@ export function ChatQuickDock() {
     };
   }, [clampFabPosition, getScreenMargin]);
 
-  const resetFabPosition = useCallback(() => {
-    setFabPosition(null);
-  }, []);
-
   // Load bootstrap + subscribe to Pusher only after the dock has been opened
   // at least once. This keeps every other dashboard page free of Pusher
   // connections, channel subscriptions, and `setUserOnline` writes until the
@@ -169,7 +165,6 @@ export function ChatQuickDock() {
   const closeDock = useCallback(() => {
     const node = cardRef.current;
     if (!node) {
-      resetFabPosition();
       setPhase("idle");
       return;
     }
@@ -181,12 +176,9 @@ export function ChatQuickDock() {
       y: 28,
       duration: 0.24,
       ease: "power2.in",
-      onComplete: () => {
-        resetFabPosition();
-        setPhase("idle");
-      },
+      onComplete: () => setPhase("idle"),
     });
-  }, [resetFabPosition]);
+  }, []);
 
   const handleFabPointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
