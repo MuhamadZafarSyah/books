@@ -11,6 +11,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Beranda",
   "/dashboard/explore": "Jelajahi",
   "/dashboard/explore/discussions": "Diskusi AI",
+  "/dashboard/explore/readers": "Cari Pembaca",
   "/dashboard/circles": "Circle Baca",
   "/dashboard/circles/discover": "Discover Circle",
   "/dashboard/shelf": "Rak Buku",

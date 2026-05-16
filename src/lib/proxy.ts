@@ -56,11 +56,12 @@ export const config = {
      * - api/pusher (Pusher channel auth — must respond with JSON, never redirect)
      * - api/books (public-ish book search/detail routes also auth-gated inside)
      * - api/ai (AI chat endpoints, gated inside)
+     * - api/users (user search endpoint, gated inside)
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      * - static assets (svg, png, jpg, etc.)
      */
-    "/((?!api/auth|api/pusher|api/books|api/ai|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|api/pusher|api/books|api/ai|api/users|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

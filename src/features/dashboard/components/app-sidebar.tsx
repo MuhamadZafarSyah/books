@@ -13,6 +13,7 @@ import {
   Sparkles,
   User,
   Users,
+  UserSearch,
 } from "lucide-react";
 
 import {
@@ -44,6 +45,11 @@ const mainNavItems = [
     title: "Jelajahi",
     href: "/dashboard/explore",
     icon: Search,
+  },
+  {
+    title: "Cari Pembaca",
+    href: "/dashboard/explore/readers",
+    icon: UserSearch,
   },
   {
     title: "Rak Buku",
