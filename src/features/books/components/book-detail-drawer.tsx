@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   BookText,
   Building2,
@@ -9,8 +11,10 @@ import {
   Globe2,
   Hash,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
+import { createBookAiConversation } from "@/actions/book-ai-chat";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -165,9 +169,11 @@ function DetailBody({ book }: { book: BookResult }) {
       <Separator />
 
       <div className="px-6 py-4">
+        <DiscussCta book={detail} />
         <Button
           asChild
-          className="w-full cursor-pointer rounded-full"
+          variant="outline"
+          className="mt-2 w-full cursor-pointer rounded-full"
           size="sm"
         >
           <a
@@ -185,6 +191,40 @@ function DetailBody({ book }: { book: BookResult }) {
         </p>
       </div>
     </div>
+  );
+}
+
+function DiscussCta({ book }: { book: BookResult }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const handleClick = () => {
+    startTransition(async () => {
+      try {
+        const { conversationId } = await createBookAiConversation(book);
+        router.push(`/dashboard/explore/discussions/${conversationId}`);
+      } catch (error) {
+        console.error("[book-ai] create conversation failed", error);
+        toast.error("Gagal membuat diskusi. Coba lagi sebentar.");
+      }
+    });
+  };
+
+  return (
+    <Button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      className="w-full cursor-pointer rounded-full"
+      size="sm"
+    >
+      {pending ? (
+        <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+      ) : (
+        <Sparkles aria-hidden="true" className="size-3.5" />
+      )}
+      {pending ? "Membuka diskusi..." : "Diskusi buku ini"}
+    </Button>
   );
 }
 
