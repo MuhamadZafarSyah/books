@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Crown } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -47,20 +48,28 @@ function PodiumSlot({ row, rank }: PodiumSlotProps) {
           href={`/u/${row.user.slug}`}
           className="flex flex-col items-center gap-2 transition-opacity duration-200 hover:opacity-80"
         >
-          <Avatar
-            className={cn(
-              "ring-2 ring-background",
-              isPrimary
-                ? "size-20 ring-primary/30 sm:size-24"
-                : "size-14 sm:size-16",
-            )}
-          >
-            <AvatarImage
-              src={row.user.image ?? undefined}
-              alt={row.user.name ?? "Pembaca"}
-            />
-            <AvatarFallback>{getInitials(row.user.name)}</AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            {isPrimary ? (
+              <Crown
+                aria-hidden="true"
+                className="absolute left-1/2 top-0 z-10 size-6 -translate-x-1/2 -translate-y-[60%] -rotate-6 fill-primary text-primary drop-shadow-sm sm:size-7"
+              />
+            ) : null}
+            <Avatar
+              className={cn(
+                "ring-2 ring-background",
+                isPrimary
+                  ? "size-20 ring-primary/30 sm:size-24"
+                  : "size-14 sm:size-16",
+              )}
+            >
+              <AvatarImage
+                src={row.user.image ?? undefined}
+                alt={row.user.name ?? "Pembaca"}
+              />
+              <AvatarFallback>{getInitials(row.user.name)}</AvatarFallback>
+            </Avatar>
+          </div>
           <p
             className={cn(
               "line-clamp-1 max-w-[10rem] font-heading text-foreground",
@@ -80,12 +89,20 @@ function PodiumSlot({ row, rank }: PodiumSlotProps) {
         </Link>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <div
-            className={cn(
-              "rounded-full border border-dashed border-border bg-muted/30",
-              isPrimary ? "size-20 sm:size-24" : "size-14 sm:size-16",
-            )}
-          />
+          <div className="relative">
+            {isPrimary ? (
+              <Crown
+                aria-hidden="true"
+                className="absolute left-1/2 top-0 z-10 size-6 -translate-x-1/2 -translate-y-[60%] -rotate-6 text-muted-foreground/50 sm:size-7"
+              />
+            ) : null}
+            <div
+              className={cn(
+                "rounded-full border border-dashed border-border bg-muted/30",
+                isPrimary ? "size-20 sm:size-24" : "size-14 sm:size-16",
+              )}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">Slot terbuka</p>
         </div>
       )}
