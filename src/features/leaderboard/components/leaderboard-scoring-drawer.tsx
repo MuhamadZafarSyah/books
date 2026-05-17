@@ -1,25 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { LEADERBOARD_SCORING_RULES } from "@/lib/leaderboard/scoring";
 import type {
   LeaderboardScopeKey,
-  LeaderboardScoringResponse,
-  LeaderboardScoringRule,
 } from "@/features/leaderboard/types";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 const NUMBER_FORMATTER = new Intl.NumberFormat("id-ID");
 
@@ -34,52 +26,19 @@ const SCOPE_BADGE: Record<
 };
 
 /**
- * Drawer (`Sheet` shadcn) untuk menjelaskan cara perhitungan poin.
+ * Drawer (`Drawer` shadcn) untuk menjelaskan cara perhitungan poin.
  *
- * Memuat data dari `GET /api/leaderboard/scoring` lazily — fetch baru
- * dimulai saat user pertama kali membuka drawer agar halaman utama tidak
- * memuat payload tambahan untuk fitur yang mungkin tidak dilihat.
+ * Aturan scoring diambil dari shared constant statis agar selalu tersedia
+ * instan di client dan tidak bergantung pada fetch tambahan saat drawer
+ * dibuka.
  */
 export function LeaderboardScoringDrawer() {
   const [open, setOpen] = useState(false);
-  const [rules, setRules] = useState<LeaderboardScoringRule[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || rules !== null || isLoading) return;
-    let cancelled = false;
-
-    void Promise.resolve().then(async () => {
-      if (cancelled) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/leaderboard/scoring");
-        if (!response.ok) {
-          throw new Error("Gagal memuat aturan poin.");
-        }
-        const data = (await response.json()) as LeaderboardScoringResponse;
-        if (cancelled) return;
-        setRules(data.rules);
-      } catch (cause) {
-        if (cancelled) return;
-        setError(
-          cause instanceof Error ? cause.message : "Gagal memuat aturan poin.",
-        );
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, rules, isLoading]);
+  const rules = LEADERBOARD_SCORING_RULES;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Drawer open={open} onOpenChange={setOpen} direction="right">
+      <DrawerTrigger asChild>
         <Button
           type="button"
           size="sm"
@@ -89,32 +48,19 @@ export function LeaderboardScoringDrawer() {
           <Info aria-hidden="true" className="size-3.5" />
           Cara perhitungan
         </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>Cara perhitungan poin</SheetTitle>
-          <SheetDescription>
+      </DrawerTrigger>
+      <DrawerContent className="w-full sm:max-w-md">
+        <DrawerHeader>
+          <DrawerTitle>Cara perhitungan poin</DrawerTitle>
+          <DrawerDescription>
             Aktivitas berikut menambah poin leaderboard. Edit dan hapus tidak
             menambah atau mengurangi poin.
-          </SheetDescription>
-        </SheetHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
-        <div className="mt-4 space-y-3">
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
-
-          {isLoading || rules === null ? (
-            <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="space-y-2">
-                  <Skeleton className="h-4 w-2/3 rounded-sm" />
-                  <Skeleton className="h-3 w-1/2 rounded-sm" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <ul className="overflow-hidden rounded-2xl border border-border/60">
+        <ScrollArea className="min-h-0 flex-1 pb-8">
+          <div className="mt-4 space-y-3 pr-3">
+            <ul className="overflow-hidden ">
               {rules.map((rule, index) => (
                 <li key={rule.type}>
                   {index > 0 ? <Separator /> : null}
@@ -143,9 +89,9 @@ export function LeaderboardScoringDrawer() {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+          </div>
+        </ScrollArea>
+      </DrawerContent>
+    </Drawer>
   );
 }

@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import {
-  ACTIVITY_LABELS,
-  ACTIVITY_POINTS,
-  ACTIVITY_SCOPE,
+  LEADERBOARD_SCORING_RULES,
 } from "@/lib/leaderboard/scoring";
 import type {
   LeaderboardScoringResponse,
-  LeaderboardScoringRule,
 } from "@/features/leaderboard/types";
 
 export const runtime = "nodejs";
@@ -28,18 +25,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rules: LeaderboardScoringRule[] = (
-    Object.keys(ACTIVITY_POINTS) as Array<keyof typeof ACTIVITY_POINTS>
-  )
-    .map((type) => ({
-      type,
-      label: ACTIVITY_LABELS[type].label,
-      points: ACTIVITY_POINTS[type],
-      scope: ACTIVITY_SCOPE[type],
-      notes: ACTIVITY_LABELS[type].notes,
-    }))
-    .sort((a, b) => b.points - a.points);
-
-  const response: LeaderboardScoringResponse = { rules };
+  const response: LeaderboardScoringResponse = {
+    rules: LEADERBOARD_SCORING_RULES,
+  };
   return NextResponse.json(response);
 }

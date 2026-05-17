@@ -47,7 +47,7 @@ export function LeaderboardRankRow({ row, isViewer }: LeaderboardRankRowProps) {
           isTopThree ? "text-primary" : "text-muted-foreground",
         )}
       >
-        {row.rank}
+        {row.rank}.
       </span>
 
       <Avatar className="size-9 shrink-0 sm:size-10">
@@ -60,11 +60,11 @@ export function LeaderboardRankRow({ row, isViewer }: LeaderboardRankRowProps) {
 
       <p className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-foreground">
         {row.user.name ?? row.user.username ?? "Pembaca"}
-        {isViewer ? (
+        {/* {isViewer ? (
           <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
             Kamu
           </span>
-        ) : null}
+        ) : null} */}
       </p>
 
       <span className="shrink-0 font-heading text-sm font-semibold tabular-nums text-foreground sm:text-base">

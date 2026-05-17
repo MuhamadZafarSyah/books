@@ -1,5 +1,7 @@
 import type { UserActivityType } from "@prisma/client";
 
+import type { LeaderboardScoringRule } from "@/features/leaderboard/types";
+
 /**
  * Bobot poin awal per jenis aktivitas (sesuai `leaderboard_plan.md`).
  *
@@ -112,3 +114,22 @@ export const ACTIVITY_LABELS: Record<
     notes: "Maksimal 10 follow ber-poin per hari.",
   },
 };
+
+/**
+ * Daftar aturan scoring siap-tampil untuk UI dan API.
+ *
+ * Aturan ini statis, jadi aman dipakai langsung oleh Client Component tanpa
+ * fetch tambahan. Urutan default dari poin terbesar ke kecil agar cepat
+ * dipindai di drawer "Cara perhitungan".
+ */
+export const LEADERBOARD_SCORING_RULES: LeaderboardScoringRule[] = (
+  Object.keys(ACTIVITY_POINTS) as Array<keyof typeof ACTIVITY_POINTS>
+)
+  .map((type) => ({
+    type,
+    label: ACTIVITY_LABELS[type].label,
+    points: ACTIVITY_POINTS[type],
+    scope: ACTIVITY_SCOPE[type],
+    notes: ACTIVITY_LABELS[type].notes,
+  }))
+  .sort((a, b) => b.points - a.points);
