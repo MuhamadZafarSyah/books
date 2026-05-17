@@ -367,7 +367,7 @@ export function EventMapPicker({
               <MapMarker longitude={longitude} latitude={latitude}>
                 <MarkerContent>
                   <MapPin
-                    className="fill-primary shadow-md"
+                    className="fill-[#8fb89e] shadow-md"
                     size={28}
                   />
                 </MarkerContent>

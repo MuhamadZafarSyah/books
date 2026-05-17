@@ -12,6 +12,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Trophy,
   User,
   Users,
   UserSearch,
@@ -76,6 +77,11 @@ const mainNavItems = [
     title: "Agenda Baca",
     href: "/dashboard/events",
     icon: CalendarHeart,
+  },
+  {
+    title: "Leaderboard",
+    href: "/dashboard/leaderboard",
+    icon: Trophy,
   },
   {
     title: "Chat",

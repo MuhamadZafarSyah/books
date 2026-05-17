@@ -43,6 +43,8 @@ model User {
   readingCircleComments     ReadingCircleComment[]
   readingEventsHosted        ReadingEvent[]
   readingEventParticipations ReadingEventParticipant[]
+  activityEvents             UserActivityEvent[]
+  leaderboardSnapshots       UserLeaderboardSnapshot[]
 }
 
 model UserFollow {
@@ -467,4 +469,78 @@ model ReadingEventParticipant {
   @@unique([eventId, userId])
   @@index([eventId, joinedAt])
   @@index([userId, joinedAt])
+}
+
+// ── Leaderboard / Activity Ledger ───────────────────────────
+
+enum UserActivityType {
+  READING_CIRCLE_CREATED
+  READING_CIRCLE_JOINED
+  READING_CIRCLE_POST_CREATED
+  READING_CIRCLE_COMMENT_CREATED
+  READING_EVENT_CREATED
+  READING_EVENT_JOINED
+  BOOK_REVIEW_CREATED
+  USER_FOLLOW_CREATED
+}
+
+enum UserActivitySourceType {
+  READING_CIRCLE
+  READING_CIRCLE_POST
+  READING_CIRCLE_COMMENT
+  READING_EVENT
+  BOOK_REVIEW
+  USER_FOLLOW
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum LeaderboardScope {
+  OVERALL
+  CIRCLES
+  EVENTS
+  REVIEWS
+  SOCIAL
+}
+
+model UserActivityEvent {
+  id           String                 @id @default(cuid())
+  userId       String
+  type         UserActivityType
+  sourceType   UserActivitySourceType
+  sourceId     String
+  points       Int
+  dedupeKey    String?                @unique
+  metadataJson Json?
+  createdAt    DateTime               @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([sourceType, createdAt])
+  @@index([createdAt])
+}
+
+model UserLeaderboardSnapshot {
+  id            String            @id @default(cuid())
+  userId        String
+  period        LeaderboardPeriod
+  scope         LeaderboardScope
+  periodKey     String
+  totalPoints   Int
+  rank          Int?
+  breakdownJson Json?
+  updatedAt     DateTime          @updatedAt
+  createdAt     DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period, scope, periodKey])
+  @@index([period, scope, periodKey, totalPoints])
 }

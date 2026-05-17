@@ -7,6 +7,7 @@ import { z } from "zod";
 import { startDirectConversation } from "@/actions/chat";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { recordActivityEvent } from "@/lib/leaderboard/record-activity";
 
 const profileActionSchema = z.object({
   targetUserId: z.string().min(1),
@@ -91,6 +92,17 @@ export async function togglePublicProfileFollow(
         followerId: currentUserId,
         followingId: targetUserId,
       },
+    });
+
+    // Plan: "unfollow tidak mencatat poin negatif pada MVP"; pencatatan
+    // dilakukan hanya saat follow baru dibuat. `dedupeKey` memastikan
+    // sequence follow → unfollow → follow ulang tidak menggandakan poin.
+    await recordActivityEvent({
+      userId: currentUserId,
+      type: "USER_FOLLOW_CREATED",
+      sourceType: "USER_FOLLOW",
+      sourceId: targetUserId,
+      dedupeKey: `user-follow:create:${currentUserId}:${targetUserId}`,
     });
   }
 

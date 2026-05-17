@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
+import { recordActivityEvent } from "@/lib/leaderboard/record-activity";
 import { requireAuth } from "@/lib/session";
 import {
   serializeCircleDetail,
@@ -118,6 +119,14 @@ export async function createReadingCircleFromBook(
     });
 
     return circle;
+  });
+
+  await recordActivityEvent({
+    userId,
+    type: "READING_CIRCLE_CREATED",
+    sourceType: "READING_CIRCLE",
+    sourceId: created.id,
+    dedupeKey: `reading-circle:create:${created.id}`,
   });
 
   revalidatePath("/dashboard/circles");
@@ -290,6 +299,15 @@ export async function joinReadingCircle(circleId: string): Promise<void> {
     });
   });
 
+  await recordActivityEvent({
+    userId,
+    type: "READING_CIRCLE_JOINED",
+    sourceType: "READING_CIRCLE",
+    sourceId: circleId,
+    dedupeKey: `reading-circle:join:${circleId}:${userId}`,
+    bypassDailyCap: true,
+  });
+
   revalidatePath(`/dashboard/circles/${circleId}`);
   revalidatePath("/dashboard/circles");
 }
@@ -355,8 +373,8 @@ export async function createReadingCirclePost(
   const membership = await getMyMembership(circleId, userId);
   if (!membership) throw new Error("Bergabung dulu untuk memposting.");
 
-  await prisma.$transaction(async (tx) => {
-    await tx.readingCirclePost.create({
+  const postId = await prisma.$transaction(async (tx) => {
+    const created = await tx.readingCirclePost.create({
       data: {
         circleId,
         authorId: userId,
@@ -367,11 +385,21 @@ export async function createReadingCirclePost(
         spoilerFromChapter,
         spoilerToChapter,
       },
+      select: { id: true },
     });
     await tx.readingCircle.update({
       where: { id: circleId },
       data: { lastActivityAt: new Date() },
     });
+    return created.id;
+  });
+
+  await recordActivityEvent({
+    userId,
+    type: "READING_CIRCLE_POST_CREATED",
+    sourceType: "READING_CIRCLE_POST",
+    sourceId: postId,
+    dedupeKey: `reading-circle-post:create:${postId}`,
   });
 
   revalidatePath(`/dashboard/circles/${circleId}`);
@@ -403,9 +431,10 @@ export async function createReadingCircleComment(
   const membership = await getMyMembership(post.circleId, userId);
   if (!membership) throw new Error("Bergabung dulu untuk berkomentar.");
 
-  await prisma.$transaction(async (tx) => {
-    await tx.readingCircleComment.create({
+  const commentId = await prisma.$transaction(async (tx) => {
+    const created = await tx.readingCircleComment.create({
       data: { postId, authorId: userId, body: trimmedBody },
+      select: { id: true },
     });
     await tx.readingCirclePost.update({
       where: { id: postId },
@@ -415,6 +444,15 @@ export async function createReadingCircleComment(
       where: { id: post.circleId },
       data: { lastActivityAt: new Date() },
     });
+    return created.id;
+  });
+
+  await recordActivityEvent({
+    userId,
+    type: "READING_CIRCLE_COMMENT_CREATED",
+    sourceType: "READING_CIRCLE_COMMENT",
+    sourceId: commentId,
+    dedupeKey: `reading-circle-comment:create:${commentId}`,
   });
 
   revalidatePath(`/dashboard/circles/${post.circleId}`);

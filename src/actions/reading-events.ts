@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { recordActivityEvent } from "@/lib/leaderboard/record-activity";
 import { requireAuth } from "@/lib/session";
 import { deriveEventStatus } from "@/features/reading-events/lib/derive-status";
 import {
@@ -228,6 +229,14 @@ export async function createReadingEvent(
     return created.id;
   });
 
+  await recordActivityEvent({
+    userId: viewer.id,
+    type: "READING_EVENT_CREATED",
+    sourceType: "READING_EVENT",
+    sourceId: eventId,
+    dedupeKey: `reading-event:create:${eventId}`,
+  });
+
   revalidatePath("/dashboard/events");
 
   return { eventId };
@@ -346,6 +355,15 @@ export async function joinReadingEvent(
       where: { id: eventId },
       data: { participantCount: { increment: 1 } },
     });
+  });
+
+  await recordActivityEvent({
+    userId: viewer.id,
+    type: "READING_EVENT_JOINED",
+    sourceType: "READING_EVENT",
+    sourceId: eventId,
+    dedupeKey: `reading-event:join:${eventId}:${viewer.id}`,
+    bypassDailyCap: true,
   });
 
   revalidatePath("/dashboard/events");

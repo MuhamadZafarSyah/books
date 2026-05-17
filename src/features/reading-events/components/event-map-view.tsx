@@ -66,7 +66,7 @@ export function EventMapView({
         <MapMarker longitude={longitude} latitude={latitude} draggable={false}>
           <MarkerContent>
             <MapPin
-              className="fill-primary shadow-md"
+              className="fill-[#8fb89e] shadow-md"
               size={28}
             />
           </MarkerContent>

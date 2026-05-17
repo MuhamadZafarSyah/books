@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
+import { recordActivityEvent } from "@/lib/leaderboard/record-activity";
 import { profileSlugFor } from "@/lib/public-profile";
 import { requireAuth } from "@/lib/session";
 import {
@@ -253,7 +254,19 @@ export async function upsertBookReview(
   const now = new Date();
   const data = parsed.data;
 
+  // Penanda apakah panggilan ini benar-benar review baru. Hanya pembuatan
+  // pertama yang menghasilkan poin leaderboard (Plan: "edit review = 0").
+  // Disimpan di luar transaksi agar dapat dibaca setelah commit untuk
+  // memutuskan pemanggilan `recordActivityEvent`.
+  let isFirstReview = false;
+
   const review = await prisma.$transaction(async (tx) => {
+    const existingReview = await tx.bookReview.findUnique({
+      where: { userId_bookId: { userId, bookId } },
+      select: { id: true },
+    });
+    isFirstReview = existingReview === null;
+
     const upserted = await tx.bookReview.upsert({
       where: { userId_bookId: { userId, bookId } },
       create: {
@@ -301,6 +314,21 @@ export async function upsertBookReview(
 
     return upserted;
   });
+
+  // `recordActivityEvent` sengaja dipanggil di luar transaksi: pencatatan
+  // leaderboard tidak boleh memblokir commit review utama, dan
+  // `dedupeKey` `book-review:create:${userId}:${bookId}` memastikan
+  // edit ulang tetap idempotent (Plan: "edit review = 0").
+  if (isFirstReview) {
+    await recordActivityEvent({
+      userId,
+      type: "BOOK_REVIEW_CREATED",
+      sourceType: "BOOK_REVIEW",
+      sourceId: review.id,
+      dedupeKey: `book-review:create:${userId}:${bookId}`,
+      bypassDailyCap: true,
+    });
+  }
 
   await revalidateAfterReviewMutation(userId, bookId);
   return { reviewId: review.id };
