@@ -20,6 +20,7 @@ import {
   MapMarker,
   MarkerContent,
   useMap,
+  type MapRef,
 } from "@/components/ui/map";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,7 @@ type EventMapPickerProps = {
  */
 const DEFAULT_CENTER: [number, number] = [110.3695, -7.7956];
 const DEFAULT_ZOOM = 11;
+const FOCUS_ZOOM = 15;
 const SEARCH_DEBOUNCE_MS = 300;
 const LOAD_TIMEOUT_MS = 8000;
 const MIN_QUERY_LENGTH = 2;
@@ -104,6 +106,16 @@ export function EventMapPicker({
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+
+  /**
+   * Ref ke instance MapLibre supaya `handleSelectResult` bisa memanggil
+   * `flyTo` secara imperatif saat user memilih hasil pencarian — efek
+   * yang sama seperti Google Maps yang animate kamera ke titik tujuan.
+   * Sengaja tidak dipakai untuk klik di peta (karena titik klik sudah
+   * berada di tampilan saat itu, fly lagi malah membuat kamera bergerak
+   * tanpa alasan).
+   */
+  const mapRef = useRef<MapRef | null>(null);
 
   const searchListId = useId();
 
@@ -212,6 +224,19 @@ export function EventMapPicker({
       });
       setSearchInput(result.displayName);
       setResults([]);
+
+      // Fly kamera ke titik hasil pencarian. `flyTo` MapLibre menganimasikan
+      // perubahan center + zoom dalam satu gerakan halus. Aman dipanggil
+      // tanpa menunggu `mapLoaded` karena MapLibre antri perintah hingga
+      // style siap; tetapi kita tetap cek `current` untuk menghindari
+      // panggilan saat fallback aktif (peta unmount).
+      mapRef.current?.flyTo({
+        center: [result.lng, result.lat],
+        zoom: FOCUS_ZOOM,
+        speed: 1.4,
+        curve: 1.42,
+        essential: true,
+      });
     },
     [onChange],
   );
@@ -334,7 +359,7 @@ export function EventMapPicker({
             </p>
           </div>
         ) : (
-          <Map viewport={viewport} attributionControl={false}>
+          <Map ref={mapRef} viewport={viewport}>
             <MapControls position="top-right" />
             <MapClickHandler onPick={handleMapPick} disabled={disabled} />
             <MapLoadDetector onLoaded={handleMapLoaded} />
