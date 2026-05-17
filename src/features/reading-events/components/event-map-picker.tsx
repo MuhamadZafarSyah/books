@@ -367,7 +367,7 @@ export function EventMapPicker({
               <MapMarker longitude={longitude} latitude={latitude}>
                 <MarkerContent>
                   <MapPin
-                    className="fill-[#8fb89e] shadow-md"
+                    className="text-black! fill-[#8fb89e]!   shadow-md"
                     size={28}
                   />
                 </MarkerContent>
@@ -379,19 +379,20 @@ export function EventMapPicker({
 
       <Separator />
 
+      <div className="space-y-1">
+        <Label htmlFor={`${searchListId}-address`}>Alamat lokasi</Label>
+        <textarea
+          id={`${searchListId}-address`}
+          value={locationAddress}
+          onChange={(event) => handleManualAddressChange(event.target.value)}
+          placeholder="Contoh: Perpustakaan Nasional, Jakarta"
+          disabled={manualInputsDisabled}
+          readOnly={!loadFailed && mapLoaded}
+          className=
+          "h-fit hide-scrollbar w-full  border border-transparent border-b-input bg-transparent px-0 py-1 text-base transition-[color,border-color] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-b-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-b-destructive md:text-sm dark:aria-invalid:border-b-destructive/50"
+        />
+      </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-        <div className="space-y-1">
-          <Label htmlFor={`${searchListId}-address`}>Alamat lokasi</Label>
-          <Input
-            id={`${searchListId}-address`}
-            value={locationAddress}
-            onChange={(event) => handleManualAddressChange(event.target.value)}
-            placeholder="Contoh: Perpustakaan Nasional, Jakarta"
-            disabled={manualInputsDisabled}
-            readOnly={!loadFailed && mapLoaded}
-            maxLength={200}
-          />
-        </div>
         <div className="space-y-1">
           <Label htmlFor={`${searchListId}-lat`}>Latitude</Label>
           <Input

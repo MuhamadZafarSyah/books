@@ -74,7 +74,13 @@ export function DateTimePicker({
     if (date) {
       nextDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
     } else {
-      nextDate.setHours(0, 0, 0, 0);
+      const fallbackTime = getDefaultTimeForSelectedDate(selectedDate);
+      nextDate.setHours(
+        fallbackTime.getHours(),
+        fallbackTime.getMinutes(),
+        0,
+        0,
+      );
     }
 
     commitValue(nextDate);
@@ -228,4 +234,42 @@ function formatPayloadValue(value: string | Date | undefined): string {
   }
 
   return format(date, "yyyy-MM-dd'T'HH:mm");
+}
+
+function getDefaultTimeForSelectedDate(selectedDate: Date): Date {
+  const roundedNow = roundUpToNextFiveMinutes(new Date());
+  const nextDate = new Date(selectedDate);
+
+  if (isSameCalendarDay(selectedDate, roundedNow)) {
+    return roundedNow;
+  }
+
+  nextDate.setHours(roundedNow.getHours(), roundedNow.getMinutes(), 0, 0);
+  return nextDate;
+}
+
+function roundUpToNextFiveMinutes(date: Date): Date {
+  const rounded = new Date(date);
+  rounded.setSeconds(0, 0);
+
+  const minutes = rounded.getMinutes();
+  const remainder = minutes % 5;
+
+  if (remainder !== 0) {
+    rounded.setMinutes(minutes + (5 - remainder));
+  }
+
+  if (rounded.getTime() <= date.getTime()) {
+    rounded.setMinutes(rounded.getMinutes() + 5);
+  }
+
+  return rounded;
+}
+
+function isSameCalendarDay(left: Date, right: Date): boolean {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }

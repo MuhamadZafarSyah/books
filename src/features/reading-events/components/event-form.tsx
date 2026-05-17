@@ -285,9 +285,8 @@ export function EventForm(props: EventFormProps) {
             <FieldGroup
               id="event-quota"
 
-              label="Kuota peserta"
+              label="Kuota peserta (Termasuk Anda sebagai Host)"
               error={errors.quota?.message}
-              hint="Termasuk Anda sebagai Host."
             >
               <Input
                 id="event-quota"
