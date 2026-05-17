@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  CalendarHeart,
   Home,
   Library,
   LogOut,
@@ -70,6 +71,11 @@ const mainNavItems = [
     title: "Circle Baca",
     href: "/dashboard/circles",
     icon: Users,
+  },
+  {
+    title: "Agenda Baca",
+    href: "/dashboard/events",
+    icon: CalendarHeart,
   },
   {
     title: "Chat",
