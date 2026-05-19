@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/db";
+import { deriveEventStatus } from "@/features/reading-events/lib/derive-status";
+import { getLeaderboardForViewer } from "@/lib/leaderboard/queries";
 import { getCurrentUser } from "@/lib/session";
+import type {
+  DashboardCircleCard,
+  DashboardEventCard,
+  DashboardLeaderboardSnippet,
+} from "@/lib/dashboard/overview-types";
 
 type ProfileUserRecord = {
   id: string;
@@ -149,6 +156,95 @@ export async function getPublicProfileBySlug(slug: string) {
     }),
   ]);
 
+  const now = new Date();
+
+  // Tambahan publik: circle yang dia miliki/ikuti, agenda mendatang yang
+  // dia host atau ikuti, plus rank leaderboard. Diletakkan setelah
+  // `Promise.all` utama agar parallelism awal tetap maksimal.
+  const [circleMemberships, hostedEvents, joinedEvents, leaderboardWeekly, leaderboardAllTime] =
+    await Promise.all([
+      prisma.readingCircleMember.findMany({
+        where: { userId: profile.id, circle: { privacy: "PUBLIC" } },
+        orderBy: { joinedAt: "desc" },
+        take: 4,
+        include: {
+          circle: {
+            select: {
+              id: true,
+              ownerId: true,
+              title: true,
+              bookTitle: true,
+              bookAuthor: true,
+              bookCoverUrl: true,
+              memberCount: true,
+              lastActivityAt: true,
+            },
+          },
+        },
+      }),
+      prisma.readingEvent.findMany({
+        where: { hostId: profile.id, statusFlag: "ACTIVE", endsAt: { gt: now } },
+        orderBy: { startsAt: "asc" },
+        take: 4,
+      }),
+      prisma.readingEvent.findMany({
+        where: {
+          statusFlag: "ACTIVE",
+          endsAt: { gt: now },
+          participants: { some: { userId: profile.id } },
+          NOT: { hostId: profile.id },
+        },
+        orderBy: { startsAt: "asc" },
+        take: 4,
+      }),
+      getLeaderboardForViewer({
+        userId: profile.id,
+        period: "weekly",
+        scope: "overall",
+      }),
+      getLeaderboardForViewer({
+        userId: profile.id,
+        period: "all-time",
+        scope: "overall",
+      }),
+    ]);
+
+  const myCircles: DashboardCircleCard[] = circleMemberships.map((membership) => ({
+    id: membership.circle.id,
+    title: membership.circle.title,
+    bookTitle: membership.circle.bookTitle,
+    bookAuthor: membership.circle.bookAuthor,
+    bookCoverUrl: membership.circle.bookCoverUrl,
+    memberCount: membership.circle.memberCount,
+    lastActivityAt: membership.circle.lastActivityAt
+      ? membership.circle.lastActivityAt.toISOString()
+      : null,
+    isOwner: membership.circle.ownerId === profile.id,
+  }));
+
+  const upcomingEvents: DashboardEventCard[] = [...hostedEvents, ...joinedEvents]
+    .map((event) => ({
+      id: event.id,
+      title: event.title,
+      locationAddress: event.locationAddress,
+      startsAt: event.startsAt.toISOString(),
+      participantCount: event.participantCount,
+      quota: event.quota,
+      status: deriveEventStatus({
+        statusFlag: event.statusFlag,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        participantCount: event.participantCount,
+        quota: event.quota,
+      }),
+      isHost: event.hostId === profile.id,
+    }))
+    .sort(
+      (a, b) =>
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+    )
+    .slice(0, 4);
+
   return {
     user: {
       id: profile.id,
@@ -178,5 +274,9 @@ export async function getPublicProfileBySlug(slug: string) {
     publicShelf: publicShelf.map(serializeUserBook),
     borrowableBooks: borrowableBooks.map(serializeUserBook),
     latestReviews: latestReviews.map(serializeReview),
+    myCircles,
+    upcomingEvents,
+    leaderboardWeekly: leaderboardWeekly satisfies DashboardLeaderboardSnippet,
+    leaderboardAllTime: leaderboardAllTime satisfies DashboardLeaderboardSnippet,
   };
 }
