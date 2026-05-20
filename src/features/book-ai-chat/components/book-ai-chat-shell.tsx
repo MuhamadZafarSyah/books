@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageSquarePlus, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ResizableShell } from "@/components/ui/resizable-shell";
 import { BookAiChatClient } from "@/features/book-ai-chat/components/book-ai-chat-client";
 import { BookAiChatHeader } from "@/features/book-ai-chat/components/book-ai-chat-header";
 import { BookAiChatHistoryDrawer } from "@/features/book-ai-chat/components/book-ai-chat-history-drawer";
@@ -16,34 +17,40 @@ export function BookAiChatShell({ data }: BookAiChatShellProps) {
   const { conversation, history } = data;
   const activeConversationId = conversation?.id ?? null;
 
+  const sidebar = (
+    <BookAiChatSidebar
+      history={history}
+      activeConversationId={activeConversationId}
+    />
+  );
+
+  const main = conversation ? (
+    <>
+      <BookAiChatHeader
+        title={conversation.title}
+        context={conversation.context}
+        openLibraryUrl={conversation.openLibraryUrl}
+        history={history}
+        activeConversationId={conversation.id}
+      />
+      <BookAiChatClient conversation={conversation} />
+    </>
+  ) : (
+    <EmptyMainPanel
+      history={history}
+      activeConversationId={activeConversationId}
+    />
+  );
+
   return (
-    <div className="grid h-full min-h-0 overflow-hidden rounded-2xl border border-border bg-card/70 shadow-sm md:grid-cols-[18rem_minmax(0,1fr)]">
-      <div className="hidden min-h-0 md:block">
-        <BookAiChatSidebar
-          history={history}
-          activeConversationId={activeConversationId}
-        />
-      </div>
-      <section className="flex min-h-0 min-w-0 flex-col">
-        {conversation ? (
-          <>
-            <BookAiChatHeader
-              title={conversation.title}
-              context={conversation.context}
-              openLibraryUrl={conversation.openLibraryUrl}
-              history={history}
-              activeConversationId={conversation.id}
-            />
-            <BookAiChatClient conversation={conversation} />
-          </>
-        ) : (
-          <EmptyMainPanel
-            history={history}
-            activeConversationId={activeConversationId}
-          />
-        )}
-      </section>
-    </div>
+    <ResizableShell
+      storageKey="book-ai-chat-shell"
+      sidebar={sidebar}
+      main={main}
+      defaultSidebarSize={22}
+    minSidebarSize={0}
+      maxSidebarSize={280}
+    />
   );
 }
 

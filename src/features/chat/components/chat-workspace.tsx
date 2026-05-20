@@ -22,6 +22,49 @@ import { toast } from "sonner";
 const TYPING_DEBOUNCE_MS = 600;
 const LAPTOP_QUERY = "(min-width: 1024px)";
 
+// Resizable sidebar — hanya aktif saat sidebar expanded di viewport `lg:` ke
+// atas. Width disimpan ke localStorage agar preferensi user persisten.
+const SIDEBAR_DEFAULT_WIDTH = 256; // 16rem
+const SIDEBAR_COLLAPSED_WIDTH = 64; // 4rem (dipakai oleh mode compact, bukan resize)
+const SIDEBAR_MIN_WIDTH = 0;
+const SIDEBAR_MAX_WIDTH = 320;
+const SIDEBAR_STORAGE_KEY = "chat-workspace:sidebar-width";
+
+// Threshold dan dimensi hit area resize handle.
+//
+// Saat `sidebarWidth` lebih kecil dari threshold (mendekati 0), aside hampir
+// hilang sehingga handle 4-6 px nyaris tidak bisa di-grab. Pada kondisi itu
+// hit area di-expand dan digeser ke dalam panel main supaya tetap mudah
+// di-klik dan cursor `col-resize` selalu kelihatan.
+const SIDEBAR_HIT_BOUNDARY_THRESHOLD = 24;
+const SIDEBAR_HIT_NORMAL = 14; // total hit area (px) saat sidebar terbuka
+const SIDEBAR_HIT_AT_BOUNDARY = 28; // saat sidebar hampir/penuh tertutup
+const SIDEBAR_HIT_OVERLAP_INTO_SIDEBAR = 6; // berapa px hit area menjorok ke arah sidebar
+
+function clampSidebarWidth(value: number) {
+  return Math.min(Math.max(value, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
+}
+
+/**
+ * Hitung posisi + lebar hit area resize handle berbasis lebar sidebar saat ini.
+ *
+ * - Saat `width` cukup besar: handle ramping (14 px) berpusat di garis batas
+ *   antara sidebar dan main, dengan sebagian kecil masuk ke main agar
+ *   cursor `col-resize` tetap mudah ditemukan.
+ * - Saat `width` mendekati 0: handle melebar (28 px) dan posisinya di-anchor
+ *   ke `left: 0` dengan ekspansi ke kanan, sehingga handle secara efektif
+ *   muncul di tepi kiri panel main dan tetap bisa ditarik kembali.
+ */
+function getResizeHandleGeometry(width: number) {
+  const atBoundary = width < SIDEBAR_HIT_BOUNDARY_THRESHOLD;
+  const hitWidth = atBoundary ? SIDEBAR_HIT_AT_BOUNDARY : SIDEBAR_HIT_NORMAL;
+  const left = Math.max(
+    0,
+    width - SIDEBAR_HIT_OVERLAP_INTO_SIDEBAR,
+  );
+  return { atBoundary, hitWidth, left };
+}
+
 function getInitials(user: Pick<ChatUserSummary, "name" | "email">) {
   const source = user.name || user.email?.split("@")[0] || "SG";
   const parts = source.trim().split(/\s+/).filter(Boolean);
@@ -194,6 +237,14 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     initializeWithValue: false,
   });
   const [isConversationListOpen, setIsConversationListOpen] = useState(false);
+  // Resizable sidebar state. `hasMountedShell` digunakan untuk menahan
+  // override inline-style sampai client mount sehingga SSR tetap memakai
+  // class-based grid (`lg:grid-cols-[16rem_...]`) dan tidak ada flicker
+  // saat hydrate.
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [hasMountedShell, setHasMountedShell] = useState(false);
+  const sidebarWidthRef = useRef(SIDEBAR_DEFAULT_WIDTH);
   const [conversations, setConversations] = useState(initialData.conversations);
   const [messagesByConversation, setMessagesByConversation] = useState(initialData.messagesByConversation);
   const [activeConversationId, setActiveConversationId] = useState(initialData.activeConversationId ?? initialData.conversations[0]?.id ?? "");
@@ -228,6 +279,72 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
       }
     });
   }, [activeConversationId]);
+
+  // Mount: baca preferensi width dari localStorage. Defer setState ke
+  // microtask supaya tidak melanggar `react-hooks/set-state-in-effect`.
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      try {
+        const raw = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+        const parsed = raw ? Number.parseFloat(raw) : Number.NaN;
+        if (Number.isFinite(parsed)) {
+          const clamped = clampSidebarWidth(parsed);
+          sidebarWidthRef.current = clamped;
+          setSidebarWidth(clamped);
+        }
+      } catch {
+        // localStorage bisa tidak tersedia di mode private; aman diabaikan.
+      }
+      setHasMountedShell(true);
+    });
+  }, []);
+
+  /**
+   * Drag handle untuk resize sidebar chat.
+   *
+   * Memakai pointer events agar mendukung mouse + touch + pen. Listener
+   * dipasang di `window` selama drag berlangsung sehingga gerakan keluar
+   * dari handle (misalnya di atas iframe map) tetap tertangkap. Saat
+   * pointerup, width final di-persist ke `localStorage`.
+   */
+  const handleSidebarPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0 && event.pointerType === "mouse") return;
+      event.preventDefault();
+
+      const startX = event.clientX;
+      const startWidth = sidebarWidthRef.current;
+
+      const handleMove = (moveEvent: PointerEvent) => {
+        const next = clampSidebarWidth(
+          startWidth + (moveEvent.clientX - startX),
+        );
+        sidebarWidthRef.current = next;
+        setSidebarWidth(next);
+      };
+
+      const handleUp = () => {
+        window.removeEventListener("pointermove", handleMove);
+        window.removeEventListener("pointerup", handleUp);
+        window.removeEventListener("pointercancel", handleUp);
+        setIsResizingSidebar(false);
+        try {
+          window.localStorage.setItem(
+            SIDEBAR_STORAGE_KEY,
+            String(sidebarWidthRef.current),
+          );
+        } catch {
+          // Aman diabaikan.
+        }
+      };
+
+      setIsResizingSidebar(true);
+      window.addEventListener("pointermove", handleMove);
+      window.addEventListener("pointerup", handleUp);
+      window.addEventListener("pointercancel", handleUp);
+    },
+    [],
+  );
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -368,24 +485,65 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
     }
   };
 
+  // Aktifkan resize hanya saat: client sudah mount + di viewport laptop +
+  // tidak compact (compact memakai collapse icon-only sendiri) + sidebar
+  // saat ini expanded. Pada kondisi lain, fallback ke class-based grid
+  // existing (`lg:grid-cols-[16rem_...]` / drawer overlay) supaya UX
+  // mobile dan dock kompak tidak berubah.
+  const isResizableSidebar =
+    hasMountedShell && isLaptopUp && !compact && showConversationListDetails;
+
+  const sidebarWidthForLayout = isResizableSidebar
+    ? sidebarWidth
+    : compact && !showConversationListDetails
+      ? SIDEBAR_COLLAPSED_WIDTH
+      : SIDEBAR_DEFAULT_WIDTH;
+
+  const inlineGridStyle = isResizableSidebar
+    ? { gridTemplateColumns: `${sidebarWidthForLayout}px minmax(0, 1fr)` }
+    : undefined;
+
   return (
     <div
       className={cn(
-        "grid min-h-0 rounded-lg overflow-hidden border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)] transition-[grid-template-columns] duration-300 ease-out",
+        "relative grid min-h-0 rounded-lg overflow-hidden border border-border bg-card/90 shadow-[0_18px_54px_rgba(36,26,18,0.08)]",
+        // Saat sedang drag, jangan animasikan grid-template-columns supaya
+        // gerakan terasa langsung mengikuti pointer.
+        !isResizingSidebar &&
+          "transition-[grid-template-columns] duration-300 ease-out",
         compact
-          ? cn("h-full", showConversationListDetails ? "grid-cols-[16rem_minmax(0,1fr)]" : "grid-cols-[4rem_minmax(0,1fr)]")
+          ? cn(
+              "h-full",
+              showConversationListDetails
+                ? "grid-cols-[16rem_minmax(0,1fr)]"
+                : "grid-cols-[4rem_minmax(0,1fr)]",
+            )
           : cn(
-            "flex-1 lg:grid-cols-[16rem_minmax(0,1fr)]",
-            isConversationListOpen ? "grid-cols-[16rem_minmax(0,1fr)]" : "grid-cols-[0rem_minmax(0,1fr)]",
-          ),
+              "flex-1",
+              // Class fallback hanya dipakai saat `isResizableSidebar` false
+              // (mis. SSR awal atau breakpoint < lg). Ketika `inlineGridStyle`
+              // ada, ia akan menimpa `grid-cols-*` lewat priority style.
+              "lg:grid-cols-[16rem_minmax(0,1fr)]",
+              isConversationListOpen
+                ? "grid-cols-[16rem_minmax(0,1fr)]"
+                : "grid-cols-[0rem_minmax(0,1fr)]",
+            ),
       )}
+      style={inlineGridStyle}
     >
-      <aside className="min-h-0 overflow-hidden">
+      <aside className="relative min-h-0 overflow-hidden">
         <div
           className={cn(
             "flex h-full flex-col border-r border-border bg-secondary/35 transition-[width,transform] duration-300 ease-out",
             compact ? (showConversationListDetails ? "w-64" : "w-16") : "w-64 lg:w-auto",
             !compact && (showConversationListDetails ? "translate-x-0" : "-translate-x-full lg:translate-x-0"),
+            // Saat resize aktif, biarkan child mengikuti container width
+            // (yang dikontrol grid-template-columns inline) tanpa class
+            // `lg:w-auto` yang sudah default di non-compact.
+            isResizableSidebar && "w-full lg:w-full",
+            // Hilangkan transisi width saat sedang drag agar gerakan
+            // sidebar mengikuti pointer secara real-time.
+            isResizingSidebar && "transition-none",
           )}
         >
           <div
@@ -605,6 +763,103 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
           </div>
         )}
       </section>
+
+      {/*
+        Resize handle: dipasang di level grid container (bukan di dalam
+        `<aside>`) supaya tidak ter-clip oleh `overflow-hidden` aside saat
+        sidebar `width = 0`. Posisi dan lebar hit area dihitung adaptif via
+        `getResizeHandleGeometry` agar tetap mudah di-grab walau sidebar
+        sudah tertutup penuh.
+      */}
+      {isResizableSidebar ? (
+        <ResizeHandle
+          width={sidebarWidth}
+          isResizing={isResizingSidebar}
+          onPointerDown={handleSidebarPointerDown}
+          onKeyAdjust={(delta) => {
+            const next = clampSidebarWidth(sidebarWidthRef.current + delta);
+            sidebarWidthRef.current = next;
+            setSidebarWidth(next);
+            try {
+              window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+            } catch {
+              // Aman diabaikan.
+            }
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Handle resize sidebar yang adaptif terhadap lebar saat ini.
+ *
+ * - Posisi `left` mengikuti tepi kanan sidebar dengan offset kecil agar
+ *   sebagian hit area menjorok ke main panel — memudahkan grab.
+ * - Saat sidebar mendekati 0 px (`atBoundary === true`), hit area melebar
+ *   2× dan ditarik penuh ke `left: 0` sehingga handle "duduk" di tepi
+ *   kiri panel main dan tetap bisa di-drag kembali ke kanan untuk
+ *   membuka sidebar.
+ * - Visual grip tetap ramping (1×32 px) agar tidak terasa berat; yang
+ *   dilebarkan hanyalah area tap.
+ */
+function ResizeHandle({
+  width,
+  isResizing,
+  onPointerDown,
+  onKeyAdjust,
+}: {
+  width: number;
+  isResizing: boolean;
+  onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onKeyAdjust: (delta: number) => void;
+}) {
+  const { atBoundary, hitWidth, left } = getResizeHandleGeometry(width);
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-valuenow={width}
+      aria-valuemin={SIDEBAR_MIN_WIDTH}
+      aria-valuemax={SIDEBAR_MAX_WIDTH}
+      aria-label="Geser untuk mengubah lebar daftar chat"
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        onKeyAdjust(event.key === "ArrowRight" ? 16 : -16);
+      }}
+      // Pakai inline style untuk lebar/posisi karena nilainya dinamis
+      // dan diluar palet Tailwind. Z-index tinggi memastikan handle ada
+      // di atas konten panel main.
+      style={{
+        left: `${left}px`,
+        width: `${hitWidth}px`,
+      }}
+      className={cn(
+        "group absolute inset-y-0 z-20 flex cursor-col-resize items-center justify-center",
+        "focus-visible:outline-none",
+        // Saat sedang drag, jangan animasikan posisi/lebar handle agar
+        // gerakan terasa langsung.
+        !isResizing && "transition-[left,width] duration-200 ease-out",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-8 w-1 rounded-full transition-colors duration-200",
+          // Saat di boundary (sidebar tertutup), grip lebih kontras
+          // sebagai affordance bahwa sidebar masih bisa ditarik kembali.
+          atBoundary
+            ? "bg-primary/55 group-hover:bg-primary/80"
+            : "bg-border group-hover:bg-primary/50",
+          "group-focus-visible:bg-primary/70",
+          isResizing && "bg-primary/70",
+        )}
+      />
     </div>
   );
 }

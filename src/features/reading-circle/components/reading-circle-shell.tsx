@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageSquarePlus, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ResizableShell } from "@/components/ui/resizable-shell";
 import { ReadingCircleHistoryDrawer } from "@/features/reading-circle/components/reading-circle-history-drawer";
 import { ReadingCircleRoom } from "@/features/reading-circle/components/reading-circle-room";
 import { ReadingCircleSidebar } from "@/features/reading-circle/components/reading-circle-sidebar";
@@ -15,25 +16,26 @@ export function ReadingCircleShell({ data }: ReadingCircleShellProps) {
   const { circle, history } = data;
   const activeCircleId = circle?.id ?? null;
 
+  const sidebar = (
+    <ReadingCircleSidebar history={history} activeCircleId={activeCircleId} />
+  );
+
+  const main = circle ? (
+    <ReadingCircleRoom initial={circle} history={history} />
+  ) : (
+    <EmptyMainPanel history={history} activeCircleId={activeCircleId} />
+  );
+
   return (
-    <div className="grid h-full min-h-0 overflow-hidden rounded-2xl border border-border bg-card/70 shadow-sm md:grid-cols-[18rem_minmax(0,1fr)]">
-      <div className="hidden min-h-0 md:block">
-        <ReadingCircleSidebar
-          history={history}
-          activeCircleId={activeCircleId}
-        />
-      </div>
-      <section className="flex min-h-0 min-w-0 flex-col">
-        {circle ? (
-          <ReadingCircleRoom initial={circle} history={history} />
-        ) : (
-          <EmptyMainPanel
-            history={history}
-            activeCircleId={activeCircleId}
-          />
-        )}
-      </section>
-    </div>
+    <ResizableShell
+      storageKey="reading-circle-shell"
+      sidebar={sidebar}
+      className="overflow-x-hidden"
+      main={main}
+      defaultSidebarSize={22}
+      minSidebarSize={0}
+      maxSidebarSize={280}
+    />
   );
 }
 
