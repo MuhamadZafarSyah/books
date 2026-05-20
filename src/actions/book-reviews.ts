@@ -202,7 +202,7 @@ export async function getBookReviewPageData(
   const book = await prisma.book.findUnique({ where: { id: bookId } });
   if (!book) return null;
 
-  const [allReviews, currentUserReview] = await Promise.all([
+  const [allReviews, currentUserReview, currentUserShelf] = await Promise.all([
     prisma.bookReview.findMany({
       where: { bookId, visibility: "PUBLIC" },
       orderBy: { createdAt: "desc" },
@@ -212,6 +212,19 @@ export async function getBookReviewPageData(
     prisma.bookReview.findUnique({
       where: { userId_bookId: { userId, bookId } },
       include: { user: { select: PUBLIC_AUTHOR_SELECT } },
+    }),
+    prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
+      select: {
+        id: true,
+        status: true,
+        visibility: true,
+        progress: true,
+        isBorrowable: true,
+        startedAt: true,
+        finishedAt: true,
+        updatedAt: true,
+      },
     }),
   ]);
 
@@ -224,6 +237,22 @@ export async function getBookReviewPageData(
     summary,
     currentUserReview: currentUserReview
       ? serializeBookReview(currentUserReview)
+      : null,
+    currentUserShelf: currentUserShelf
+      ? {
+          id: currentUserShelf.id,
+          status: currentUserShelf.status,
+          visibility: currentUserShelf.visibility,
+          progress: currentUserShelf.progress,
+          isBorrowable: currentUserShelf.isBorrowable,
+          startedAt: currentUserShelf.startedAt
+            ? currentUserShelf.startedAt.toISOString()
+            : null,
+          finishedAt: currentUserShelf.finishedAt
+            ? currentUserShelf.finishedAt.toISOString()
+            : null,
+          updatedAt: currentUserShelf.updatedAt.toISOString(),
+        }
       : null,
     reviews: otherReviews.map(serializeBookReview),
   };

@@ -62,8 +62,11 @@ model UserFollow {
 
 enum UserBookStatus {
   WANT_TO_READ
+  TO_BE_READ
   READING
   FINISHED
+  ON_HOLD
+  ABANDONED
 }
 
 enum UserBookVisibility {

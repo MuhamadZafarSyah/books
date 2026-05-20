@@ -8,14 +8,21 @@
 import type {
   UserActivitySourceType,
   UserActivityType,
+  UserBookStatus,
 } from "@prisma/client";
 
 export type DashboardBookCard = {
+  /** ID buku global (`Book.id`) — dipakai untuk navigasi & dialog rak. */
   id: string;
+  /**
+   * ID baris rak (`UserBook.id`) bila card berasal dari rak pengguna.
+   * `null` untuk card yang tidak terikat ke rak (mis. trending public).
+   */
+  shelfRowId: string | null;
   title: string;
   author: string;
   coverUrl: string | null;
-  status: "WANT_TO_READ" | "READING" | "FINISHED";
+  status: UserBookStatus;
   progress: number | null;
   updatedAt: string;
 };

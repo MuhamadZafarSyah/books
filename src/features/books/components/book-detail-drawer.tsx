@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   BookText,
+  BookmarkPlus,
   Building2,
   Calendar,
   Ellipsis,
@@ -35,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookCover } from "@/features/books/components/book-cover";
 import { CreateCircleDialog } from "@/features/reading-circle/components/create-circle-dialog";
+import { BookShelfStatusDialog } from "@/features/user-books/components/book-shelf-status-dialog";
 import type { BookResult } from "@/features/books/types";
 import { cn } from "@/lib/utils";
 
@@ -190,56 +192,89 @@ function DetailBody({ book }: { book: BookResult }) {
 
 function DetailActions({ book }: { book: BookResult }) {
   const [open, setOpen] = useState(false);
+  const [shelfDialogOpen, setShelfDialogOpen] = useState(false);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full cursor-pointer justify-between rounded-full"
-          size="sm"
-        >
-          <span>Actions</span>
-          <Ellipsis aria-hidden="true" className="size-3.5" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(18rem,calc(100vw-3rem))] p-1.5">
-        <div className="grid gap-1">
-          <CreateCircleDialog
-            book={book}
-            buttonClassName="w-full cursor-pointer justify-start rounded-[1rem] px-3"
-            buttonLabel="Buat circle"
-            buttonVariant="ghost"
-            onTriggerClick={() => setOpen(false)}
-          />
-          <ReviewsCta
-            book={book}
-            className="justify-start rounded-[1rem] px-3"
-            label="Lihat review"
-            onAction={() => setOpen(false)}
-            variant="ghost"
-          />
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
           <Button
-            asChild
-            variant="ghost"
-            className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+            type="button"
+            variant="outline"
+            className="w-full cursor-pointer justify-between rounded-full"
             size="sm"
           >
-            <a
-              href={book.openLibraryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Buka ${book.title} di Open Library`}
-              onClick={() => setOpen(false)}
-            >
-              <ExternalLink aria-hidden="true" className="size-3.5" />
-              Buka di Open Library
-            </a>
+            <span>Actions</span>
+            <Ellipsis aria-hidden="true" className="size-3.5" />
           </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="w-[min(18rem,calc(100vw-3rem))] p-1.5"
+        >
+          <div className="grid gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+              onClick={() => {
+                setOpen(false);
+                // Defer pembukaan dialog ke microtask supaya Radix
+                // popover sempat menutup dulu — mencegah konflik focus
+                // trap antara popover dan dialog.
+                setTimeout(() => setShelfDialogOpen(true), 0);
+              }}
+            >
+              <BookmarkPlus aria-hidden="true" className="size-3.5" />
+              Atur status & visibilitas
+            </Button>
+            <CreateCircleDialog
+              book={book}
+              buttonClassName="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+              buttonLabel="Buat circle"
+              buttonVariant="ghost"
+              onTriggerClick={() => setOpen(false)}
+            />
+            <ReviewsCta
+              book={book}
+              className="justify-start rounded-[1rem] px-3"
+              label="Lihat review"
+              onAction={() => setOpen(false)}
+              variant="ghost"
+            />
+            <Button
+              asChild
+              variant="ghost"
+              className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+              size="sm"
+            >
+              <a
+                href={book.openLibraryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Buka ${book.title} di Open Library`}
+                onClick={() => setOpen(false)}
+              >
+                <ExternalLink aria-hidden="true" className="size-3.5" />
+                Buka di Open Library
+              </a>
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/*
+        Dialog "Atur rak" dirender sebagai sibling dari popover (controlled)
+        agar bisa dipanggil dari menu tanpa nested dialog di dalam popover —
+        nesting tersebut sering bermasalah dengan focus management Radix.
+      */}
+      <BookShelfStatusDialog
+        source={{ kind: "result", book }}
+        open={shelfDialogOpen}
+        onOpenChange={setShelfDialogOpen}
+      />
+    </>
   );
 }
 

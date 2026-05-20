@@ -4,13 +4,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { BookCover } from "@/features/dashboard/components/overview/book-cover";
 import { SectionHeading } from "@/features/dashboard/components/overview/section-heading";
 import { cn } from "@/lib/utils";
+import { USER_BOOK_STATUS_META } from "@/lib/user-books/status";
 import type { DashboardBookCard } from "@/lib/dashboard/overview-types";
-
-const STATUS_LABEL: Record<DashboardBookCard["status"], string> = {
-  WANT_TO_READ: "Ingin dibaca",
-  READING: "Sedang dibaca",
-  FINISHED: "Selesai",
-};
 
 type ProfileRecentBooksProps = {
   books: DashboardBookCard[];
@@ -56,7 +51,7 @@ export function ProfileRecentBooks({ books }: ProfileRecentBooksProps) {
                     {book.title}
                   </p>
                   <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    {STATUS_LABEL[book.status]}
+                    {USER_BOOK_STATUS_META[book.status].shortLabel}
                   </p>
                 </Link>
               </li>
