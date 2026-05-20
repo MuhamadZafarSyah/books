@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Star } from "lucide-react";
 
@@ -63,11 +65,13 @@ export function TrendingBooks() {
             </span>
 
             {/* Cover */}
-            <div className="h-[48px] w-[32px] shrink-0 overflow-hidden rounded shadow-sm">
-              <img
+            <div className="relative h-[48px] w-[32px] shrink-0 overflow-hidden rounded shadow-sm">
+              <Image
                 src={book.cover}
                 alt={`Cover ${book.title}`}
-                className="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                fill
+                sizes="32px"
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>
 

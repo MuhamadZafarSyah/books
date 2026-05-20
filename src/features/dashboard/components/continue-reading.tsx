@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ChevronRight } from "lucide-react";
@@ -116,10 +118,12 @@ function BookProgressCard({
         <div className="flex gap-3 p-4">
           {/* Book Cover */}
           <div className="relative h-[120px] w-[80px] shrink-0 overflow-hidden rounded-md shadow-md">
-            <img
+            <Image
               src={book.cover}
               alt={`Cover buku ${book.title}`}
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              sizes="80px"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {/* Progress overlay */}
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent px-1.5 pb-1.5 pt-4">

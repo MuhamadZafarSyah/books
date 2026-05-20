@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { BookOpen } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -17,12 +18,12 @@ type BookCoverProps = {
 export function BookCover({ src, alt, className }: BookCoverProps) {
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={src}
         alt={alt}
-        className={cn("size-full object-cover", className)}
-        loading="lazy"
+        fill
+        sizes="(max-width: 640px) 45vw, 180px"
+        className={cn("object-cover", className)}
       />
     );
   }

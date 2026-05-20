@@ -1,4 +1,6 @@
 
+import Image from "next/image";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { BookOpen, Star } from "lucide-react";
@@ -139,10 +141,12 @@ export function ProfileStats({
                   >
                     <div className="relative aspect-2/3 overflow-hidden rounded-md bg-primary/10 shadow-md transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
                       {book.cover ? (
-                        <img
+                        <Image
                           src={book.cover}
                           alt={`Cover ${book.title}`}
-                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          sizes="90px"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
                         <div className="flex size-full flex-col justify-between bg-linear-to-br from-primary to-[#8B6F4E] p-2 text-primary-foreground">

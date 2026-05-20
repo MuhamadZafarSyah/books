@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -149,11 +151,13 @@ function FeedCard({ item }: { item: (typeof feedItems)[number] }) {
         {/* Content */}
         <div className="mt-3 flex gap-3">
           {/* Book cover thumbnail */}
-          <div className="hidden h-[90px] w-[60px] shrink-0 overflow-hidden rounded-md shadow-sm sm:block">
-            <img
+          <div className="relative hidden h-[90px] w-[60px] shrink-0 overflow-hidden rounded-md shadow-sm sm:block">
+            <Image
               src={item.book.cover}
               alt={`Cover ${item.book.title}`}
-              className="size-full object-cover"
+              fill
+              sizes="60px"
+              className="object-cover"
             />
           </div>
 
