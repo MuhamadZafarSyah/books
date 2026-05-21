@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { UserBookStatus, UserBookVisibility } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
@@ -29,6 +30,18 @@ const updateUserBookStatusSchema = z.object({
 export type UpdateUserBookStatusInput = z.infer<
   typeof updateUserBookStatusSchema
 >;
+
+export type MyShelfBoardItem = {
+  bookId: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  status: UserBookStatus;
+  visibility: UserBookVisibility;
+  isBorrowable: boolean;
+  progress: number | null;
+  updatedAt: string;
+};
 
 async function requireUserId() {
   const user = await requireAuth();
@@ -163,8 +176,8 @@ export async function removeUserBook(bookId: string): Promise<void> {
  */
 export async function getMyShelfState(bookId: string): Promise<{
   id: string;
-  status: import("@prisma/client").UserBookStatus;
-  visibility: import("@prisma/client").UserBookVisibility;
+  status: UserBookStatus;
+  visibility: UserBookVisibility;
   isBorrowable: boolean;
   progress: number | null;
   startedAt: string | null;
@@ -199,4 +212,40 @@ export async function getMyShelfState(bookId: string): Promise<{
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+/**
+ * Snapshot mini-kanban rak viewer. Dipakai oleh drawer status supaya saat
+ * dibuka pengguna langsung melihat tumpukan buku yang sudah tersimpan pada
+ * tiap status baca, bukan hanya status buku yang sedang diedit.
+ */
+export async function getMyShelfBoard(): Promise<MyShelfBoardItem[]> {
+  const userId = await requireUserId();
+
+  const rows = await prisma.userBook.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      book: {
+        select: {
+          id: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+        },
+      },
+    },
+  });
+
+  return rows.map((row) => ({
+    bookId: row.book.id,
+    title: row.book.title,
+    author: row.book.author,
+    coverUrl: row.book.coverUrl,
+    status: row.status,
+    visibility: row.visibility,
+    isBorrowable: row.isBorrowable,
+    progress: row.progress,
+    updatedAt: row.updatedAt.toISOString(),
+  }));
 }
