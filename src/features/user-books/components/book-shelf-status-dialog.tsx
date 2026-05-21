@@ -23,6 +23,7 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type Active,
   type DragEndEvent,
   type DragMoveEvent,
   type DragStartEvent,
@@ -157,17 +158,16 @@ const EMPTY_COLUMN_COPY: Record<UserBookStatus, string> = {
   ON_HOLD: "Kosong",
   ABANDONED: "Kosong",
 };
+
 const VISIBLE_STACK_SIZE = 5;
 const SWIPE_THRESHOLD = 72;
-const DRAG_LONG_PRESS_MS = 2000;
-const DRAG_LONG_PRESS_TOLERANCE = 10;
 const SWIPE_TRACK_LIMIT = 154;
-const DRAG_SCROLL_EDGE_SIZE = 76;
-const DRAG_SCROLL_IDLE_MS = 90;
-const DRAG_SCROLL_MAX_SPEED = 12;
-const DRAG_SCROLL_MIN_MOVEMENT = 2.4;
-const DRAG_SCROLL_MOVEMENT_MULTIPLIER = 0.75;
-const DRAG_SCROLL_SIDE_ZONE = 0.42;
+const DRAG_LONG_PRESS_MS = 600;
+const DRAG_LONG_PRESS_TOLERANCE = 8;
+const DRAG_SCROLL_EDGE_THRESHOLD = 24;
+const DRAG_SCROLL_MAX_SPEED = 16;
+const STACK_TRANSITION =
+  "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease-out";
 
 /**
  * Sheet "Atur rak" yang reusable di seluruh aplikasi.
@@ -190,11 +190,6 @@ export function BookShelfStatusDialog({
   const router = useRouter();
   const boardScrollAreaRef = useRef<HTMLDivElement | null>(null);
   const dragScrollFrameRef = useRef<number | null>(null);
-  const dragScrollIdleTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const dragScrollSpeedRef = useRef(0);
-  const lastDragClientXRef = useRef<number | null>(null);
   const isControlled = typeof controlledOpen === "boolean";
   const [internalOpen, setInternalOpen] = useState(false);
   const open = isControlled ? controlledOpen! : internalOpen;
@@ -250,66 +245,72 @@ export function BookShelfStatusDialog({
   );
 
   const stopDragScroll = useCallback(() => {
-    dragScrollSpeedRef.current = 0;
-    if (dragScrollIdleTimeoutRef.current !== null) {
-      clearTimeout(dragScrollIdleTimeoutRef.current);
-      dragScrollIdleTimeoutRef.current = null;
-    }
     if (dragScrollFrameRef.current !== null) {
       window.cancelAnimationFrame(dragScrollFrameRef.current);
       dragScrollFrameRef.current = null;
     }
   }, []);
 
-  const resetDragScroll = useCallback(() => {
-    stopDragScroll();
-    lastDragClientXRef.current = null;
-  }, [stopDragScroll]);
-
-  const startDragScroll = useCallback(() => {
-    if (dragScrollFrameRef.current !== null) return;
-
-    const step = () => {
-      const viewport = getBoardScrollViewport(boardScrollAreaRef.current);
-      const speed = dragScrollSpeedRef.current;
-
-      if (!viewport || speed === 0) {
-        dragScrollFrameRef.current = null;
+  /**
+   * Dijalankan tiap kali pointer drag bergerak. Mengukur posisi rect
+   * elemen yang sedang di-drag (dari dnd-kit) terhadap viewport scroll
+   * area. Scroll baru dipicu saat sisi kartu menyentuh ujung area scroll
+   * (overshoot), bukan oleh delta pergerakan pointer. Pendekatan ini
+   * membuat hit-box terasa pas dan secara alami mendukung perubahan arah:
+   * saat user geser balik, sisi kartu yang menyentuh ujung berbeda akan
+   * memberi kecepatan arah berlawanan.
+   */
+  const ensureDragScrollLoop = useCallback(
+    (active: Active | null) => {
+      if (!active) {
+        stopDragScroll();
         return;
       }
 
-      viewport.scrollLeft += speed;
+      if (dragScrollFrameRef.current !== null) return;
+
+      const step = () => {
+        const viewport = getBoardScrollViewport(boardScrollAreaRef.current);
+        if (!viewport) {
+          dragScrollFrameRef.current = null;
+          return;
+        }
+
+        const dragRect = active.rect.current.translated;
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+
+        if (!dragRect || maxScroll <= 0) {
+          dragScrollFrameRef.current = window.requestAnimationFrame(step);
+          return;
+        }
+
+        const viewportRect = viewport.getBoundingClientRect();
+        const speed = overshootScrollSpeed({
+          dragLeft: dragRect.left,
+          dragRight: dragRect.left + dragRect.width,
+          maxScroll,
+          scrollLeft: viewport.scrollLeft,
+          viewportLeft: viewportRect.left,
+          viewportRight: viewportRect.right,
+        });
+
+        if (speed !== 0) {
+          viewport.scrollLeft = clamp(
+            viewport.scrollLeft + speed,
+            0,
+            maxScroll,
+          );
+        }
+
+        dragScrollFrameRef.current = window.requestAnimationFrame(step);
+      };
+
       dragScrollFrameRef.current = window.requestAnimationFrame(step);
-    };
-
-    dragScrollFrameRef.current = window.requestAnimationFrame(step);
-  }, []);
-
-  const updateDragScroll = useCallback(
-    (speed: number) => {
-      dragScrollSpeedRef.current = speed;
-      if (dragScrollIdleTimeoutRef.current !== null) {
-        clearTimeout(dragScrollIdleTimeoutRef.current);
-        dragScrollIdleTimeoutRef.current = null;
-      }
-
-      if (speed === 0) {
-        stopDragScroll();
-        return;
-      }
-
-      if (dragScrollFrameRef.current === null) {
-        startDragScroll();
-      }
-
-      dragScrollIdleTimeoutRef.current = setTimeout(() => {
-        stopDragScroll();
-      }, DRAG_SCROLL_IDLE_MS);
     },
-    [startDragScroll, stopDragScroll],
+    [stopDragScroll],
   );
 
-  useEffect(() => () => resetDragScroll(), [resetDragScroll]);
+  useEffect(() => () => stopDragScroll(), [stopDragScroll]);
 
   // Reset cache state saat buku berubah. Defer ke microtask supaya patuh
   // aturan `react-hooks/set-state-in-effect` (React 19 strict).
@@ -492,39 +493,16 @@ export function BookShelfStatusDialog({
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    resetDragScroll();
-    lastDragClientXRef.current = activatorClientX(event.activatorEvent);
     if (typeof event.active.id === "string") setActiveId(event.active.id);
+    ensureDragScrollLoop(event.active);
   };
 
   const handleDragMove = (event: DragMoveEvent) => {
-    const viewport = getBoardScrollViewport(boardScrollAreaRef.current);
-    const dragX = dragClientX(event);
-
-    if (!viewport || dragX === null) {
-      updateDragScroll(0);
-      return;
-    }
-
-    const movementX =
-      lastDragClientXRef.current === null
-        ? 0
-        : dragX - lastDragClientXRef.current;
-    lastDragClientXRef.current = dragX;
-
-    updateDragScroll(
-      horizontalDragScrollSpeed({
-        maxScrollLeft: viewport.scrollWidth - viewport.clientWidth,
-        movementX,
-        pointerX: dragX,
-        rect: viewport.getBoundingClientRect(),
-        scrollLeft: viewport.scrollLeft,
-      }),
-    );
+    ensureDragScrollLoop(event.active);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    resetDragScroll();
+    stopDragScroll();
     setActiveId(null);
 
     const draggedBookId = bookIdFromDraggableId(event.active.id);
@@ -534,18 +512,18 @@ export function BookShelfStatusDialog({
     const item = board.find((book) => book.bookId === draggedBookId);
     if (!item) return;
 
-    if (nextStatus && nextStatus !== item.status) {
+    if (nextStatus !== item.status) {
       persistStatus(item, nextStatus);
       return;
     }
 
-    if (nextStatus && item.isTransient) {
+    if (item.isTransient) {
       persistStatus(item, nextStatus);
     }
   };
 
   const handleDragCancel = () => {
-    resetDragScroll();
+    stopDragScroll();
     setActiveId(null);
   };
 
@@ -565,14 +543,14 @@ export function BookShelfStatusDialog({
         className="max-h-[92vh] w-full border-border/70 bg-background p-0"
       >
         <TooltipProvider>
-          <div className="mx-auto flex h-[min(86vh,760px)] w-full max-w-[1440px] flex-col px-4 sm:px-6 lg:px-8">
-            <SheetHeader className="px-0 pb-3 pt-5 text-left">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mx-auto flex h-[min(86vh,760px)] w-full max-w-[1440px] flex-col gap-4 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
+            <SheetHeader className="px-0 py-0 text-left">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <SheetTitle className="font-heading text-2xl normal-case tracking-normal text-foreground">
+                  <SheetTitle className="font-heading text-xl normal-case tracking-normal text-foreground sm:text-2xl">
                     Rak baca
                   </SheetTitle>
-                  <SheetDescription>
+                  <SheetDescription className="text-sm">
                     Tumpukan buku pribadi berdasarkan status baca.
                   </SheetDescription>
                 </div>
@@ -587,7 +565,7 @@ export function BookShelfStatusDialog({
                   >
                     <SelectTrigger
                       aria-label="Visibilitas"
-                      className="h-9 w-[min(100vw-2rem,11rem)] rounded-full"
+                      className="h-9 w-[10.5rem] rounded-full border-border/70"
                     >
                       <SelectValue placeholder="Visibilitas" />
                     </SelectTrigger>
@@ -623,7 +601,7 @@ export function BookShelfStatusDialog({
                           isBusy
                         }
                         onClick={handleRemove}
-                        className="cursor-pointer rounded-full text-muted-foreground hover:text-destructive"
+                        className="cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         aria-label="Hapus buku aktif dari rak"
                       >
                         {removePending ? (
@@ -643,8 +621,8 @@ export function BookShelfStatusDialog({
                     <Button
                       type="button"
                       size="icon-sm"
-                      variant="outline"
-                      className="cursor-pointer rounded-full"
+                      variant="ghost"
+                      className="cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       aria-label="Tutup rak baca"
                     >
                       <X aria-hidden="true" className="size-4" />
@@ -655,7 +633,10 @@ export function BookShelfStatusDialog({
             </SheetHeader>
 
             {resolveError ? (
-              <p role="alert" className="py-6 text-sm text-destructive">
+              <p
+                role="alert"
+                className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              >
                 {resolveError}
               </p>
             ) : resolving || loadedSourceKey !== sourceKey ? (
@@ -671,15 +652,16 @@ export function BookShelfStatusDialog({
                 onDragCancel={handleDragCancel}
               >
                 <div ref={boardScrollAreaRef} className="min-h-0 flex-1">
-                  <ScrollArea className="h-full overflow-hidden rounded-[1.25rem] border border-border/60 bg-card/35 overscroll-contain">
-                    <div className="flex min-w-max gap-0 p-3 sm:p-4">
-                      {columns.map((column) => (
+                  <ScrollArea className="h-full overscroll-contain">
+                    <div className="flex min-w-max items-start gap-0 pb-2">
+                      {columns.map((column, index) => (
                         <ShelfStatusColumn
                           key={column.status}
                           status={column.status}
                           books={column.books}
                           disabled={isBusy}
                           activeBookId={shelf?.bookId ?? null}
+                          showLeftDivider={index > 0}
                           onRotateDeck={rotateDeck}
                         />
                       ))}
@@ -694,7 +676,7 @@ export function BookShelfStatusDialog({
               </DndContext>
             )}
 
-            <div className="flex min-h-10 items-center justify-end py-3">
+            <div className="flex min-h-5 items-center justify-end">
               {savePending ? (
                 <span
                   aria-live="polite"
@@ -717,12 +699,14 @@ function ShelfStatusColumn({
   books,
   disabled,
   activeBookId,
+  showLeftDivider,
   onRotateDeck,
 }: {
   status: UserBookStatus;
   books: ShelfBoardItem[];
   disabled: boolean;
   activeBookId: string | null;
+  showLeftDivider: boolean;
   onRotateDeck: (status: UserBookStatus, direction: 1 | -1) => void;
 }) {
   const meta = USER_BOOK_STATUS_META[status];
@@ -738,46 +722,41 @@ function ShelfStatusColumn({
       ref={setNodeRef}
       aria-label={meta.label}
       className={cn(
-        "flex min-h-[20rem] w-36 shrink-0 flex-col border-l border-border/60 px-2.5 first:border-l-0 sm:w-40 sm:px-3 lg:w-44",
-        isOver && "bg-primary/5 ring-1 ring-primary/20",
+        "flex w-36 shrink-0 flex-col px-2.5 py-2 transition-colors duration-200 sm:w-40 sm:px-3 lg:w-44",
+        showLeftDivider && "border-l border-border/40",
+        isOver && "bg-primary/5",
       )}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-foreground">
-            {meta.shortLabel}
-          </h3>
-          <p className="text-[11px] text-muted-foreground">{books.length}</p>
-        </div>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h3 className="truncate text-sm font-medium text-foreground">
+          {meta.shortLabel}
+        </h3>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {books.length}
+        </span>
       </div>
 
       {books.length === 0 ? (
-        <div className="flex min-h-44 flex-1 items-center justify-center rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground">
+        <div className="flex h-60 items-center justify-center rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground sm:h-64">
           {EMPTY_COLUMN_COPY[status]}
         </div>
       ) : (
         <div className="relative mx-auto h-60 w-full sm:h-64">
           {visibleBooks
-            .map((book, index) =>
-              index === 0 ? (
-                <DraggableBookTile
-                  key={book.bookId}
-                  item={book}
-                  stackIndex={index}
-                  stackTotal={visibleBooks.length}
-                  disabled={disabled}
-                  isActiveBook={book.bookId === activeBookId}
-                  onSwipe={(direction) => onRotateDeck(status, direction)}
-                />
-              ) : (
-                <BookStackCard
-                  key={book.bookId}
-                  item={book}
-                  stackIndex={index}
-                  stackTotal={visibleBooks.length}
-                />
-              ),
-            )
+            .map((book, slotIndex) => (
+              <ShelfBookSlot
+                key={book.bookId}
+                item={book}
+                slotIndex={slotIndex}
+                stackTotal={visibleBooks.length}
+                isTop={slotIndex === 0}
+                disabled={disabled}
+                isActiveBook={book.bookId === activeBookId}
+                onSwipe={(direction) => onRotateDeck(status, direction)}
+              />
+            ))
+            // Render belakang dulu supaya kartu paling depan punya z-index DOM
+            // tertinggi (selain z-index inline) dan menerima event pointer.
             .reverse()}
         </div>
       )}
@@ -785,17 +764,28 @@ function ShelfStatusColumn({
   );
 }
 
-function DraggableBookTile({
+/**
+ * Slot kartu di dalam stack. Komponen ini selalu sama untuk semua posisi
+ * (slot 0..N-1) supaya React tidak perlu unmount/mount ketika user me-rotate
+ * deck - itulah yang dulu menyebabkan transisi swipe terlihat glitch.
+ *
+ * - `isTop` mengontrol apakah slot mengaktifkan gesture swipe + kanban drag.
+ * - Wrapper memakai CSS transition pada `transform` sehingga perpindahan
+ *   antar slot terlihat seperti deck native saat `slotIndex` berubah.
+ */
+function ShelfBookSlot({
   item,
-  stackIndex,
+  slotIndex,
   stackTotal,
+  isTop,
   disabled,
   isActiveBook,
   onSwipe,
 }: {
   item: ShelfBoardItem;
-  stackIndex: number;
+  slotIndex: number;
   stackTotal: number;
+  isTop: boolean;
   disabled: boolean;
   isActiveBook: boolean;
   onSwipe: (direction: 1 | -1) => void;
@@ -803,73 +793,108 @@ function DraggableBookTile({
   const { attributes, isDragging, listeners, setNodeRef } = useDraggable({
     id: draggableIdFor(item.bookId),
     data: { item },
-    disabled,
+    disabled: disabled || !isTop,
   });
   const cardRef = useRef<HTMLButtonElement | null>(null);
   const gestureRef = useRef<CardGesture | null>(null);
-  const swipeTweenRef = useRef<gsap.core.Tween | null>(null);
+  const swipeAnimRef = useRef<gsap.core.Tween | gsap.core.Timeline | null>(
+    null,
+  );
   const [dragReady, setDragReady] = useState(false);
-  const style: CSSProperties = {
-    zIndex: stackTotal - stackIndex,
-    transform: stackTransform(stackIndex),
+
+  const wrapperStyle: CSSProperties = {
+    zIndex: stackTotal - slotIndex,
+    transform: stackTransform(slotIndex),
+    transition: STACK_TRANSITION,
   };
+
   const dragPointerDown = listeners?.onPointerDown as
     | ((event: ReactPointerEvent<HTMLButtonElement>) => void)
     | undefined;
-  const dragListeners = {
-    ...listeners,
-    onPointerDown: undefined,
-  };
+  const restListeners = isTop
+    ? { ...listeners, onPointerDown: undefined }
+    : undefined;
 
+  // Inisialisasi posisi default sekali saat slot dibuat dan bersihkan
+  // animasi yang masih berjalan saat slot benar-benar di-unmount. Sengaja
+  // tidak bergantung pada `isTop` / `item.bookId` supaya cleanup tidak
+  // mematikan timeline swipe yang sedang berjalan ketika React me-rotate
+  // deck di tengah animasi - itulah yang menyebabkan kartu "menghilang"
+  // alih-alih meluncur ke belakang.
   useEffect(() => {
     const card = cardRef.current;
     if (card) {
-      gsap.set(card, {
-        force3D: true,
-        opacity: 1,
-        rotate: 0,
-        scale: 1,
-        x: 0,
-        y: 0,
-      });
+      gsap.set(card, { force3D: true });
     }
-
     return () => {
-      clearGestureTimer(gestureRef.current);
-      swipeTweenRef.current?.kill();
+      if (gestureRef.current?.timer) clearTimeout(gestureRef.current.timer);
+      gestureRef.current = null;
+      swipeAnimRef.current?.kill();
       if (card) gsap.killTweensOf(card);
     };
   }, []);
 
+  const releaseCapture = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Capture mungkin sudah dilepas otomatis (mis. pointerup native).
+    }
+  };
+
+  /**
+   * Animasi swipe ke belakang stack. Strategi:
+   * 1. Lempar kartu sedikit keluar (arc) tanpa hilang opacity-nya, supaya
+   *    user melihat kartu benar-benar berpindah - bukan hilang.
+   * 2. Sembunyikan singkat sambil rotate deck (ganti slotIndex). Wrapper
+   *    sudah ditata `transition-transform` jadi posisi otomatis menggeser.
+   * 3. Bawa kartu kembali ke transform identitas; sekarang transform
+   *    tersebut diaplikasikan oleh wrapper di slot baru (paling belakang).
+   */
   const finishSwipe = (direction: 1 | -1) => {
     const card = cardRef.current;
+    setDragReady(false);
     if (!card) {
       onSwipe(direction);
       return;
     }
-    const exitX = direction > 0 ? -190 : 190;
-    setDragReady(false);
-    swipeTweenRef.current?.kill();
-    swipeTweenRef.current = gsap.to(card, {
-      duration: 0.34,
-      ease: "power4.out",
+
+    swipeAnimRef.current?.kill();
+    const exitX = direction > 0 ? -180 : 180;
+    const exitRotate = direction > 0 ? -12 : 12;
+
+    const tl = gsap.timeline();
+    tl.to(card, {
+      duration: 0.26,
+      ease: "power2.in",
+      overwrite: "auto",
+      rotate: exitRotate,
+      scale: 0.9,
+      x: exitX,
+      y: -8,
+    });
+    // Sembunyikan sebentar saat wrapper berpindah ke slot belakang. Tanpa
+    // jeda ini, perpindahan terasa "teleport". Dengan opacity 0 singkat,
+    // mata user fokus pada kartu yang naik dari belakang.
+    tl.to(card, {
+      duration: 0.12,
+      ease: "power1.in",
       opacity: 0,
       overwrite: "auto",
-      rotate: direction > 0 ? -16 : 16,
-      scale: 0.96,
-      x: exitX,
-      y: -12,
-      onComplete: () => {
-        onSwipe(direction);
-        gsap.set(card, {
-          opacity: 1,
-          rotate: 0,
-          scale: 1,
-          x: 0,
-          y: 0,
-        });
-      },
     });
+    tl.add(() => onSwipe(direction));
+    tl.set(card, { rotate: 0, scale: 1, x: 0, y: 0 });
+    // Fade in kembali setelah CSS transition wrapper selesai meluncurkan
+    // kartu ke posisi belakang.
+    tl.to(card, {
+      delay: 0.18,
+      duration: 0.26,
+      ease: "power2.out",
+      opacity: 1,
+      overwrite: "auto",
+    });
+
+    swipeAnimRef.current = tl;
   };
 
   const snapBack = () => {
@@ -877,9 +902,9 @@ function DraggableBookTile({
     setDragReady(false);
     if (!card) return;
 
-    swipeTweenRef.current?.kill();
-    swipeTweenRef.current = gsap.to(card, {
-      duration: 0.52,
+    swipeAnimRef.current?.kill();
+    swipeAnimRef.current = gsap.to(card, {
+      duration: 0.5,
       ease: "elastic.out(1, 0.72)",
       opacity: 1,
       overwrite: "auto",
@@ -891,10 +916,20 @@ function DraggableBookTile({
   };
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (disabled) return;
+    if (disabled || !isTop) return;
+
+    // Ambil pointer capture supaya event tetap mengalir saat kursor keluar
+    // dari kartu - ini yang membuat swipe pada laptop sebelumnya gagal.
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Browser tertentu menolak setPointerCapture pada elemen non-button;
+      // fallback aman: gesture tetap berjalan via event normal.
+    }
+
     const card = cardRef.current;
     if (card) {
-      swipeTweenRef.current?.kill();
+      swipeAnimRef.current?.kill();
       gsap.set(card, {
         opacity: 1,
         rotate: 0,
@@ -920,9 +955,16 @@ function DraggableBookTile({
       if (gesture.moved) return;
       gesture.dragReady = true;
       setDragReady(true);
+      // Saat dnd mengambil alih, lepas pointer capture supaya overlay dnd
+      // bisa menerima pointer event di seluruh viewport.
+      try {
+        cardRef.current?.releasePointerCapture(gesture.pointerId);
+      } catch {
+        // Sudah dilepas otomatis, abaikan.
+      }
       if (cardRef.current) {
         gsap.to(cardRef.current, {
-          duration: 0.24,
+          duration: 0.22,
           ease: "power3.out",
           overwrite: "auto",
           scale: 1.035,
@@ -947,16 +989,21 @@ function DraggableBookTile({
 
     if (Math.abs(x) > 4 || Math.abs(y) > 4) {
       gesture.moved = true;
-      clearGestureTimer(gesture);
+      if (gesture.timer) {
+        clearTimeout(gesture.timer);
+        gesture.timer = null;
+      }
     }
 
     if (Math.abs(x) > 3 && Math.abs(x) > Math.abs(y) * 0.7) {
-      event.preventDefault();
+      // Cegah scroll vertikal native saat user melakukan swipe horizontal
+      // pada touch device, supaya kartu mengikuti jari dengan presisi.
+      if (event.cancelable) event.preventDefault();
       const clampedX = clamp(x, -SWIPE_TRACK_LIMIT, SWIPE_TRACK_LIMIT);
       const swipeProgress = Math.min(1, Math.abs(clampedX) / SWIPE_THRESHOLD);
 
       if (cardRef.current) {
-        swipeTweenRef.current = gsap.to(cardRef.current, {
+        swipeAnimRef.current = gsap.to(cardRef.current, {
           duration: 0.16,
           ease: "power3.out",
           opacity: 1,
@@ -984,8 +1031,12 @@ function DraggableBookTile({
     const gesture = gestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
 
-    clearGestureTimer(gesture);
+    if (gesture.timer) {
+      clearTimeout(gesture.timer);
+      gesture.timer = null;
+    }
     gestureRef.current = null;
+    releaseCapture(event);
 
     if (gesture.dragReady) {
       setDragReady(false);
@@ -1004,17 +1055,24 @@ function DraggableBookTile({
     snapBack();
   };
 
-  const handlePointerCancel = () => {
-    clearGestureTimer(gestureRef.current);
+  const handlePointerCancel = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (gestureRef.current?.timer) clearTimeout(gestureRef.current.timer);
     gestureRef.current = null;
+    releaseCapture(event);
     snapBack();
   };
 
+  const interactive = isTop && !disabled;
+  const meta = USER_BOOK_STATUS_META[item.status];
+  const visibilityMeta = USER_BOOK_VISIBILITY_META[item.visibility];
+
   return (
     <div
-      ref={setNodeRef}
-      className="absolute left-1/2 top-2 w-[6.15rem] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[6.8rem]"
-      style={style}
+      ref={isTop ? setNodeRef : undefined}
+      className="absolute left-1/2 top-2 w-[6.15rem] sm:w-[6.8rem]"
+      style={wrapperStyle}
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -1022,75 +1080,48 @@ function DraggableBookTile({
             type="button"
             variant="ghost"
             size="icon"
-            disabled={disabled}
-            aria-label={`${item.title}, ${USER_BOOK_STATUS_META[item.status].label}`}
+            disabled={!interactive}
+            aria-label={`${item.title}, ${meta.label}`}
             className={cn(
-              "relative aspect-[2/3] h-auto w-full cursor-grab touch-none select-none overflow-hidden rounded-md border border-border/60 bg-muted p-0 shadow-sm",
-              "transition-[border-color,box-shadow,opacity] duration-200 ease-out hover:border-primary/50 hover:bg-muted hover:shadow-md active:cursor-grabbing",
-              isActiveBook && "ring-2 ring-primary/35 ring-offset-2",
+              "relative aspect-[2/3] h-auto w-full overflow-hidden rounded-md border border-border/60 bg-muted p-0 shadow-sm",
+              "transition-[border-color,box-shadow,opacity] duration-200 ease-out",
+              interactive
+                ? "cursor-grab touch-none select-none hover:border-primary/50 hover:shadow-md active:cursor-grabbing"
+                : "pointer-events-none",
+              !isTop && slotIndex > 2 && "opacity-85",
+              isActiveBook && interactive && "ring-2 ring-primary/35 ring-offset-2",
               dragReady && "border-primary/60 shadow-lg shadow-primary/10",
               isDragging && "opacity-35",
             )}
             ref={cardRef}
-            {...attributes}
-            {...dragListeners}
-            onPointerCancel={handlePointerCancel}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+            {...(interactive ? attributes : {})}
+            {...(interactive ? restListeners : {})}
+            onPointerCancel={interactive ? handlePointerCancel : undefined}
+            onPointerDown={interactive ? handlePointerDown : undefined}
+            onPointerMove={interactive ? handlePointerMove : undefined}
+            onPointerUp={interactive ? handlePointerUp : undefined}
           >
             <BookCoverImage src={item.coverUrl} title={item.title} />
             <span className="sr-only">{item.title}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="block max-w-64 text-left">
-          <span className="block font-medium">{item.title}</span>
-          <span className="mt-0.5 block text-background/75">
-            {item.author}
-          </span>
-          <span className="mt-1 block text-background/75">
-            {USER_BOOK_STATUS_META[item.status].label} -{" "}
-            {USER_BOOK_VISIBILITY_META[item.visibility].label}
-          </span>
-          {item.progress !== null ? (
+        {isTop ? (
+          <TooltipContent side="top" className="block max-w-64 text-left">
+            <span className="block font-medium">{item.title}</span>
             <span className="mt-0.5 block text-background/75">
-              Progres {item.progress}%
+              {item.author}
             </span>
-          ) : null}
-        </TooltipContent>
+            <span className="mt-1 block text-background/75">
+              {meta.label} - {visibilityMeta.label}
+            </span>
+            {item.progress !== null ? (
+              <span className="mt-0.5 block text-background/75">
+                Progres {item.progress}%
+              </span>
+            ) : null}
+          </TooltipContent>
+        ) : null}
       </Tooltip>
-    </div>
-  );
-}
-
-function BookStackCard({
-  item,
-  stackIndex,
-  stackTotal,
-}: {
-  item: ShelfBoardItem;
-  stackIndex: number;
-  stackTotal: number;
-}) {
-  const style: CSSProperties = {
-    zIndex: stackTotal - stackIndex,
-    transform: stackTransform(stackIndex),
-  };
-
-  return (
-    <div
-      className="pointer-events-none absolute left-1/2 top-2 w-[6.15rem] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[6.8rem]"
-      style={style}
-      aria-hidden="true"
-    >
-      <div
-        className={cn(
-          "relative aspect-[2/3] w-full overflow-hidden rounded-md border border-border/55 bg-muted shadow-sm",
-          stackIndex > 2 && "opacity-80",
-        )}
-      >
-        <BookCoverImage src={item.coverUrl} title={item.title} />
-      </div>
     </div>
   );
 }
@@ -1104,24 +1135,18 @@ function BookTilePreview({ item }: { item: ShelfBoardItem }) {
 }
 
 function stackTransform(index: number) {
-  const offsetX = [0, 13, -13, 21, -21][index] ?? 0;
-  const offsetY = [0, 13, 25, 37, 49][index] ?? 0;
+  const offsetX = [0, 12, -12, 20, -20][index] ?? 0;
+  const offsetY = [0, 12, 24, 36, 48][index] ?? 0;
   const scale = [1, 0.96, 0.92, 0.88, 0.84][index] ?? 0.84;
-  const rotation = [0, 4, -4, 6, -6][index] ?? 0;
+  const rotation = [0, 3.5, -3.5, 5.5, -5.5][index] ?? 0;
 
-  return `translateX(calc(-50% + ${offsetX}px)) translateY(${offsetY}px) scale(${scale}) rotate(${rotation}deg)`;
+  return `translate3d(calc(-50% + ${offsetX}px), ${offsetY}px, 0) scale(${scale}) rotate(${rotation}deg)`;
 }
 
 function swipeDirectionFor(delta: { x: number; y: number }) {
   if (Math.abs(delta.x) < SWIPE_THRESHOLD) return null;
   if (Math.abs(delta.x) < Math.abs(delta.y) * 1.25) return null;
   return delta.x < 0 ? 1 : -1;
-}
-
-function clearGestureTimer(gesture: CardGesture | null) {
-  if (!gesture?.timer) return;
-  clearTimeout(gesture.timer);
-  gesture.timer = null;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -1134,89 +1159,55 @@ function getBoardScrollViewport(root: HTMLDivElement | null) {
   );
 }
 
-function dragClientX(event: DragMoveEvent) {
-  const startX = activatorClientX(event.activatorEvent);
-  return startX === null ? null : startX + event.delta.x;
-}
-
-function activatorClientX(event: Event) {
-  if (event instanceof MouseEvent || event instanceof PointerEvent) {
-    return event.clientX;
-  }
-
-  if (typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
-    const touch = event.touches.item(0) ?? event.changedTouches.item(0);
-    return touch?.clientX ?? null;
-  }
-
-  return null;
-}
-
-function horizontalDragScrollSpeed({
-  maxScrollLeft,
-  movementX,
-  pointerX,
-  rect,
+/**
+ * Hitung kecepatan auto-scroll berdasarkan seberapa jauh sisi kartu yang
+ * sedang di-drag melewati ujung viewport. Tidak ada scroll bila kartu masih
+ * berada di dalam viewport - jadi hit-box scroll persis menyentuh ujung
+ * layar. Karena perhitungannya berbasis posisi rect, perubahan arah drag
+ * otomatis ditangani: rect bergeser ke sisi lain, edge yang mengalami
+ * overshoot berganti, kecepatan otomatis berlawanan tanda.
+ */
+function overshootScrollSpeed({
+  dragLeft,
+  dragRight,
+  maxScroll,
   scrollLeft,
+  viewportLeft,
+  viewportRight,
 }: {
-  maxScrollLeft: number;
-  movementX: number;
-  pointerX: number;
-  rect: DOMRect;
+  dragLeft: number;
+  dragRight: number;
+  maxScroll: number;
   scrollLeft: number;
+  viewportLeft: number;
+  viewportRight: number;
 }) {
-  if (maxScrollLeft <= 0) return 0;
+  if (maxScroll <= 0) return 0;
 
-  const direction = Math.sign(movementX);
-  if (direction === 0 || Math.abs(movementX) < DRAG_SCROLL_MIN_MOVEMENT) {
-    return 0;
+  const overshootRight = dragRight - viewportRight;
+  if (overshootRight > -DRAG_SCROLL_EDGE_THRESHOLD && scrollLeft < maxScroll) {
+    const intensity =
+      Math.max(0, overshootRight + DRAG_SCROLL_EDGE_THRESHOLD) /
+      DRAG_SCROLL_EDGE_THRESHOLD;
+    if (intensity > 0) {
+      const speed = Math.ceil(
+        clamp(intensity, 0.1, 1.4) * DRAG_SCROLL_MAX_SPEED,
+      );
+      return Math.min(speed, maxScroll - scrollLeft);
+    }
   }
 
-  const leftDistance = pointerX - rect.left;
-  const rightDistance = rect.right - pointerX;
-  const sideZoneWidth = rect.width * DRAG_SCROLL_SIDE_ZONE;
-  const leftZoneEnd = rect.left + sideZoneWidth;
-  const rightZoneStart = rect.right - sideZoneWidth;
-  const movementSpeed = clamp(
-    Math.abs(movementX) * DRAG_SCROLL_MOVEMENT_MULTIPLIER + 3,
-    2,
-    DRAG_SCROLL_MAX_SPEED,
-  );
-
-  if (direction > 0 && scrollLeft < maxScrollLeft) {
-    if (pointerX < rightZoneStart && rightDistance >= DRAG_SCROLL_EDGE_SIZE) {
-      return 0;
+  const overshootLeft = viewportLeft - dragLeft;
+  if (overshootLeft > -DRAG_SCROLL_EDGE_THRESHOLD && scrollLeft > 0) {
+    const intensity =
+      Math.max(0, overshootLeft + DRAG_SCROLL_EDGE_THRESHOLD) /
+      DRAG_SCROLL_EDGE_THRESHOLD;
+    if (intensity > 0) {
+      const speed = Math.ceil(
+        clamp(intensity, 0.1, 1.4) * DRAG_SCROLL_MAX_SPEED,
+      );
+      return -Math.min(speed, scrollLeft);
     }
-
-    const zoneProgress = clamp(
-      (pointerX - rightZoneStart) / sideZoneWidth,
-      0,
-      1,
-    );
-    const edgeProgress =
-      1 -
-      clamp(rightDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
-    const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
-    const zoneSpeed = movementSpeed * clamp(zoneProgress, 0.25, 1);
-    const remainingScroll = maxScrollLeft - scrollLeft;
-
-    return Math.ceil(
-      Math.min(Math.max(zoneSpeed, edgeSpeed), remainingScroll),
-    );
-  }
-
-  if (direction < 0 && scrollLeft > 0) {
-    if (pointerX > leftZoneEnd && leftDistance >= DRAG_SCROLL_EDGE_SIZE) {
-      return 0;
-    }
-
-    const zoneProgress = clamp((leftZoneEnd - pointerX) / sideZoneWidth, 0, 1);
-    const edgeProgress =
-      1 - clamp(leftDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
-    const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
-    const zoneSpeed = movementSpeed * clamp(zoneProgress, 0.25, 1);
-
-    return -Math.ceil(Math.min(Math.max(zoneSpeed, edgeSpeed), scrollLeft));
   }
 
   return 0;
@@ -1268,22 +1259,28 @@ function BookCoverImage({
 
 function ShelfBoardSkeleton() {
   return (
-    <div className="min-h-0 flex-1 overflow-hidden rounded-[1.25rem] border border-border/60 bg-card/35 p-3 sm:p-4">
-      <div className="flex min-w-max gap-0">
-        {USER_BOOK_STATUS_VALUES.map((status) => (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-w-max gap-0 pb-2">
+        {USER_BOOK_STATUS_VALUES.map((status, index) => (
           <div
             key={status}
-            className="min-h-[20rem] w-36 shrink-0 border-l border-border/60 px-2.5 first:border-l-0 sm:w-40 sm:px-3 lg:w-44"
+            className={cn(
+              "w-36 shrink-0 px-2.5 py-2 sm:w-40 sm:px-3 lg:w-44",
+              index > 0 && "border-l border-border/40",
+            )}
           >
-            <Skeleton className="mb-3 h-4 w-20 rounded-sm" />
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <Skeleton className="h-4 w-20 rounded-sm" />
+              <Skeleton className="h-3 w-5 rounded-sm" />
+            </div>
             <div className="relative mx-auto h-60 w-full sm:h-64">
-              {Array.from({ length: 5 }).map((_, index) => (
+              {Array.from({ length: 5 }).map((_, slotIndex) => (
                 <Skeleton
-                  key={index}
+                  key={slotIndex}
                   className="absolute left-1/2 top-2 aspect-[2/3] w-[6.15rem] rounded-md sm:w-[6.8rem]"
                   style={{
-                    zIndex: 5 - index,
-                    transform: stackTransform(index),
+                    zIndex: 5 - slotIndex,
+                    transform: stackTransform(slotIndex),
                   }}
                 />
               ))}
