@@ -162,9 +162,11 @@ const SWIPE_THRESHOLD = 72;
 const DRAG_LONG_PRESS_MS = 2000;
 const DRAG_LONG_PRESS_TOLERANCE = 10;
 const SWIPE_TRACK_LIMIT = 154;
-const DRAG_SCROLL_EDGE_SIZE = 72;
-const DRAG_SCROLL_DIRECTION_ZONE = 0.38;
+const DRAG_SCROLL_EDGE_SIZE = 86;
+const DRAG_SCROLL_IDLE_MS = 120;
 const DRAG_SCROLL_MAX_SPEED = 18;
+const DRAG_SCROLL_MIN_MOVEMENT = 0.8;
+const DRAG_SCROLL_MOVEMENT_MULTIPLIER = 1.45;
 
 /**
  * Drawer "Atur rak" yang reusable di seluruh aplikasi.
@@ -187,6 +189,9 @@ export function BookShelfStatusDialog({
   const router = useRouter();
   const boardScrollAreaRef = useRef<HTMLDivElement | null>(null);
   const dragScrollFrameRef = useRef<number | null>(null);
+  const dragScrollIdleTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const dragScrollSpeedRef = useRef(0);
   const lastDragClientXRef = useRef<number | null>(null);
   const isControlled = typeof controlledOpen === "boolean";
@@ -245,12 +250,20 @@ export function BookShelfStatusDialog({
 
   const stopDragScroll = useCallback(() => {
     dragScrollSpeedRef.current = 0;
-    lastDragClientXRef.current = null;
+    if (dragScrollIdleTimeoutRef.current !== null) {
+      clearTimeout(dragScrollIdleTimeoutRef.current);
+      dragScrollIdleTimeoutRef.current = null;
+    }
     if (dragScrollFrameRef.current !== null) {
       window.cancelAnimationFrame(dragScrollFrameRef.current);
       dragScrollFrameRef.current = null;
     }
   }, []);
+
+  const resetDragScroll = useCallback(() => {
+    stopDragScroll();
+    lastDragClientXRef.current = null;
+  }, [stopDragScroll]);
 
   const startDragScroll = useCallback(() => {
     if (dragScrollFrameRef.current !== null) return;
@@ -274,6 +287,10 @@ export function BookShelfStatusDialog({
   const updateDragScroll = useCallback(
     (speed: number) => {
       dragScrollSpeedRef.current = speed;
+      if (dragScrollIdleTimeoutRef.current !== null) {
+        clearTimeout(dragScrollIdleTimeoutRef.current);
+        dragScrollIdleTimeoutRef.current = null;
+      }
 
       if (speed === 0) {
         stopDragScroll();
@@ -283,11 +300,15 @@ export function BookShelfStatusDialog({
       if (dragScrollFrameRef.current === null) {
         startDragScroll();
       }
+
+      dragScrollIdleTimeoutRef.current = setTimeout(() => {
+        stopDragScroll();
+      }, DRAG_SCROLL_IDLE_MS);
     },
     [startDragScroll, stopDragScroll],
   );
 
-  useEffect(() => () => stopDragScroll(), [stopDragScroll]);
+  useEffect(() => () => resetDragScroll(), [resetDragScroll]);
 
   // Reset cache state saat buku berubah. Defer ke microtask supaya patuh
   // aturan `react-hooks/set-state-in-effect` (React 19 strict).
@@ -470,7 +491,7 @@ export function BookShelfStatusDialog({
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    stopDragScroll();
+    resetDragScroll();
     lastDragClientXRef.current = activatorClientX(event.activatorEvent);
     if (typeof event.active.id === "string") setActiveId(event.active.id);
   };
@@ -502,7 +523,7 @@ export function BookShelfStatusDialog({
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    stopDragScroll();
+    resetDragScroll();
     setActiveId(null);
 
     const draggedBookId = bookIdFromDraggableId(event.active.id);
@@ -523,7 +544,7 @@ export function BookShelfStatusDialog({
   };
 
   const handleDragCancel = () => {
-    stopDragScroll();
+    resetDragScroll();
     setActiveId(null);
   };
 
@@ -1141,45 +1162,39 @@ function horizontalDragScrollSpeed({
 }) {
   if (maxScrollLeft <= 0) return 0;
 
+  const direction = Math.sign(movementX);
+  if (direction === 0 || Math.abs(movementX) < DRAG_SCROLL_MIN_MOVEMENT) {
+    return 0;
+  }
+
   const leftDistance = pointerX - rect.left;
   const rightDistance = rect.right - pointerX;
-  const directionZoneWidth = rect.width * DRAG_SCROLL_DIRECTION_ZONE;
-  const leftDirectionEnd = rect.left + directionZoneWidth;
-  const rightDirectionStart = rect.right - directionZoneWidth;
+  const movementSpeed = clamp(
+    Math.abs(movementX) * DRAG_SCROLL_MOVEMENT_MULTIPLIER + 3,
+    4,
+    DRAG_SCROLL_MAX_SPEED,
+  );
 
-  if (
-    scrollLeft < maxScrollLeft &&
-    (rightDistance < DRAG_SCROLL_EDGE_SIZE ||
-      (movementX > 0 && pointerX > rightDirectionStart))
-  ) {
+  if (direction > 0 && scrollLeft < maxScrollLeft) {
     const edgeProgress =
       1 -
       clamp(rightDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
-    const directionProgress =
-      movementX > 0
-        ? clamp(
-            (pointerX - rightDirectionStart) / directionZoneWidth,
-            0,
-            1,
-          ) * 0.72
-        : 0;
-    const progress = Math.max(edgeProgress, directionProgress);
-    return Math.ceil(progress * DRAG_SCROLL_MAX_SPEED);
+    const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
+    const remainingScroll = maxScrollLeft - scrollLeft;
+
+    return Math.ceil(
+      Math.min(Math.max(movementSpeed, edgeSpeed), remainingScroll),
+    );
   }
 
-  if (
-    scrollLeft > 0 &&
-    (leftDistance < DRAG_SCROLL_EDGE_SIZE ||
-      (movementX < 0 && pointerX < leftDirectionEnd))
-  ) {
+  if (direction < 0 && scrollLeft > 0) {
     const edgeProgress =
       1 - clamp(leftDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
-    const directionProgress =
-      movementX < 0
-        ? clamp((leftDirectionEnd - pointerX) / directionZoneWidth, 0, 1) * 0.72
-        : 0;
-    const progress = Math.max(edgeProgress, directionProgress);
-    return -Math.ceil(progress * DRAG_SCROLL_MAX_SPEED);
+    const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
+
+    return -Math.ceil(
+      Math.min(Math.max(movementSpeed, edgeSpeed), scrollLeft),
+    );
   }
 
   return 0;
