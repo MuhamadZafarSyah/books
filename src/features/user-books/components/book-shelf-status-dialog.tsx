@@ -188,6 +188,7 @@ export function BookShelfStatusDialog({
   const boardScrollAreaRef = useRef<HTMLDivElement | null>(null);
   const dragScrollFrameRef = useRef<number | null>(null);
   const dragScrollSpeedRef = useRef(0);
+  const lastDragClientXRef = useRef<number | null>(null);
   const isControlled = typeof controlledOpen === "boolean";
   const [internalOpen, setInternalOpen] = useState(false);
   const open = isControlled ? controlledOpen! : internalOpen;
@@ -244,6 +245,7 @@ export function BookShelfStatusDialog({
 
   const stopDragScroll = useCallback(() => {
     dragScrollSpeedRef.current = 0;
+    lastDragClientXRef.current = null;
     if (dragScrollFrameRef.current !== null) {
       window.cancelAnimationFrame(dragScrollFrameRef.current);
       dragScrollFrameRef.current = null;
@@ -469,6 +471,7 @@ export function BookShelfStatusDialog({
 
   const handleDragStart = (event: DragStartEvent) => {
     stopDragScroll();
+    lastDragClientXRef.current = activatorClientX(event.activatorEvent);
     if (typeof event.active.id === "string") setActiveId(event.active.id);
   };
 
@@ -481,10 +484,16 @@ export function BookShelfStatusDialog({
       return;
     }
 
+    const movementX =
+      lastDragClientXRef.current === null
+        ? 0
+        : dragX - lastDragClientXRef.current;
+    lastDragClientXRef.current = dragX;
+
     updateDragScroll(
       horizontalDragScrollSpeed({
-        deltaX: event.delta.x,
         maxScrollLeft: viewport.scrollWidth - viewport.clientWidth,
+        movementX,
         pointerX: dragX,
         rect: viewport.getBoundingClientRect(),
         scrollLeft: viewport.scrollLeft,
@@ -1118,14 +1127,14 @@ function activatorClientX(event: Event) {
 }
 
 function horizontalDragScrollSpeed({
-  deltaX,
   maxScrollLeft,
+  movementX,
   pointerX,
   rect,
   scrollLeft,
 }: {
-  deltaX: number;
   maxScrollLeft: number;
+  movementX: number;
   pointerX: number;
   rect: DOMRect;
   scrollLeft: number;
@@ -1141,13 +1150,13 @@ function horizontalDragScrollSpeed({
   if (
     scrollLeft < maxScrollLeft &&
     (rightDistance < DRAG_SCROLL_EDGE_SIZE ||
-      (deltaX > 0 && pointerX > rightDirectionStart))
+      (movementX > 0 && pointerX > rightDirectionStart))
   ) {
     const edgeProgress =
       1 -
       clamp(rightDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
     const directionProgress =
-      deltaX > 0
+      movementX > 0
         ? clamp(
             (pointerX - rightDirectionStart) / directionZoneWidth,
             0,
@@ -1161,12 +1170,12 @@ function horizontalDragScrollSpeed({
   if (
     scrollLeft > 0 &&
     (leftDistance < DRAG_SCROLL_EDGE_SIZE ||
-      (deltaX < 0 && pointerX < leftDirectionEnd))
+      (movementX < 0 && pointerX < leftDirectionEnd))
   ) {
     const edgeProgress =
       1 - clamp(leftDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
     const directionProgress =
-      deltaX < 0
+      movementX < 0
         ? clamp((leftDirectionEnd - pointerX) / directionZoneWidth, 0, 1) * 0.72
         : 0;
     const progress = Math.max(edgeProgress, directionProgress);
