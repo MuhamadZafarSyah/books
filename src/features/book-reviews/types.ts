@@ -38,5 +38,30 @@ export type BookReviewPageData = {
   book: BookReviewBookContext;
   summary: BookReviewSummaryStats;
   currentUserReview: BookReviewSummary | null;
+  currentUserShelf: BookReviewShelfState | null;
   reviews: BookReviewSummary[];
+};
+
+/**
+ * Snapshot rak (status + visibility + progres) viewer untuk buku ini.
+ *
+ * `null` saat viewer belum pernah meletakkan buku tersebut di rak — UI
+ * akan menampilkan tombol "Tambahkan ke rak" yang mendefault ke
+ * `WANT_TO_READ`.
+ */
+export type BookReviewShelfState = {
+  id: string;
+  status:
+    | "WANT_TO_READ"
+    | "TO_BE_READ"
+    | "READING"
+    | "FINISHED"
+    | "ON_HOLD"
+    | "ABANDONED";
+  visibility: BookReviewVisibility;
+  progress: number | null;
+  isBorrowable: boolean;
+  startedAt: string | null;
+  finishedAt: string | null;
+  updatedAt: string;
 };

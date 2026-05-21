@@ -38,15 +38,6 @@ type PublicProfileShellProps = {
   profile: PublicProfile;
 };
 
-const SHELF_STATUS_MAP: Record<
-  PublicProfile["publicShelf"][number]["status"],
-  DashboardBookCard["status"]
-> = {
-  WANT_TO_READ: "WANT_TO_READ",
-  READING: "READING",
-  FINISHED: "FINISHED",
-};
-
 /**
  * Halaman profil publik (viewer-other) untuk `/u/[slug]`.
  *
@@ -66,28 +57,30 @@ export function PublicProfileShell({ profile }: PublicProfileShellProps) {
   const displayName = user.name ?? user.username ?? "Pembaca";
   const banner = user.banner?.trim();
 
+  // Tampilkan publicShelf apa adanya — viewer-other berhak melihat semua
+  // status yang sudah dipublikasikan (`READING/FINISHED/ON_HOLD/...`).
+  // Limit 8 entri terbaru agar strip tetap ringan.
   const recentlyRead: DashboardBookCard[] = profile.publicShelf
-    .filter(
-      (item) => item.status === "READING" || item.status === "FINISHED",
-    )
     .slice(0, 8)
     .map((item) => ({
-      id: item.id,
+      id: item.book.id,
+      shelfRowId: item.id,
       title: item.book.title,
       author: item.book.author,
       coverUrl: item.book.coverUrl,
-      status: SHELF_STATUS_MAP[item.status],
+      status: item.status,
       progress: item.progress,
       updatedAt: item.updatedAt,
     }));
 
   const currentlyReading: DashboardBookCard[] = profile.currentlyReading.map(
     (item) => ({
-      id: item.id,
+      id: item.book.id,
+      shelfRowId: item.id,
       title: item.book.title,
       author: item.book.author,
       coverUrl: item.book.coverUrl,
-      status: SHELF_STATUS_MAP[item.status],
+      status: item.status,
       progress: item.progress,
       updatedAt: item.updatedAt,
     }),

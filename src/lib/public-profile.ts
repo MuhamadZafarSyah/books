@@ -32,7 +32,7 @@ export function profileSlugFor(user: ProfileUserRecord) {
 
 function serializeUserBook(item: {
   id: string;
-  status: "WANT_TO_READ" | "READING" | "FINISHED";
+  status: import("@prisma/client").UserBookStatus;
   isBorrowable: boolean;
   progress: number | null;
   updatedAt: Date;

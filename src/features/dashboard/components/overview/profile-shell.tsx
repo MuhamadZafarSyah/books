@@ -162,7 +162,7 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
         emptyHint="Belum ada buku yang sedang berjalan."
       />
 
-      <ProfileShelfStrip books={overview.recentlyRead} />
+      <ProfileShelfStrip books={overview.recentlyRead} editable />
 
       <ProfileReviewsList reviews={overview.recentReviews} />
 

@@ -45,13 +45,14 @@ type SimpleBook = {
 
 function serializeBookCard(item: {
   id: string;
-  status: "WANT_TO_READ" | "READING" | "FINISHED";
+  status: import("@prisma/client").UserBookStatus;
   progress: number | null;
   updatedAt: Date;
   book: SimpleBook;
 }): DashboardBookCard {
   return {
-    id: item.id,
+    id: item.book.id,
+    shelfRowId: item.id,
     title: item.book.title,
     author: item.book.author,
     coverUrl: item.book.coverUrl,
