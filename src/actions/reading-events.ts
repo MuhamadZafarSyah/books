@@ -37,14 +37,14 @@ export type GetReadingEventsListPageInput = {
 /**
  * Loader untuk Event_List_View.
  *
- * - Hanya menampilkan Event yang `statusFlag === ACTIVE` dan `startsAt > now`
- *   (Requirement 3.1).
+ * - Hanya menampilkan Event yang `statusFlag === ACTIVE` dan belum selesai
+ *   (`endsAt > now`), sehingga agenda yang sedang berlangsung tetap muncul.
  * - `q` dicocokkan case-insensitive ke `title`, `description`,
  *   `locationAddress` (Requirement 3.6).
  * - Pagination 20 entri per halaman, urut `startsAt asc` (Requirement 3.4).
- * - Filter `onlyJoinable` dievaluasi setelah `deriveEventStatus` lewat
- *   serializer agar tetap konsisten dengan status real-time (Requirement 3.3,
- *   Property 12).
+ * - Filter `onlyJoinable` dipersempit ke agenda yang belum mulai di query,
+ *   lalu tetap divalidasi setelah `deriveEventStatus` lewat serializer agar
+ *   konsisten dengan status real-time (Requirement 3.3, Property 12).
  */
 export async function getReadingEventsListPage(
   input: GetReadingEventsListPageInput,
@@ -60,8 +60,12 @@ export async function getReadingEventsListPage(
 
   const where: Prisma.ReadingEventWhereInput = {
     statusFlag: "ACTIVE",
-    startsAt: { gt: now },
+    endsAt: { gt: now },
   };
+
+  if (onlyJoinable) {
+    where.startsAt = { gt: now };
+  }
 
   if (trimmedQuery.length > 0) {
     where.OR = [
