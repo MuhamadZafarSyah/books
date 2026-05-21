@@ -160,14 +160,22 @@ const EMPTY_COLUMN_COPY: Record<UserBookStatus, string> = {
 };
 
 const VISIBLE_STACK_SIZE = 5;
-const SWIPE_THRESHOLD = 72;
-const SWIPE_TRACK_LIMIT = 154;
+const SWIPE_THRESHOLD = 56;
+const SWIPE_TRACK_LIMIT = 96;
+const SWIPE_EXIT_DISTANCE = 120;
 const DRAG_LONG_PRESS_MS = 600;
 const DRAG_LONG_PRESS_TOLERANCE = 8;
 const DRAG_SCROLL_EDGE_THRESHOLD = 24;
 const DRAG_SCROLL_MAX_SPEED = 16;
 const STACK_TRANSITION =
   "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease-out";
+
+// Offset deck per slot. Dirancang lebih ringkas dibanding versi sebelumnya
+// supaya tinggi kolom turun signifikan tanpa kehilangan kesan tumpukan.
+const STACK_OFFSET_X = [0, 9, -9, 16, -16];
+const STACK_OFFSET_Y = [0, 8, 16, 24, 32];
+const STACK_SCALE = [1, 0.965, 0.935, 0.905, 0.875];
+const STACK_ROTATE = [0, 2.5, -2.5, 4, -4];
 
 /**
  * Sheet "Atur rak" yang reusable di seluruh aplikasi.
@@ -527,10 +535,10 @@ export function BookShelfStatusDialog({
     setActiveId(null);
   };
 
-  const rotateDeck = (status: UserBookStatus, direction: 1 | -1) => {
+  const rotateDeck = (status: UserBookStatus) => {
     setDeckOffsets((current) => ({
       ...current,
-      [status]: (current[status] ?? 0) + direction,
+      [status]: (current[status] ?? 0) + 1,
     }));
   };
 
@@ -543,51 +551,19 @@ export function BookShelfStatusDialog({
         className="max-h-[92vh] w-full border-border/70 bg-background p-0"
       >
         <TooltipProvider>
-          <div className="mx-auto flex h-[min(86vh,760px)] w-full max-w-[1440px] flex-col gap-4 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-[min(70vh,720px)] w-full max-w-[1200px] flex-col gap-3 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
             <SheetHeader className="px-0 py-0 text-left">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <SheetTitle className="font-heading text-xl normal-case tracking-normal text-foreground sm:text-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-0.5">
+                  <SheetTitle className="font-heading text-xl normal-case tracking-normal text-foreground sm:text-[1.6rem]">
                     Rak baca
                   </SheetTitle>
-                  <SheetDescription className="text-sm">
+                  <SheetDescription className="text-[13px] leading-snug">
                     Tumpukan buku pribadi berdasarkan status baca.
                   </SheetDescription>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={shelf?.visibility ?? DEFAULT_STATE.visibility}
-                    disabled={!shelf || isBusy}
-                    onValueChange={(value) =>
-                      persistVisibility(value as UserBookVisibility)
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="Visibilitas"
-                      className="h-9 w-[10.5rem] rounded-full border-border/70"
-                    >
-                      <SelectValue placeholder="Visibilitas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USER_BOOK_VISIBILITY_VALUES.map((value) => {
-                        const meta = USER_BOOK_VISIBILITY_META[value];
-                        return (
-                          <SelectItem key={value} value={value}>
-                            <span className="flex flex-col">
-                              <span className="text-sm font-medium text-foreground">
-                                {meta.label}
-                              </span>
-                              <span className="text-[11px] leading-snug text-muted-foreground">
-                                {meta.description}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-
+                <div className="flex shrink-0 items-center gap-1">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -601,7 +577,7 @@ export function BookShelfStatusDialog({
                           isBusy
                         }
                         onClick={handleRemove}
-                        className="cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="size-8 cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
                         aria-label="Hapus buku aktif dari rak"
                       >
                         {removePending ? (
@@ -622,13 +598,48 @@ export function BookShelfStatusDialog({
                       type="button"
                       size="icon-sm"
                       variant="ghost"
-                      className="cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="size-8 cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       aria-label="Tutup rak baca"
                     >
                       <X aria-hidden="true" className="size-4" />
                     </Button>
                   </SheetClose>
                 </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="text-[11px] uppercase tracking-wide">
+                  Visibilitas
+                </span>
+                <Select
+                  value={shelf?.visibility ?? DEFAULT_STATE.visibility}
+                  disabled={!shelf || isBusy}
+                  onValueChange={(value) =>
+                    persistVisibility(value as UserBookVisibility)
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Visibilitas"
+                    className="h-8 w-auto min-w-[7.5rem] gap-1.5 rounded-full border-border/60 bg-card px-3 text-xs font-medium text-foreground shadow-none data-[size=default]:h-8"
+                  >
+                    <SelectValue placeholder="Visibilitas" />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    {USER_BOOK_VISIBILITY_VALUES.map((value) => {
+                      const meta = USER_BOOK_VISIBILITY_META[value];
+                      return (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          textValue={meta.label}
+                          aria-description={meta.description}
+                        >
+                          {meta.label}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </SheetHeader>
 
@@ -707,7 +718,7 @@ function ShelfStatusColumn({
   disabled: boolean;
   activeBookId: string | null;
   showLeftDivider: boolean;
-  onRotateDeck: (status: UserBookStatus, direction: 1 | -1) => void;
+  onRotateDeck: (status: UserBookStatus) => void;
 }) {
   const meta = USER_BOOK_STATUS_META[status];
   const { isOver, setNodeRef } = useDroppable({
@@ -722,26 +733,26 @@ function ShelfStatusColumn({
       ref={setNodeRef}
       aria-label={meta.label}
       className={cn(
-        "flex w-36 shrink-0 flex-col px-2.5 py-2 transition-colors duration-200 sm:w-40 sm:px-3 lg:w-44",
+        "flex w-32 shrink-0 flex-col px-2 py-1.5 transition-colors duration-200 sm:w-36 sm:px-2.5 lg:w-40",
         showLeftDivider && "border-l border-border/40",
         isOver && "bg-primary/5",
       )}
     >
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h3 className="truncate text-sm font-medium text-foreground">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h3 className="truncate text-[13px] font-medium text-foreground">
           {meta.shortLabel}
         </h3>
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span className="text-[11px] tabular-nums text-muted-foreground">
           {books.length}
         </span>
       </div>
 
       {books.length === 0 ? (
-        <div className="flex h-60 items-center justify-center rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground sm:h-64">
+        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground sm:h-52">
           {EMPTY_COLUMN_COPY[status]}
         </div>
       ) : (
-        <div className="relative mx-auto h-60 w-full sm:h-64">
+        <div className="relative mx-auto h-48 w-full sm:h-52">
           {visibleBooks
             .map((book, slotIndex) => (
               <ShelfBookSlot
@@ -752,7 +763,7 @@ function ShelfStatusColumn({
                 isTop={slotIndex === 0}
                 disabled={disabled}
                 isActiveBook={book.bookId === activeBookId}
-                onSwipe={(direction) => onRotateDeck(status, direction)}
+                onSwipe={() => onRotateDeck(status)}
               />
             ))
             // Render belakang dulu supaya kartu paling depan punya z-index DOM
@@ -788,7 +799,7 @@ function ShelfBookSlot({
   isTop: boolean;
   disabled: boolean;
   isActiveBook: boolean;
-  onSwipe: (direction: 1 | -1) => void;
+  onSwipe: () => void;
 }) {
   const { attributes, isDragging, listeners, setNodeRef } = useDraggable({
     id: draggableIdFor(item.bookId),
@@ -801,6 +812,8 @@ function ShelfBookSlot({
     null,
   );
   const [dragReady, setDragReady] = useState(false);
+  const [pressing, setPressing] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const wrapperStyle: CSSProperties = {
     zIndex: stackTotal - slotIndex,
@@ -846,49 +859,53 @@ function ShelfBookSlot({
    * Animasi swipe ke belakang stack. Strategi:
    * 1. Lempar kartu sedikit keluar (arc) tanpa hilang opacity-nya, supaya
    *    user melihat kartu benar-benar berpindah - bukan hilang.
-   * 2. Sembunyikan singkat sambil rotate deck (ganti slotIndex). Wrapper
-   *    sudah ditata `transition-transform` jadi posisi otomatis menggeser.
+   * 2. Sembunyikan singkat sambil rotate deck. Wrapper sudah ditata
+   *    `transition-transform` jadi posisi otomatis menggeser.
    * 3. Bawa kartu kembali ke transform identitas; sekarang transform
    *    tersebut diaplikasikan oleh wrapper di slot baru (paling belakang).
+   *
+   * Arah swipe (kiri/kanan) hanya mempengaruhi visual exit - hasil akhirnya
+   * sama: kartu paling depan pindah ke belakang stack.
    */
-  const finishSwipe = (direction: 1 | -1) => {
+  const finishSwipe = (direction: SwipeDirection) => {
     const card = cardRef.current;
     setDragReady(false);
     if (!card) {
-      onSwipe(direction);
+      onSwipe();
       return;
     }
 
     swipeAnimRef.current?.kill();
-    const exitX = direction > 0 ? -180 : 180;
-    const exitRotate = direction > 0 ? -12 : 12;
+    const exitX =
+      direction === "left" ? -SWIPE_EXIT_DISTANCE : SWIPE_EXIT_DISTANCE;
+    const exitRotate = direction === "left" ? -10 : 10;
 
     const tl = gsap.timeline();
     tl.to(card, {
-      duration: 0.26,
+      duration: 0.22,
       ease: "power2.in",
       overwrite: "auto",
       rotate: exitRotate,
-      scale: 0.9,
+      scale: 0.92,
       x: exitX,
-      y: -8,
+      y: -6,
     });
     // Sembunyikan sebentar saat wrapper berpindah ke slot belakang. Tanpa
     // jeda ini, perpindahan terasa "teleport". Dengan opacity 0 singkat,
     // mata user fokus pada kartu yang naik dari belakang.
     tl.to(card, {
-      duration: 0.12,
+      duration: 0.1,
       ease: "power1.in",
       opacity: 0,
       overwrite: "auto",
     });
-    tl.add(() => onSwipe(direction));
+    tl.add(() => onSwipe());
     tl.set(card, { rotate: 0, scale: 1, x: 0, y: 0 });
     // Fade in kembali setelah CSS transition wrapper selesai meluncurkan
     // kartu ke posisi belakang.
     tl.to(card, {
-      delay: 0.18,
-      duration: 0.26,
+      delay: 0.16,
+      duration: 0.24,
       ease: "power2.out",
       opacity: 1,
       overwrite: "auto",
@@ -930,15 +947,23 @@ function ShelfBookSlot({
     const card = cardRef.current;
     if (card) {
       swipeAnimRef.current?.kill();
-      gsap.set(card, {
+      // Beri respons visual instan: angkat kartu sedikit + sedikit
+      // perbesar. Ini membuat user di laptop tahu kartu siap digeser
+      // tanpa harus menunggu long-press kanban.
+      gsap.to(card, {
+        duration: 0.16,
+        ease: "power3.out",
         opacity: 1,
+        overwrite: "auto",
         rotate: 0,
-        scale: 1,
+        scale: 1.02,
         x: 0,
-        y: 0,
+        y: -3,
       });
     }
     setDragReady(false);
+    setPressing(true);
+    setTooltipOpen(true);
 
     const gesture: CardGesture = {
       currentX: 0,
@@ -967,8 +992,8 @@ function ShelfBookSlot({
           duration: 0.22,
           ease: "power3.out",
           overwrite: "auto",
-          scale: 1.035,
-          y: -4,
+          scale: 1.045,
+          y: -6,
         });
       }
     }, DRAG_LONG_PRESS_MS);
@@ -1037,6 +1062,8 @@ function ShelfBookSlot({
     }
     gestureRef.current = null;
     releaseCapture(event);
+    setPressing(false);
+    setTooltipOpen(false);
 
     if (gesture.dragReady) {
       setDragReady(false);
@@ -1061,6 +1088,8 @@ function ShelfBookSlot({
     if (gestureRef.current?.timer) clearTimeout(gestureRef.current.timer);
     gestureRef.current = null;
     releaseCapture(event);
+    setPressing(false);
+    setTooltipOpen(false);
     snapBack();
   };
 
@@ -1074,7 +1103,13 @@ function ShelfBookSlot({
       className="absolute left-1/2 top-2 w-[6.15rem] sm:w-[6.8rem]"
       style={wrapperStyle}
     >
-      <Tooltip>
+      <Tooltip
+        open={isTop && tooltipOpen}
+        onOpenChange={(next) => {
+          if (!isTop) return;
+          setTooltipOpen(next);
+        }}
+      >
         <TooltipTrigger asChild>
           <Button
             type="button"
@@ -1090,7 +1125,8 @@ function ShelfBookSlot({
                 : "pointer-events-none",
               !isTop && slotIndex > 2 && "opacity-85",
               isActiveBook && interactive && "ring-2 ring-primary/35 ring-offset-2",
-              dragReady && "border-primary/60 shadow-lg shadow-primary/10",
+              pressing && "border-primary/55 shadow-md shadow-primary/10",
+              dragReady && "border-primary/60 shadow-lg shadow-primary/15",
               isDragging && "opacity-35",
             )}
             ref={cardRef}
@@ -1135,18 +1171,20 @@ function BookTilePreview({ item }: { item: ShelfBoardItem }) {
 }
 
 function stackTransform(index: number) {
-  const offsetX = [0, 12, -12, 20, -20][index] ?? 0;
-  const offsetY = [0, 12, 24, 36, 48][index] ?? 0;
-  const scale = [1, 0.96, 0.92, 0.88, 0.84][index] ?? 0.84;
-  const rotation = [0, 3.5, -3.5, 5.5, -5.5][index] ?? 0;
+  const offsetX = STACK_OFFSET_X[index] ?? STACK_OFFSET_X.at(-1) ?? 0;
+  const offsetY = STACK_OFFSET_Y[index] ?? STACK_OFFSET_Y.at(-1) ?? 0;
+  const scale = STACK_SCALE[index] ?? STACK_SCALE.at(-1) ?? 0.875;
+  const rotation = STACK_ROTATE[index] ?? STACK_ROTATE.at(-1) ?? 0;
 
   return `translate3d(calc(-50% + ${offsetX}px), ${offsetY}px, 0) scale(${scale}) rotate(${rotation}deg)`;
 }
 
-function swipeDirectionFor(delta: { x: number; y: number }) {
+type SwipeDirection = "left" | "right";
+
+function swipeDirectionFor(delta: { x: number; y: number }): SwipeDirection | null {
   if (Math.abs(delta.x) < SWIPE_THRESHOLD) return null;
   if (Math.abs(delta.x) < Math.abs(delta.y) * 1.25) return null;
-  return delta.x < 0 ? 1 : -1;
+  return delta.x < 0 ? "left" : "right";
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -1265,15 +1303,15 @@ function ShelfBoardSkeleton() {
           <div
             key={status}
             className={cn(
-              "w-36 shrink-0 px-2.5 py-2 sm:w-40 sm:px-3 lg:w-44",
+              "w-32 shrink-0 px-2 py-1.5 sm:w-36 sm:px-2.5 lg:w-40",
               index > 0 && "border-l border-border/40",
             )}
           >
-            <div className="mb-3 flex items-baseline justify-between gap-2">
-              <Skeleton className="h-4 w-20 rounded-sm" />
-              <Skeleton className="h-3 w-5 rounded-sm" />
+            <div className="mb-2 flex items-baseline justify-between gap-2">
+              <Skeleton className="h-3.5 w-16 rounded-sm" />
+              <Skeleton className="h-3 w-4 rounded-sm" />
             </div>
-            <div className="relative mx-auto h-60 w-full sm:h-64">
+            <div className="relative mx-auto h-48 w-full sm:h-52">
               {Array.from({ length: 5 }).map((_, slotIndex) => (
                 <Skeleton
                   key={slotIndex}
