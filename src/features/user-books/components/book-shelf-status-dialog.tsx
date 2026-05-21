@@ -43,14 +43,14 @@ import {
 import type { MyShelfBoardItem } from "@/actions/user-books";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -79,7 +79,7 @@ import type { BookResult } from "@/features/books/types";
 type BookSource =
   /**
    * Sumber buku berbasis `BookResult` (mis. dari hasil pencarian Open
-   * Library). Saat drawer dibuka, kita panggil `ensureLocalBookFromResult`
+   * Library). Saat sheet dibuka, kita panggil `ensureLocalBookFromResult`
    * supaya entri lokal tersedia sebelum kanban dirender.
    */
   | { kind: "result"; book: BookResult }
@@ -94,7 +94,7 @@ export type BookShelfStatusDialogProps = {
   /**
    * Trigger custom. Saat tidak diberikan, komponen tidak merender trigger
    * sendiri - parent boleh memakai mode controlled lewat `open` /
-   * `onOpenChange` agar drawer bisa dibuka dari menu lain.
+   * `onOpenChange` agar sheet bisa dibuka dari menu lain.
    */
   trigger?: ReactNode;
   open?: boolean;
@@ -162,19 +162,20 @@ const SWIPE_THRESHOLD = 72;
 const DRAG_LONG_PRESS_MS = 2000;
 const DRAG_LONG_PRESS_TOLERANCE = 10;
 const SWIPE_TRACK_LIMIT = 154;
-const DRAG_SCROLL_EDGE_SIZE = 86;
-const DRAG_SCROLL_IDLE_MS = 120;
-const DRAG_SCROLL_MAX_SPEED = 18;
-const DRAG_SCROLL_MIN_MOVEMENT = 0.8;
-const DRAG_SCROLL_MOVEMENT_MULTIPLIER = 1.45;
+const DRAG_SCROLL_EDGE_SIZE = 76;
+const DRAG_SCROLL_IDLE_MS = 90;
+const DRAG_SCROLL_MAX_SPEED = 12;
+const DRAG_SCROLL_MIN_MOVEMENT = 2.4;
+const DRAG_SCROLL_MOVEMENT_MULTIPLIER = 0.75;
+const DRAG_SCROLL_SIDE_ZONE = 0.42;
 
 /**
- * Drawer "Atur rak" yang reusable di seluruh aplikasi.
+ * Sheet "Atur rak" yang reusable di seluruh aplikasi.
  *
  * Karakteristik:
  * - **Lazy resolve**: ketika `source.kind === "result"`, Book lokal
- *   dipastikan ada lewat `ensureLocalBookFromResult` saat drawer dibuka.
- * - **Mini kanban**: saat drawer terbuka, semua buku viewer dimuat dan
+ *   dipastikan ada lewat `ensureLocalBookFromResult` saat sheet dibuka.
+ * - **Mini kanban**: saat sheet terbuka, semua buku viewer dimuat dan
  *   dikelompokkan berdasarkan status baca.
  * - **Optimistic + rollback**: drag antar kolom langsung memindahkan cover
  *   secara lokal, lalu dipersist ke server. Bila gagal, board dikembalikan.
@@ -323,7 +324,7 @@ export function BookShelfStatusDialog({
     });
   }, [sourceKey]);
 
-  // Saat drawer terbuka pertama kali untuk source ini, resolve `bookId`
+  // Saat sheet terbuka pertama kali untuk source ini, resolve `bookId`
   // (jika perlu), ambil shelf state buku aktif, lalu muat mini-board.
   useEffect(() => {
     if (!open) return;
@@ -556,20 +557,24 @@ export function BookShelfStatusDialog({
   };
 
   return (
-    <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
-      {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
-      <DrawerContent className="max-h-[92vh] w-full border-border/70 bg-background">
+    <Sheet open={open} onOpenChange={setOpen}>
+      {trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : null}
+      <SheetContent
+        side="bottom"
+        showCloseButton={false}
+        className="max-h-[92vh] w-full border-border/70 bg-background p-0"
+      >
         <TooltipProvider>
           <div className="mx-auto flex h-[min(86vh,760px)] w-full max-w-[1440px] flex-col px-4 sm:px-6 lg:px-8">
-            <DrawerHeader className="px-0 pb-3 pt-5 text-left">
+            <SheetHeader className="px-0 pb-3 pt-5 text-left">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <DrawerTitle className="font-heading text-2xl normal-case tracking-normal text-foreground">
+                  <SheetTitle className="font-heading text-2xl normal-case tracking-normal text-foreground">
                     Rak baca
-                  </DrawerTitle>
-                  <DrawerDescription>
+                  </SheetTitle>
+                  <SheetDescription>
                     Tumpukan buku pribadi berdasarkan status baca.
-                  </DrawerDescription>
+                  </SheetDescription>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -634,7 +639,7 @@ export function BookShelfStatusDialog({
                     <TooltipContent>Hapus buku aktif dari rak</TooltipContent>
                   </Tooltip>
 
-                  <DrawerClose asChild>
+                  <SheetClose asChild>
                     <Button
                       type="button"
                       size="icon-sm"
@@ -644,10 +649,10 @@ export function BookShelfStatusDialog({
                     >
                       <X aria-hidden="true" className="size-4" />
                     </Button>
-                  </DrawerClose>
+                  </SheetClose>
                 </div>
               </div>
-            </DrawerHeader>
+            </SheetHeader>
 
             {resolveError ? (
               <p role="alert" className="py-6 text-sm text-destructive">
@@ -702,8 +707,8 @@ export function BookShelfStatusDialog({
             </div>
           </div>
         </TooltipProvider>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1169,32 +1174,49 @@ function horizontalDragScrollSpeed({
 
   const leftDistance = pointerX - rect.left;
   const rightDistance = rect.right - pointerX;
+  const sideZoneWidth = rect.width * DRAG_SCROLL_SIDE_ZONE;
+  const leftZoneEnd = rect.left + sideZoneWidth;
+  const rightZoneStart = rect.right - sideZoneWidth;
   const movementSpeed = clamp(
     Math.abs(movementX) * DRAG_SCROLL_MOVEMENT_MULTIPLIER + 3,
-    4,
+    2,
     DRAG_SCROLL_MAX_SPEED,
   );
 
   if (direction > 0 && scrollLeft < maxScrollLeft) {
+    if (pointerX < rightZoneStart && rightDistance >= DRAG_SCROLL_EDGE_SIZE) {
+      return 0;
+    }
+
+    const zoneProgress = clamp(
+      (pointerX - rightZoneStart) / sideZoneWidth,
+      0,
+      1,
+    );
     const edgeProgress =
       1 -
       clamp(rightDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
     const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
+    const zoneSpeed = movementSpeed * clamp(zoneProgress, 0.25, 1);
     const remainingScroll = maxScrollLeft - scrollLeft;
 
     return Math.ceil(
-      Math.min(Math.max(movementSpeed, edgeSpeed), remainingScroll),
+      Math.min(Math.max(zoneSpeed, edgeSpeed), remainingScroll),
     );
   }
 
   if (direction < 0 && scrollLeft > 0) {
+    if (pointerX > leftZoneEnd && leftDistance >= DRAG_SCROLL_EDGE_SIZE) {
+      return 0;
+    }
+
+    const zoneProgress = clamp((leftZoneEnd - pointerX) / sideZoneWidth, 0, 1);
     const edgeProgress =
       1 - clamp(leftDistance, 0, DRAG_SCROLL_EDGE_SIZE) / DRAG_SCROLL_EDGE_SIZE;
     const edgeSpeed = edgeProgress * DRAG_SCROLL_MAX_SPEED;
+    const zoneSpeed = movementSpeed * clamp(zoneProgress, 0.25, 1);
 
-    return -Math.ceil(
-      Math.min(Math.max(movementSpeed, edgeSpeed), scrollLeft),
-    );
+    return -Math.ceil(Math.min(Math.max(zoneSpeed, edgeSpeed), scrollLeft));
   }
 
   return 0;
