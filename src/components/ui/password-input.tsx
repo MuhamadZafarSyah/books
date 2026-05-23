@@ -35,13 +35,13 @@ function PasswordInput({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className={cn("space-y-2", wrapperClassName)}>
-      <div className="flex items-center justify-between gap-3">
+    <div className={cn(wrapperClassName)}>
+      {/* <div className="flex items-center justify-between gap-3">
         <Label htmlFor={inputId} className={labelClassName}>
           {label}
         </Label>
         {labelAddon}
-      </div>
+      </div> */}
       <div className="relative">
         <Input
           id={inputId}

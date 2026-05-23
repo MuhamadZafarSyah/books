@@ -4,20 +4,12 @@ import { useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { loginWithCredentials, loginWithGoogle } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -62,97 +54,36 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 gap-6 bg-transparent py-0 shadow-none ring-0 duration-700">
-      <CardHeader className="px-0">
-        <div className="mb-8 text-center lg:hidden">
-          <span className="text-2xl font-heading italic text-primary">
-            Shelfgram
-          </span>
-        </div>
-        <CardTitle className="text-2xl normal-case tracking-normal">
-          Sign in to your account
-        </CardTitle>
-        <CardDescription>Enter your details below to continue.</CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-3 duration-500">
+      {/* Mobile branding */}
+      <div className="mb-10 lg:hidden">
+        <span className="font-heading text-xl italic text-primary">
+          Shelfgram
+        </span>
+      </div>
 
-      <CardContent className="px-0">
-        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-2">
-            <Label
-              htmlFor="email"
-              className="text-sm normal-case tracking-normal text-muted-foreground"
-            >
-              Email Address
-            </Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="reader@example.com"
-                autoComplete="email"
-                disabled={isPending}
-                aria-invalid={Boolean(errors.email)}
-                className="h-12 rounded-2xl border border-input bg-background px-10 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-                {...register("email")}
-              />
-            </div>
-            {errors.email ? (
-              <p className="text-sm font-medium text-destructive">
-                {errors.email.message}
-              </p>
-            ) : null}
-          </div>
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+          Masuk
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Lanjutkan membaca bersama komunitas Shelfgram.
+        </p>
+      </div>
 
-          <PasswordInput
-            id="password"
-            label="Password"
-            labelAddon={
-              <Link
-                className="text-xs font-semibold text-secondary-foreground transition-colors hover:text-primary"
-                href="#"
-              >
-                Forgot password?
-              </Link>
-            }
-            labelClassName="text-sm normal-case tracking-normal text-muted-foreground"
-            placeholder="********"
-            autoComplete="current-password"
-            disabled={isPending}
-            error={errors.password?.message}
-            inputClassName="h-12 rounded-2xl border border-input bg-background pl-4 pr-12 text-sm shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-            {...register("password")}
-          />
-
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="h-12 w-full rounded-2xl text-sm font-semibold normal-case tracking-normal shadow-lg shadow-primary/10"
-          >
-            Sign In
-            <ArrowRight className="size-4" />
-          </Button>
-        </form>
-      </CardContent>
-
-      <CardFooter className="flex flex-col gap-6 px-0">
-        <div className="flex w-full items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-            Or
-          </span>
-          <Separator className="flex-1" />
-        </div>
-
-        <form action={loginWithGoogle} className="w-full">
+      {/* Google OAuth — di atas untuk mengurangi friction */}
+      <div className="mt-8">
+        <form action={loginWithGoogle}>
           <input name="callbackUrl" type="hidden" value={callbackUrl} />
           <Button
             type="submit"
             variant="outline"
-            className="h-12 w-full rounded-2xl text-sm font-semibold normal-case tracking-normal"
+            disabled={isPending}
+            className="h-11 w-full cursor-pointer gap-3 rounded-xl text-sm font-medium"
           >
             <svg
-              className="size-5"
+              className="size-4"
               fill="none"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
@@ -174,20 +105,92 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            Lanjutkan dengan Google
           </Button>
         </form>
+      </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/auth/register"
-            className="font-semibold text-primary underline-offset-4 transition-colors hover:underline"
-          >
-            Sign Up
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+      {/* Divider */}
+      <div className="my-6 flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-[11px] text-muted-foreground">atau</span>
+        <Separator className="flex-1" />
+      </div>
+
+      {/* Credentials form */}
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs text-muted-foreground">
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="nama@email.com"
+            autoComplete="email"
+            disabled={isPending}
+
+            aria-invalid={Boolean(errors.email)}
+            className="h-11 autofill:bg-transparent!"
+            {...register("email")}
+          />
+          {errors.email ? (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="password"
+              className="text-xs text-muted-foreground"
+            >
+              Password
+            </Label>
+            {/* <Link
+              href="#"
+              className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Lupa password?
+            </Link> */}
+          </div>
+          <PasswordInput
+            id="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            disabled={isPending}
+            error={errors.password?.message}
+            inputClassName="h-11 "
+            {...register("password")}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="mt-2 h-11 w-full cursor-pointer rounded-xl text-sm font-medium"
+        >
+          {isPending ? (
+            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+          ) : (
+            <>
+              Masuk
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </>
+          )}
+        </Button>
+      </form>
+
+      {/* Footer */}
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        Belum punya akun?{" "}
+        <Link
+          href="/auth/register"
+          className="font-medium text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+        >
+          Daftar
+        </Link>
+      </p>
+    </div>
   );
 }

@@ -53,16 +53,16 @@ const mainNavItems = [
     href: "/dashboard/explore/readers",
     icon: UserSearch,
   },
-  {
-    title: "Rak Buku",
-    href: "/dashboard/shelf",
-    icon: Library,
-  },
-  {
-    title: "Sedang Dibaca",
-    href: "/dashboard/reading",
-    icon: BookOpen,
-  },
+  // {
+  //   title: "Rak Buku",
+  //   href: "/dashboard/shelf",
+  //   icon: Library,
+  // },
+  // {
+  //   title: "Sedang Dibaca",
+  //   href: "/dashboard/reading",
+  //   icon: BookOpen,
+  // },
   {
     title: "Diskusi AI",
     href: "/dashboard/explore/discussions",
@@ -96,11 +96,11 @@ const secondaryNavItems = [
     href: "/dashboard/profile",
     icon: User,
   },
-  {
-    title: "Pengaturan",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Pengaturan",
+  //   href: "/dashboard/settings",
+  //   icon: Settings,
+  // },
 ];
 
 type AppSidebarUser = {
