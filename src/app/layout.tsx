@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Manrope, Noto_Serif } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { NavigationProgress } from "@/components/navigation-progress";
 
 const notoSerif = Noto_Serif({
   variable: "--font-heading",
@@ -49,8 +50,10 @@ export default function RootLayout({
         <ThemeProvider
           defaultTheme="system"
         >
+          <Suspense>
+            <NavigationProgress />
+          </Suspense>
           {children}
-          {/* <ThemeToggle /> */}
           <Toaster richColors />
         </ThemeProvider>
       </body>
