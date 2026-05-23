@@ -15,6 +15,7 @@ import {
   Loader2,
   Sparkles,
   Star,
+  Users,
 } from "lucide-react";
 
 import { createBookAiConversation } from "@/actions/book-ai-chat";
@@ -193,6 +194,7 @@ function DetailBody({ book }: { book: BookResult }) {
 function DetailActions({ book }: { book: BookResult }) {
   const [open, setOpen] = useState(false);
   const [shelfDialogOpen, setShelfDialogOpen] = useState(false);
+  const [circleDialogOpen, setCircleDialogOpen] = useState(false);
 
   return (
     <>
@@ -229,13 +231,19 @@ function DetailActions({ book }: { book: BookResult }) {
               <BookmarkPlus aria-hidden="true" className="size-3.5" />
               Atur status & visibilitas
             </Button>
-            <CreateCircleDialog
-              book={book}
-              buttonClassName="w-full cursor-pointer justify-start rounded-[1rem] px-3"
-              buttonLabel="Buat circle"
-              buttonVariant="ghost"
-              onTriggerClick={() => setOpen(false)}
-            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+              onClick={() => {
+                setOpen(false);
+                setTimeout(() => setCircleDialogOpen(true), 0);
+              }}
+            >
+              <Users aria-hidden="true" className="size-3.5" />
+              Buat circle
+            </Button>
             <ReviewsCta
               book={book}
               className="justify-start rounded-[1rem] px-3"
@@ -273,6 +281,12 @@ function DetailActions({ book }: { book: BookResult }) {
         source={{ kind: "result", book }}
         open={shelfDialogOpen}
         onOpenChange={setShelfDialogOpen}
+      />
+      <CreateCircleDialog
+        book={book}
+        open={circleDialogOpen}
+        onOpenChange={setCircleDialogOpen}
+        showTrigger={false}
       />
     </>
   );

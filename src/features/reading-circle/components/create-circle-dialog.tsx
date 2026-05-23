@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Users } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,13 +30,18 @@ import {
 } from "@/components/ui/select";
 import type { BookResult } from "@/features/books/types";
 import type { ReadingCirclePrivacy } from "@/features/reading-circle/types";
+import { useIsMobile } from "@/hooks/use-mobile"
+
 
 type CreateCircleDialogProps = {
   book: BookResult;
   buttonClassName?: string;
   buttonLabel?: string;
-  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+  buttonVariant?: ComponentProps<typeof Button>["variant"];
   onTriggerClick?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 };
 
 export function CreateCircleDialog({
@@ -44,14 +50,26 @@ export function CreateCircleDialog({
   buttonLabel = "Buat Circle",
   buttonVariant = "outline",
   onTriggerClick,
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: CreateCircleDialogProps) {
-  const [open, setOpen] = useState(false);
+    const isMobile = useIsMobile()
+  const [internalOpen, setInternalOpen] = useState(false);
   const [title, setTitle] = useState(() => `Diskusi ${book.title}`.slice(0, 120));
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState<ReadingCirclePrivacy>("PUBLIC");
   const [targetLabel, setTargetLabel] = useState("");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const dialogOpen = open ?? internalOpen;
+
+  const setDialogOpen = (next: boolean) => {
+    if (open === undefined) {
+      setInternalOpen(next);
+    }
+    onOpenChange?.(next);
+  };
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
@@ -63,7 +81,7 @@ export function CreateCircleDialog({
       setTargetLabel("");
       setPrivacy("PUBLIC");
     }
-    setOpen(next);
+    setDialogOpen(next);
   };
 
   const submit = () => {
@@ -81,7 +99,7 @@ export function CreateCircleDialog({
           targetLabel: targetLabel.trim() || null,
         });
         toast.success("Circle berhasil dibuat.");
-        setOpen(false);
+        setDialogOpen(false);
         router.push(`/dashboard/circles/${circleId}`);
       } catch (error) {
         toast.error(
@@ -92,20 +110,21 @@ export function CreateCircleDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <Button
-        type="button"
-        size="sm"
-        variant={buttonVariant}
-        className={buttonClassName ?? "w-full cursor-pointer rounded-full"}
-        onClick={() => {
-          onTriggerClick?.();
-          handleOpenChange(true);
-        }}
-      >
-        <Users aria-hidden="true" className="size-3.5" />
-        {buttonLabel}
-      </Button>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+      {showTrigger ? (
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant={buttonVariant}
+            className={buttonClassName ?? "w-full cursor-pointer rounded-full"}
+            onClick={onTriggerClick}
+          >
+            <Users aria-hidden="true" className="size-3.5" />
+            {buttonLabel}
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Buat reading circle</DialogTitle>
@@ -134,17 +153,18 @@ export function CreateCircleDialog({
             </Label>
             <textarea
               id="rc-desc"
-              rows={3}
+              rows={isMobile ? 3 : 6}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               maxLength={500}
+              
               placeholder="Apa yang ingin dibahas di circle ini?"
-              className="min-h-[5rem] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+              className="min-h-[5rem] w-full resize-none hide-scrollbar  border-b border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors focus-visible:border-ring "
             />
           </div>
 
           <div className="grid gap-2">
-            <Label className="text-[10px] tracking-[0.18em]">Privasi</Label>
+            <Label className="text-[10px]  tracking-[0.18em]">Privasi</Label>
             <Select
               value={privacy}
               onValueChange={(value) => setPrivacy(value as ReadingCirclePrivacy)}

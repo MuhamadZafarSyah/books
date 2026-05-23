@@ -53,7 +53,7 @@ export function ReadingCircleSidebar({
             Circle Baca
           </p>
         </div>
-        <Button
+        {/* <Button
           asChild
           size="icon-sm"
           variant="ghost"
@@ -63,7 +63,7 @@ export function ReadingCircleSidebar({
           <Link href="/dashboard/explore">
             <ArrowLeft className="size-4" />
           </Link>
-        </Button>
+        </Button> */}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -83,7 +83,7 @@ export function ReadingCircleSidebar({
                       : "hover:border-border hover:bg-secondary/60",
                   )}
                 >
-                  <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                  {/* <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
                     {item.bookCoverUrl ? (
                       <Image
                         src={item.bookCoverUrl}
@@ -97,7 +97,7 @@ export function ReadingCircleSidebar({
                         <BookOpen aria-hidden="true" className="size-4" />
                       </span>
                     )}
-                  </div>
+                  </div> */}
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-1 text-xs font-semibold text-foreground">
                       {item.title}

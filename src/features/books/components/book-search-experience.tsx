@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   Loader2,
@@ -20,7 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -110,10 +110,23 @@ function buildSearchKey(query: string, filters: BookFilters) {
 }
 
 export function BookSearchExperience() {
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<BookFilters>(DEFAULT_FILTERS);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Inisialisasi state dari URL search params
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [filters, setFilters] = useState<BookFilters>(() => ({
+    sort: (searchParams.get("sort") as BookFilters["sort"]) || "relevance",
+    language: searchParams.get("language") ?? "",
+    publisher: searchParams.get("publisher") ?? "",
+    yearFrom: searchParams.get("yearFrom") ?? "",
+    yearTo: searchParams.get("yearTo") ?? "",
+    subject: searchParams.get("subject") ?? "",
+  }));
   const [results, setResults] = useState<BookResult[]>([]);
   const [total, setTotal] = useState(0);
+  const [lastResultCount, setLastResultCount] = useState(0);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -131,6 +144,31 @@ export function BookSearchExperience() {
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const lastAutoSearchKeyRef = useRef<string | null>(null);
+  const isUpdatingUrlRef = useRef(false);
+
+  // Sinkronisasi state ke URL query params (debounced via searchKey)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (trimmedQuery) params.set("q", trimmedQuery);
+      if (safeFilters.sort && safeFilters.sort !== "relevance") {
+        params.set("sort", safeFilters.sort);
+      }
+      if (safeFilters.language) params.set("language", safeFilters.language);
+      if (safeFilters.publisher) params.set("publisher", safeFilters.publisher);
+      if (safeFilters.subject) params.set("subject", safeFilters.subject);
+      if (safeFilters.yearFrom) params.set("yearFrom", safeFilters.yearFrom);
+      if (safeFilters.yearTo) params.set("yearTo", safeFilters.yearTo);
+
+      const queryString = params.toString();
+      const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+      isUpdatingUrlRef.current = true;
+      router.replace(nextUrl, { scroll: false });
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [trimmedQuery, safeFilters, pathname, router]);
 
   const runSearch = useCallback(
     async (
@@ -173,6 +211,7 @@ export function BookSearchExperience() {
         if (requestId !== requestIdRef.current) return;
 
         setTotal(data.total);
+        setLastResultCount(data.results.length);
         setResults((current) =>
           append ? [...current, ...data.results] : data.results,
         );
@@ -203,6 +242,7 @@ export function BookSearchExperience() {
         requestIdRef.current += 1;
         setResults([]);
         setTotal(0);
+        setLastResultCount(0);
         setPage(1);
         setStatus("idle");
         setErrorMessage(null);
@@ -237,7 +277,7 @@ export function BookSearchExperience() {
     }));
   }, []);
 
-  const hasMore = results.length < total;
+  const hasMore = lastResultCount >= PAGE_LIMIT && results.length < total;
 
   return (
     <div className="space-y-8">
@@ -382,8 +422,31 @@ function FiltersDrawer({
   onReset: () => void;
   filterCount: number;
 }) {
+  // State lokal "staged" — perubahan di panel belum diterapkan ke pencarian
+  // sampai user menekan "Terapkan". Saat drawer dibuka, staged di-sync
+  // dengan filter aktif saat ini via onOpenChange callback.
+  const [staged, setStaged] = useState<BookFilters>(filters);
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) setStaged(filters);
+    onOpenChange(next);
+  };
+
+  const stagedFilterCount = countActiveFilters(staged);
+
+  const handleApply = () => {
+    onFiltersChange(staged);
+    onOpenChange(false);
+  };
+
+  const handleReset = () => {
+    setStaged(DEFAULT_FILTERS);
+    onReset();
+    onOpenChange(false);
+  };
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
       <DrawerTrigger asChild>
         <Button
           type="button"
@@ -393,7 +456,6 @@ function FiltersDrawer({
           aria-label={`Buka filter${filterCount > 0 ? `, ${filterCount} aktif` : ""}`}
         >
           <SlidersHorizontal aria-hidden="true" className="size-3.5 text-muted-foreground!" />
-          {/* Filter */}
           {filterCount > 0 && (
             <span className="ml-1 absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
               {filterCount}
@@ -417,7 +479,7 @@ function FiltersDrawer({
         <Separator />
 
         <div className="hide-scrollbar flex-1 overflow-y-auto px-6 py-6">
-          <BookFilterPanel value={filters} onChange={onFiltersChange} />
+          <BookFilterPanel value={staged} onChange={setStaged} />
         </div>
 
         <Separator />
@@ -428,22 +490,21 @@ function FiltersDrawer({
               type="button"
               variant="outline"
               size="sm"
-              onClick={onReset}
-              disabled={filterCount === 0}
+              onClick={handleReset}
+              disabled={stagedFilterCount === 0}
               className="cursor-pointer rounded-full"
             >
               <RotateCcw aria-hidden="true" className="size-3.5" />
               Reset
             </Button>
-            <DrawerClose asChild>
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1 cursor-pointer rounded-full"
-              >
-                Terapkan
-              </Button>
-            </DrawerClose>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleApply}
+              className="flex-1 cursor-pointer rounded-full"
+            >
+              Terapkan
+            </Button>
           </div>
         </DrawerFooter>
       </DrawerContent>
@@ -617,7 +678,7 @@ function ResultsBody({
             {loadingMore && (
               <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
             )}
-            {loadingMore ? "Memuat..." : "Tampilkan lebih banyak"}
+            {loadingMore  ? "Memuat..." : "Tampilkan lebih banyak"}
           </Button>
         </div>
       )}

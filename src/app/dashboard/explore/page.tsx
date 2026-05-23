@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { BookSearchExperience } from "@/features/books/components/book-search-experience";
 import { requireAuth } from "@/lib/session";
@@ -14,7 +15,9 @@ export default async function ExplorePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl">
-      <BookSearchExperience />
+      <Suspense>
+        <BookSearchExperience />
+      </Suspense>
     </div>
   );
 }
