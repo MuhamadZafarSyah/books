@@ -5,7 +5,6 @@ import { CalendarHeart, Edit, ExternalLink, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ActivityFeed } from "@/features/dashboard/components/overview/activity-feed";
-import { CurrentlyReadingStrip } from "@/features/dashboard/components/overview/currently-reading-strip";
 import { MyCirclesList } from "@/features/dashboard/components/overview/my-circles-list";
 import { ProfileReviewsList } from "@/features/dashboard/components/overview/profile-reviews-list";
 import { ProfileShelfStrip } from "@/features/dashboard/components/overview/profile-shelf-strip";
@@ -70,9 +69,10 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
                 className="object-cover"
               />
             ) : null}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
           </div>
 
-          <div className="relative -mt-12 flex flex-col gap-4 px-4 pb-5 sm:flex-row sm:items-end sm:gap-5 sm:px-6">
+          <div className="relative z-10 -mt-12 flex flex-col gap-4 px-4 pb-5 sm:flex-row sm:items-end sm:gap-5 sm:px-6">
             <Avatar className="size-20 shrink-0 ring-4 ring-background sm:size-24">
               <AvatarImage src={user.image ?? undefined} alt={displayName} />
               <AvatarFallback className="text-lg">
@@ -82,7 +82,7 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
 
             <div className="min-w-0 flex-1 space-y-2 sm:pb-1">
               <div className="space-y-0.5">
-                <h1 className="line-clamp-1 font-heading text-2xl font-semibold tracking-tight text-foreground">
+                <h1 className="line-clamp-1 font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-white sm:drop-shadow-[0_2px_10px_rgb(0_0_0/0.9)]">
                   {displayName}
                 </h1>
                 {user.username ? (
@@ -156,12 +156,7 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
         </div>
       </header>
 
-      {/* Buku yang sedang dibaca (subset, fokus hanya status READING) */}
-      <CurrentlyReadingStrip
-        books={overview.recentlyRead.filter((book) => book.status === "READING")}
-        emptyHint="Belum ada buku yang sedang berjalan."
-      />
-
+      {/* Rak buku dengan tab status (menggantikan CurrentlyReadingStrip) */}
       <ProfileShelfStrip books={overview.recentlyRead} editable />
 
       <ProfileReviewsList reviews={overview.recentReviews} />

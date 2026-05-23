@@ -17,7 +17,7 @@ const RECENT_ACTIVITY_LIMIT = 10;
 const CURRENTLY_READING_LIMIT = 6;
 const MY_CIRCLES_LIMIT = 4;
 const UPCOMING_EVENTS_LIMIT = 4;
-const RECENT_BOOKS_PROFILE_LIMIT = 8;
+const RECENT_BOOKS_PROFILE_LIMIT = 30;
 const RECENT_REVIEWS_PROFILE_LIMIT = 4;
 
 const PUBLIC_USER_SELECT = {
@@ -473,7 +473,7 @@ export async function getProfileOverview(input: {
       _count: { _all: true },
     }),
     prisma.userBook.findMany({
-      where: { userId, status: { in: ["READING", "FINISHED"] } },
+      where: { userId },
       orderBy: { updatedAt: "desc" },
       take: RECENT_BOOKS_PROFILE_LIMIT,
       include: { book: true },
