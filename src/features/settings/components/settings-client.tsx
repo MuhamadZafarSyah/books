@@ -76,6 +76,12 @@ const SCHEME_META: Record<
     swatchDark: "#fb923c",
     description: "Oranye hangat",
   },
+  sketchy: {
+    label: "Sketchy",
+    swatch: "#3d3428",
+    swatchDark: "#d4c4a0",
+    description: "Hand-drawn",
+  },
 };
 
 export function SettingsClient() {
@@ -149,10 +155,14 @@ export function SettingsClient() {
                   active
                     ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                     : "border-border bg-card hover:border-primary/30",
+                  scheme === "sketchy" && "font-[var(--font-sketchy)]",
                 )}
               >
                 <span
-                  className="size-7 rounded-full shadow-sm ring-2 ring-background transition-transform duration-150 group-hover:scale-110"
+                  className={cn(
+                    "size-7 rounded-full shadow-sm ring-2 ring-background transition-transform duration-150 group-hover:scale-110",
+                    scheme === "sketchy" && "rounded-none! rotate-2 border-2 border-dashed border-foreground/30",
+                  )}
                   style={{ backgroundColor: swatch }}
                 />
                 <span

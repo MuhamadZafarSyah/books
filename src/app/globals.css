@@ -768,3 +768,249 @@ select:-webkit-autofill:active {
   --sidebar-border: #283040;
   --sidebar-ring: #8fa4b8;
 }
+
+/* --- SKETCHY (hand-drawn, wiredjs-inspired) --- */
+.theme-sketchy {
+  --background: #fefcf8;
+  --foreground: #2c2416;
+  --card: #fffdf8;
+  --card-foreground: #2c2416;
+  --popover: #fffdf8;
+  --popover-foreground: #2c2416;
+  --primary: #3d3428;
+  --primary-foreground: #fefcf8;
+  --secondary: #f5efe4;
+  --secondary-foreground: #2c2416;
+  --muted: #f5efe4;
+  --muted-foreground: #6b5e4c;
+  --accent: #ebe3d4;
+  --accent-foreground: #2c2416;
+  --destructive: #c44030;
+  --border: #2c2416;
+  --input: #2c2416;
+  --ring: #3d3428;
+  --chart-1: #3d3428;
+  --chart-2: #6b5e4c;
+  --chart-3: #9a8a6e;
+  --chart-4: #4a3f30;
+  --chart-5: #8a7a5e;
+  --radius: 0rem;
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #2c2416;
+  --sidebar-primary: #3d3428;
+  --sidebar-primary-foreground: #fefcf8;
+  --sidebar-accent: #f5efe4;
+  --sidebar-accent-foreground: #2c2416;
+  --sidebar-border: #2c2416;
+  --sidebar-ring: #3d3428;
+}
+
+.theme-sketchy.dark {
+  --background: #1a1610;
+  --foreground: #f0e8d8;
+  --card: #221c14;
+  --card-foreground: #f0e8d8;
+  --popover: #221c14;
+  --popover-foreground: #f0e8d8;
+  --primary: #d4c4a0;
+  --primary-foreground: #1a1610;
+  --secondary: #2c2418;
+  --secondary-foreground: #f0e8d8;
+  --muted: #2c2418;
+  --muted-foreground: #b0a488;
+  --accent: #3a3020;
+  --accent-foreground: #f0e8d8;
+  --destructive: #e87060;
+  --border: #f0e8d8;
+  --input: #f0e8d8;
+  --ring: #d4c4a0;
+  --chart-1: #d4c4a0;
+  --chart-2: #b0a488;
+  --chart-3: #9a8a6e;
+  --chart-4: #e0d4b8;
+  --chart-5: #8a7a5e;
+  --sidebar: #221c14;
+  --sidebar-foreground: #f0e8d8;
+  --sidebar-primary: #d4c4a0;
+  --sidebar-primary-foreground: #1a1610;
+  --sidebar-accent: #2c2418;
+  --sidebar-accent-foreground: #f0e8d8;
+  --sidebar-border: #f0e8d8;
+  --sidebar-ring: #d4c4a0;
+}
+
+/*
+ * Sketchy mode global overrides.
+ * Menggunakan SVG filter untuk membuat semua border/outline terlihat
+ * hand-drawn (wobbly). Font diganti ke handwriting font.
+ */
+.theme-sketchy,
+.theme-sketchy.dark {
+  --font-sans: var(--font-sketchy), "Comic Sans MS", cursive;
+  --font-heading: var(--font-sketchy), "Comic Sans MS", cursive;
+}
+
+/* SVG filter definition — disisipkan sekali di body */
+.theme-sketchy body::before {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  /* SVG filter for wobbly edges */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='sketchy-filter'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.03' numOctaves='3' seed='2' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E");
+}
+
+/* Apply hand-drawn distortion to all bordered elements */
+.theme-sketchy *:not(img):not(video):not(canvas):not(svg):not(path) {
+  border-radius: 0 !important;
+}
+
+/* Thick, visible, ink-like borders on everything */
+.theme-sketchy input,
+.theme-sketchy textarea,
+.theme-sketchy select,
+.theme-sketchy [data-slot="select-trigger"],
+.theme-sketchy [data-slot="input"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--border) !important;
+  background: transparent !important;
+  box-shadow: 3px 3px 0 0 var(--border) !important;
+}
+
+.theme-sketchy button,
+.theme-sketchy [role="button"],
+.theme-sketchy [data-slot="button"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--border) !important;
+  box-shadow: 3px 3px 0 0 var(--border) !important;
+  border-radius: 0 !important;
+}
+
+.theme-sketchy button:active,
+.theme-sketchy [role="button"]:active {
+  box-shadow: 1px 1px 0 0 var(--border) !important;
+  transform: translate(2px, 2px) !important;
+}
+
+/* Cards, dialogs, sheets — thick border + offset shadow (like pen on paper) */
+.theme-sketchy [data-slot="card"],
+.theme-sketchy [data-slot="sheet-content"],
+.theme-sketchy [data-slot="dialog-content"],
+.theme-sketchy [data-slot="popover-content"],
+.theme-sketchy [data-slot="select-content"],
+.theme-sketchy [data-slot="drawer-content"],
+.theme-sketchy [data-slot="tabs-list"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--border) !important;
+  box-shadow: 4px 4px 0 0 var(--border) !important;
+  border-radius: 0 !important;
+}
+
+/* Separator — dashed line like hand-drawn */
+.theme-sketchy [data-slot="separator"] {
+  border-style: dashed !important;
+  border-width: 1px !important;
+  border-color: var(--border) !important;
+  background: transparent !important;
+  height: auto !important;
+}
+
+/* Tabs triggers — underline style with thick bottom border */
+.theme-sketchy [data-slot="tabs-trigger"] {
+  border: none !important;
+  box-shadow: none !important;
+  border-bottom: 3px solid transparent !important;
+}
+
+.theme-sketchy [data-slot="tabs-trigger"][data-active] {
+  border-bottom: 3px solid var(--foreground) !important;
+}
+
+/* Avatar — square with thick border */
+.theme-sketchy [data-slot="avatar"] {
+  border-radius: 0 !important;
+  border: 2px solid var(--border) !important;
+}
+
+/* Badge — no rounded, thick border */
+.theme-sketchy [data-slot="badge"] {
+  border-radius: 0 !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Scrollbar hide for cleaner sketch look */
+.theme-sketchy ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.theme-sketchy ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.theme-sketchy ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 1px solid var(--background);
+}
+
+/* Remove all rounded corners on images — keep them square/raw */
+.theme-sketchy img {
+  border-radius: 0 !important;
+  border: 2px solid var(--border) !important;
+}
+
+/* Remove smooth transitions for instant "pen stroke" feel */
+.theme-sketchy * {
+  transition-duration: 0ms !important;
+  transition: none !important;
+}
+
+/* Keep essential animations for usability */
+.theme-sketchy [role="progressbar"] *,
+.theme-sketchy [data-state="open"],
+.theme-sketchy [data-state="closed"],
+.theme-sketchy .animate-spin {
+  transition-duration: 150ms !important;
+  transition: all 150ms !important;
+}
+
+.theme-sketchy .animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+/* Tooltip — thick border, no rounded */
+.theme-sketchy [data-slot="tooltip-content"] {
+  border: 2px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 0 var(--border) !important;
+}
+
+/* Links get a wavy underline effect */
+.theme-sketchy a {
+  text-decoration-style: wavy !important;
+  text-underline-offset: 4px !important;
+}
+
+.theme-sketchy a:not([class*="no-underline"]):not(button a):not([role="button"] a) {
+  text-decoration: underline !important;
+  text-decoration-style: wavy !important;
+  text-decoration-color: var(--border) !important;
+}
+
+/* Override for nav links and buttons that shouldn't have underline */
+.theme-sketchy nav a,
+.theme-sketchy [data-slot="sidebar"] a,
+.theme-sketchy button a,
+.theme-sketchy [role="button"] a,
+.theme-sketchy a[class*="flex"],
+.theme-sketchy a[class*="grid"],
+.theme-sketchy a[class*="block"],
+.theme-sketchy a[class*="inline-flex"] {
+  text-decoration: none !important;
+}
+

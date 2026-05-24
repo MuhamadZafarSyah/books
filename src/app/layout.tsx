@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Manrope, Noto_Serif } from "next/font/google";
+import { Architects_Daughter, Geist_Mono, Manrope, Noto_Serif } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,12 @@ const manrope = Manrope({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const architectsDaughter = Architects_Daughter({
+  variable: "--font-sketchy",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -44,6 +50,7 @@ export default function RootLayout({
         manrope.variable,
         notoSerif.variable,
         geistMono.variable,
+        architectsDaughter.variable,
         "font-sans",
       )}
     >

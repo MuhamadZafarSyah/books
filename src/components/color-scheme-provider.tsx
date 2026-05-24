@@ -10,9 +10,9 @@ import {
   type ReactNode,
 } from "react";
 
-export type ColorScheme = "forest" | "pink" | "blue" | "purple" | "orange" | "sage" | "lavender" | "mocha" | "slate";
+export type ColorScheme = "forest" | "pink" | "blue" | "purple" | "orange" | "sage" | "lavender" | "mocha" | "slate" | "sketchy";
 
-const COLOR_SCHEMES: ColorScheme[] = ["forest", "sage", "mocha", "lavender", "slate", "pink", "blue", "purple", "orange"];
+const COLOR_SCHEMES: ColorScheme[] = ["forest", "sage", "mocha", "lavender", "slate", "pink", "blue", "purple", "orange", "sketchy"];
 
 const STORAGE_KEY = "shelfgram-color-scheme";
 const CHANGE_EVENT = "shelfgram-color-scheme-change";
@@ -27,6 +27,7 @@ const SCHEME_CLASS_MAP: Record<ColorScheme, string | null> = {
   lavender: "theme-lavender",
   mocha: "theme-mocha",
   slate: "theme-slate",
+  sketchy: "theme-sketchy",
 };
 
 type ColorSchemeContextValue = {
