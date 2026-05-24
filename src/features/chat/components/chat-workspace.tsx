@@ -576,9 +576,9 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                 <MessageCircle aria-hidden="true" className="size-4" />
               </div>
             )}
-            <Button aria-label="Refresh chat" className={cn(compact ? "hidden" : "hidden lg:inline-flex")} onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
+            {/* <Button aria-label="Refresh chat" className={cn(compact ? "hidden" : "hidden lg:inline-flex")} onClick={refreshBootstrap} size="icon-sm" type="button" variant="outline">
               <Search className="size-4" />
-            </Button>
+            </Button> */}
             {showConversationDrawerToggle && (
               <Button
                 aria-label="Tutup daftar chat"

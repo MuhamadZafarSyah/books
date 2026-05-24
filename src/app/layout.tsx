@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ColorSchemeProvider } from "@/components/color-scheme-provider";
 import { NavigationProgress } from "@/components/navigation-progress";
 
 const notoSerif = Noto_Serif({
@@ -50,11 +51,13 @@ export default function RootLayout({
         <ThemeProvider
           defaultTheme="system"
         >
-          <Suspense>
-            <NavigationProgress />
-          </Suspense>
-          {children}
-          <Toaster richColors />
+          <ColorSchemeProvider>
+            <Suspense>
+              <NavigationProgress />
+            </Suspense>
+            {children}
+            <Toaster richColors />
+          </ColorSchemeProvider>
         </ThemeProvider>
       </body>
     </html>

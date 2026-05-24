@@ -96,11 +96,11 @@ const secondaryNavItems = [
     href: "/dashboard/profile",
     icon: User,
   },
-  // {
-  //   title: "Pengaturan",
-  //   href: "/dashboard/settings",
-  //   icon: Settings,
-  // },
+  {
+    title: "Pengaturan",
+    href: "/dashboard/settings",
+    icon: Settings,
+  },
 ];
 
 type AppSidebarUser = {
