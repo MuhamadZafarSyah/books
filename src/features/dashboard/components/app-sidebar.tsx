@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   CalendarHeart,
   Home,
   Library,
@@ -167,7 +166,9 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
         </Link>
       </SidebarHeader>
 
-      <Separator className="mx-3 w-auto bg-sidebar-border" />
+      <div className="shrink-0 px-3">
+        <Separator className="bg-sidebar-border" />
+      </div>
 
       <SidebarContent>
         <ScrollArea className="flex-1">
@@ -233,7 +234,9 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
         </ScrollArea>
       </SidebarContent>
 
-      <Separator className="mx-3 w-auto bg-sidebar-border" />
+      <div className="shrink-0 px-3">
+        <Separator className="bg-sidebar-border" />
+      </div>
 
       <SidebarFooter className="p-3">
         <div className="flex items-center gap-2.5">

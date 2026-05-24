@@ -31,7 +31,7 @@ export function ReadingCircleHistoryDrawer({
       <Button
         type="button"
         size="icon-sm"
-        variant="outline"
+        variant="ghost"
         className="cursor-pointer rounded-full md:hidden"
         aria-label={`Buka history circle (${history.length})`}
         onClick={() => setOpen(true)}

@@ -49,15 +49,19 @@ function EmptyMainPanel({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-4 sm:px-6">
-        <ReadingCircleHistoryDrawer
-          history={history}
-          activeCircleId={activeCircleId}
-        />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
-            <Sparkles aria-hidden="true" className="size-3" />
-            Reading Circle
-          </span>
+          <div className="flex relative justify-between items-center">
+            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+              <Sparkles aria-hidden="true" className="size-3" />
+              Reading Circle
+            </span>
+            <div className="absolute -top-2 -right-2">
+              <ReadingCircleHistoryDrawer
+                history={history}
+                activeCircleId={activeCircleId}
+              />
+            </div>
+          </div>
           <h1 className="mt-1 font-heading text-base font-semibold leading-tight tracking-tight text-foreground sm:text-lg">
             Pilih circle
           </h1>
