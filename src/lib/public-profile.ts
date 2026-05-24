@@ -33,7 +33,6 @@ export function profileSlugFor(user: ProfileUserRecord) {
 function serializeUserBook(item: {
   id: string;
   status: import("@prisma/client").UserBookStatus;
-  isBorrowable: boolean;
   progress: number | null;
   updatedAt: Date;
   book: {
@@ -47,7 +46,6 @@ function serializeUserBook(item: {
   return {
     id: item.id,
     status: item.status,
-    isBorrowable: item.isBorrowable,
     progress: item.progress,
     updatedAt: item.updatedAt.toISOString(),
     book: item.book,
@@ -106,7 +104,6 @@ export async function getPublicProfileBySlug(slug: string) {
     isFollowing,
     currentlyReading,
     publicShelf,
-    borrowableBooks,
     latestReviews,
   ] = await Promise.all([
     prisma.userFollow.count({ where: { followingId: profile.id } }),
@@ -140,12 +137,6 @@ export async function getPublicProfileBySlug(slug: string) {
       where: { userId: profile.id, visibility: "PUBLIC" },
       orderBy: { updatedAt: "desc" },
       take: 8,
-      include: { book: true },
-    }),
-    prisma.userBook.findMany({
-      where: { userId: profile.id, visibility: "PUBLIC", isBorrowable: true },
-      orderBy: { updatedAt: "desc" },
-      take: 4,
       include: { book: true },
     }),
     prisma.bookReview.findMany({
@@ -272,7 +263,6 @@ export async function getPublicProfileBySlug(slug: string) {
     },
     currentlyReading: currentlyReading.map(serializeUserBook),
     publicShelf: publicShelf.map(serializeUserBook),
-    borrowableBooks: borrowableBooks.map(serializeUserBook),
     latestReviews: latestReviews.map(serializeReview),
     myCircles,
     upcomingEvents,

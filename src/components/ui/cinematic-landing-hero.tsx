@@ -5,7 +5,6 @@ import {
   BookOpen,
   LibraryBig,
   MessageCircle,
-  ShieldCheck,
   Star,
   Users,
 } from "lucide-react";
@@ -151,10 +150,10 @@ export interface CinematicHeroProps extends React.HTMLAttributes<HTMLDivElement>
 export function CinematicHero({
   brandName = "Shelfgram",
   tagline1 = "Baca.",
-  tagline2 = "Review. Pinjam.",
-  cardHeading = "Buku. Review. Pinjam.",
+  tagline2 = "Review. Terhubung.",
+  cardHeading = "Buku. Review. Teman baca.",
   cardDescription = (
-    <>Catat buku, tulis review, dan temukan koleksi fisik pembaca lain.</>
+    <>Catat buku, tulis review, dan temukan pembaca lain.</>
   ),
   metricValue = 128,
   metricLabel = "buku terkurasi",
@@ -565,14 +564,14 @@ export function CinematicHero({
 
               <div className="sg-floating-badge absolute right-1 bottom-4 z-30 flex max-w-[13rem] items-center gap-3 rounded-2xl p-3 sm:right-4 sm:bottom-8 sm:max-w-[16rem] sm:p-4 lg:-right-6">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#8fb89e]/30 bg-[#8fb89e]/15 text-[#8fb89e]">
-                  <ShieldCheck aria-hidden="true" className="size-5" />
+                  <Users aria-hidden="true" className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
-                    Buku bisa dipinjam
+                    Teman baca aktif
                   </p>
                   <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
-                    Siap dipinjam.
+                    Profil dan review.
                   </p>
                 </div>
               </div>

@@ -139,7 +139,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
                   : "translate-y-2 opacity-0",
               )}
             >
-              Baca. Review. Pinjam.
+              Baca. Review. Terhubung.
             </p>
           </div>
 

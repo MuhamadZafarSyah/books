@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { BookOpen, Handshake, MessageCircle, Star } from "lucide-react";
+import { BookOpen, MessageCircle, Star, Users } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -21,10 +21,10 @@ const steps = [
     copy: "Rating, quote, dan catatan tampil ringkas.",
   },
   {
-    icon: Handshake,
-    eyebrow: "03 Pinjam",
-    title: "Temukan buku fisik.",
-    copy: "Lihat status dan ajukan pinjam dengan aman.",
+    icon: Users,
+    eyebrow: "03 Komunitas",
+    title: "Temukan pembaca.",
+    copy: "Lihat profil, review, dan circle yang cocok dengan ritme bacamu.",
   },
 ] as const;
 

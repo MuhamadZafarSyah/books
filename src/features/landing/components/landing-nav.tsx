@@ -11,7 +11,6 @@ const navItems = [
   { href: "#fitur", label: "Fitur" },
   { href: "#cara-kerja", label: "Cara kerja" },
   { href: "#komunitas", label: "Komunitas" },
-  { href: "#peminjaman", label: "Peminjaman" },
 ];
 
 export function LandingNav() {

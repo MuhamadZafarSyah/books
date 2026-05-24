@@ -1,20 +1,14 @@
-import Link from "next/link";
 import Image from "next/image";
 import {
-  BookOpen,
   CalendarHeart,
-  Handshake,
   MapPin,
-  Star,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { MyCirclesList } from "@/features/dashboard/components/overview/my-circles-list";
 import { ProfileReviewsList } from "@/features/dashboard/components/overview/profile-reviews-list";
 import { ProfileShelfStrip } from "@/features/dashboard/components/overview/profile-shelf-strip";
 import { RankPill } from "@/features/dashboard/components/overview/rank-pill";
-import { SectionHeading } from "@/features/dashboard/components/overview/section-heading";
 import { StatsStrip } from "@/features/dashboard/components/overview/stats-strip";
 import { UpcomingEventsList } from "@/features/dashboard/components/overview/upcoming-events-list";
 import {
@@ -45,9 +39,7 @@ type PublicProfileShellProps = {
  *
  * - Banner action diganti dengan `PublicProfileActions` (Follow / Message).
  * - Stat strip menyesuaikan ke metrik publik (total rak, follower, review,
- *   booksRead, bisa-dipinjam).
- * - Section "Buku bisa dipinjam" hadir karena ini fitur khas pengunjung
- *   (bukan profil sendiri).
+ *   dan booksRead).
  * - Tidak ada section "Aktivitas kamu" karena loader publik sengaja tidak
  *   memuat ledger pribadi user lain (privasi sederhana).
  */
@@ -131,10 +123,6 @@ export function PublicProfileShell({ profile }: PublicProfileShellProps) {
     {
       label: "Mengikuti",
       value: formatNumber(profile.stats.followingCount),
-    },
-    {
-      label: "Bisa dipinjam",
-      value: formatNumber(profile.borrowableBooks.length),
     },
   ];
 
@@ -239,59 +227,6 @@ export function PublicProfileShell({ profile }: PublicProfileShellProps) {
         circles={profile.myCircles}
         emptyHint="Belum bergabung di circle publik."
       />
-
-      <BorrowableBooksList books={profile.borrowableBooks} />
     </div>
-  );
-}
-
-type BorrowableItem = PublicProfile["borrowableBooks"][number];
-
-function BorrowableBooksList({ books }: { books: BorrowableItem[] }) {
-  return (
-    <section aria-labelledby="profile-borrowable">
-      <SectionHeading
-        title="Buku bisa dipinjam"
-        description="Koleksi yang ditandai pemilik untuk dipinjam komunitas."
-      />
-
-      {books.length === 0 ? (
-        <p className="mt-3 rounded-2xl border border-dashed border-border/60 px-4 py-6 text-center text-sm text-muted-foreground">
-          Belum ada buku yang ditandai bisa dipinjam.
-        </p>
-      ) : (
-        <ul className="mt-3 overflow-hidden rounded-2xl border border-border/60">
-          {books.map((item, index) => (
-            <li key={item.id}>
-              {index > 0 ? <Separator /> : null}
-              <Link
-                href={`/dashboard/explore/books/${item.book.id}/reviews`}
-                className="flex items-center gap-3 px-3 py-3 transition-colors duration-200 hover:bg-muted/40 sm:gap-4 sm:px-4"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Handshake aria-hidden="true" className="size-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-medium text-foreground">
-                    {item.book.title}
-                  </p>
-                  <p className="line-clamp-1 text-xs text-muted-foreground">
-                    {item.book.author}
-                  </p>
-                </div>
-                <span className="hidden items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary sm:inline-flex">
-                  <BookOpen aria-hidden="true" className="size-3" />
-                  Tersedia
-                </span>
-                <Star
-                  aria-hidden="true"
-                  className="size-4 shrink-0 text-muted-foreground/40 sm:hidden"
-                />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }

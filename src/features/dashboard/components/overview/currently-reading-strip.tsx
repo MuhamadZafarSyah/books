@@ -16,7 +16,7 @@ type CurrentlyReadingStripProps = {
  *
  * Mobile-first: scroll horizontal dengan `ScrollArea` shadcn supaya tidak
  * memaksa stack vertikal panjang di layar kecil. Tiap kartu kompak (cover
- * + judul + author + progress), tanpa heavy shadow.
+ * + judul + author), tanpa heavy shadow.
  */
 export function CurrentlyReadingStrip({
   books,
@@ -44,16 +44,8 @@ export function CurrentlyReadingStrip({
                   href={`/dashboard/explore/books/${book.id}/reviews`}
                   className="group block space-y-2"
                 >
-                  <div className="relative aspect-[2/3] overflow-hidden rounded-xl border border-border/60 bg-muted">
+                  <div className="aspect-[2/3] overflow-hidden rounded-xl border border-border/60 bg-muted">
                     <BookCover src={book.coverUrl} alt={book.title} />
-                    {typeof book.progress === "number" ? (
-                      <span
-                        aria-label={`Progres ${book.progress} persen`}
-                        className="absolute inset-x-2 bottom-2 rounded-full bg-background/90 px-2 py-0.5 text-center text-[10px] font-semibold tabular-nums text-foreground backdrop-blur-sm"
-                      >
-                        {book.progress}%
-                      </span>
-                    ) : null}
                   </div>
                   <div className="space-y-0.5">
                     <p

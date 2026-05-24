@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 import {
   BookOpen,
-  Handshake,
   LibraryBig,
   MessageCircle,
   Quote,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -43,13 +43,13 @@ const storyScenes = [
     metricLabel: "teman pembaca",
   },
   {
-    icon: Handshake,
+    icon: Users,
     eyebrow: "Scene 04",
-    title: "Buku fisik punya perjalanan.",
-    copy: "Status pinjam, request, dan pemiliknya jelas sejak awal, jadi proses berbagi terasa aman.",
-    cue: "Pinjam",
+    title: "Komunitas memberi arah.",
+    copy: "Profil, circle, dan agenda membantu pembaca menemukan ritme baca yang cocok.",
+    cue: "Komunitas",
     metric: "6",
-    metricLabel: "buku tersedia",
+    metricLabel: "circle aktif",
   },
 ] as const;
 
@@ -378,7 +378,7 @@ export function CinematicStorytelling({ className }: { className?: string }) {
             </h2>
             <p className="story-copy mt-5 max-w-xl text-base leading-7 text-[#fff9f0]/76 sm:text-lg sm:leading-8">
               Section ini mengikuti satu buku saat ia dicatat, direview,
-              ditemukan teman, lalu dipinjam dengan jelas.
+              ditemukan teman, lalu membuka percakapan baru.
             </p>
 
             <div className="mt-9 grid gap-5 lg:relative lg:block lg:min-h-[18rem]">

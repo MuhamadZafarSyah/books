@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   BookOpen,
-  Handshake,
   LibraryBig,
   MessageCircle,
   ShieldCheck,
@@ -11,7 +10,6 @@ import {
 
 import { CinematicHero } from "@/components/ui/cinematic-landing-hero";
 import { CinematicReadingFlow } from "@/components/ui/cinematic-reading-flow";
-import { CinematicStorytelling } from "@/components/ui/cinematic-storytelling";
 import { SplashScreen } from "@/components/ui/splash-screen";
 
 const featureCards = [
@@ -26,22 +24,22 @@ const featureCards = [
     description: "Rating, quote, dan kesan tampil ringkas di feed.",
   },
   {
-    icon: Handshake,
-    title: "Pinjam buku",
-    description: "Lihat buku tersedia dan ajukan request dengan aman.",
+    icon: Users,
+    title: "Temukan pembaca",
+    description: "Lihat profil pembaca lain dan mulai koneksi dari buku yang sama.",
   },
 ] as const;
 
 const trustItems = [
   "Profil membaca yang personal.",
-  "Status pinjam yang jelas.",
+  "Koneksi pembaca yang jelas.",
   "Feed sosial yang tetap tenang.",
 ] as const;
 
 const statCards = [
   { icon: Star, value: "4.8", label: "rating rata-rata" },
   { icon: Users, value: "18", label: "teman pembaca" },
-  { icon: ShieldCheck, value: "6", label: "buku bisa dipinjam" },
+  { icon: LibraryBig, value: "128", label: "buku tercatat" },
 ] as const;
 
 export default function Page() {
@@ -50,15 +48,15 @@ export default function Page() {
       <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
         <CinematicHero
           brandName="Shelfgram"
-          cardDescription="Catat buku, tulis review, dan temukan koleksi fisik pembaca lain."
-          cardHeading="Buku. Review. Pinjam."
+          cardDescription="Catat buku, tulis review, dan temukan pembaca lain."
+          cardHeading="Buku. Review. Teman baca."
           ctaDescription="Catat buku dan temukan pembaca lain."
           ctaHeading="Mulai rakmu."
           metricLabel="buku terkurasi"
           metricValue={128}
           splineScene="/3d/opening_book_on_scroll.spline"
           tagline1="Baca."
-          tagline2="Review. Pinjam."
+          tagline2="Review. Terhubung."
         />
 
         {/* <CinematicStorytelling /> */}
@@ -72,7 +70,7 @@ export default function Page() {
                 Intinya
               </p>
               <h2 className="mt-3 max-w-3xl font-heading text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-                Satu tempat untuk buku, review, dan peminjaman.
+                Satu tempat untuk buku, review, dan koneksi pembaca.
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
