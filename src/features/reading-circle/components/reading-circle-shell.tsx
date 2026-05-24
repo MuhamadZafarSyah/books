@@ -21,7 +21,11 @@ export function ReadingCircleShell({ data }: ReadingCircleShellProps) {
   );
 
   const main = circle ? (
-    <ReadingCircleRoom initial={circle} history={history} />
+    <ReadingCircleRoom
+      key={`${circle.id}:${circle.myRole ?? "visitor"}:${circle.memberCount}`}
+      initial={circle}
+      history={history}
+    />
   ) : (
     <EmptyMainPanel history={history} activeCircleId={activeCircleId} />
   );

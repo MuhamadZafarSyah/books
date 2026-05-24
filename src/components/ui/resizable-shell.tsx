@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -38,8 +39,22 @@ const SAVE_DEBOUNCE_MS = 200;
 
 type Layout = { [panelId: string]: number };
 
+const mountedStorageKeys = new Set<string>();
+const sidebarSizeCache = new Map<string, number>();
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function getCachedSidebarSize(
+  storageFullKey: string,
+  minSidebarSize: number,
+  maxSidebarSize: number,
+) {
+  if (typeof window === "undefined") return null;
+  const cached = sidebarSizeCache.get(storageFullKey);
+  if (typeof cached !== "number" || !Number.isFinite(cached)) return null;
+  return clamp(cached, minSidebarSize, maxSidebarSize);
 }
 
 /**
@@ -57,7 +72,7 @@ function clamp(value: number, min: number, max: number): number {
  * akses ke DOM saat hydration; sebelum mount, fallback grid statis
  * dirender supaya tidak ada flicker layout.
  */
-export function ResizableShell({
+function ResizableShellBase({
   sidebar,
   main,
   storageKey,
@@ -66,37 +81,81 @@ export function ResizableShell({
   maxSidebarSize = 40,
   className,
 }: ResizableShellProps) {
-  const [mounted, setMounted] = useState(false);
-  const [savedSidebarSize, setSavedSidebarSize] = useState<number | null>(null);
-
   // Kunci penuh per `storageKey` agar dua shell yang berbeda (mis. circle vs
   // book-ai-chat) menyimpan preferensi terpisah.
   const storageFullKey = useMemo(
     () => `resizable-shell:${storageKey}`,
     [storageKey],
   );
+  const [mounted, setMounted] = useState(
+    () =>
+      typeof window !== "undefined" && mountedStorageKeys.has(storageFullKey),
+  );
+  const [savedSidebarSize, setSavedSidebarSize] = useState<number | null>(() =>
+    getCachedSidebarSize(storageFullKey, minSidebarSize, maxSidebarSize),
+  );
 
   // Saat mount: baca preferensi dari localStorage. Defer setState ke
   // microtask supaya tidak melanggar `react-hooks/set-state-in-effect`
   // (React 19 strict).
   useEffect(() => {
+    let cancelled = false;
+
     void Promise.resolve().then(() => {
+      if (cancelled) return;
+
+      let nextSidebarSize = getCachedSidebarSize(
+        storageFullKey,
+        minSidebarSize,
+        maxSidebarSize,
+      );
+
       setMounted(true);
+      mountedStorageKeys.add(storageFullKey);
+
       try {
         const raw = window.localStorage.getItem(storageFullKey);
-        if (!raw) return;
+        if (!raw) {
+          setSavedSidebarSize(nextSidebarSize);
+          return;
+        }
         const parsed = Number.parseFloat(raw);
-        if (!Number.isFinite(parsed)) return;
-        setSavedSidebarSize(
-          clamp(parsed, minSidebarSize, maxSidebarSize),
+        if (!Number.isFinite(parsed)) {
+          setSavedSidebarSize(nextSidebarSize);
+          return;
+        }
+        nextSidebarSize = clamp(
+          parsed,
+          minSidebarSize,
+          maxSidebarSize,
         );
+        sidebarSizeCache.set(storageFullKey, nextSidebarSize);
       } catch {
         // localStorage bisa tidak tersedia di mode private; aman diabaikan.
       }
+
+      setSavedSidebarSize(nextSidebarSize);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [storageFullKey, minSidebarSize, maxSidebarSize]);
 
   const sidebarSize = savedSidebarSize ?? defaultSidebarSize;
+  const defaultLayout = useMemo(
+    () => ({
+      [SIDEBAR_PANEL_ID]: sidebarSize,
+      [MAIN_PANEL_ID]: 100 - sidebarSize,
+    }),
+    [sidebarSize],
+  );
+  const fallbackGridStyle = useMemo(
+    () => ({
+      gridTemplateColumns: `${sidebarSize}% minmax(0, 1fr)`,
+    }),
+    [sidebarSize],
+  );
 
   /**
    * Persist layout setiap kali user selesai resize. `react-resizable-panels`
@@ -122,6 +181,7 @@ export function ResizableShell({
     (layout: Layout) => {
       const next = layout[SIDEBAR_PANEL_ID];
       if (typeof next !== "number" || !Number.isFinite(next)) return;
+      sidebarSizeCache.set(storageFullKey, next);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
         try {
@@ -152,11 +212,9 @@ export function ResizableShell({
       <div className="hidden h-full min-h-0 md:block">
         {mounted ? (
           <ResizablePanelGroup
+            id={storageFullKey}
             orientation="horizontal"
-            defaultLayout={{
-              [SIDEBAR_PANEL_ID]: sidebarSize,
-              [MAIN_PANEL_ID]: 100 - sidebarSize,
-            }}
+            defaultLayout={defaultLayout}
             onLayoutChanged={handleLayoutChanged}
             className="h-full min-h-0"
           >
@@ -186,9 +244,7 @@ export function ResizableShell({
           // flicker layout sebelum `react-resizable-panels` aktif.
           <div
             className="grid h-full min-h-0"
-            style={{
-              gridTemplateColumns: `${sidebarSize}% minmax(0, 1fr)`,
-            }}
+            style={fallbackGridStyle}
           >
             <div className="min-h-0">{sidebar}</div>
             <section className="flex min-h-0 min-w-0 flex-col">
@@ -200,3 +256,6 @@ export function ResizableShell({
     </div>
   );
 }
+
+export const ResizableShell = memo(ResizableShellBase);
+ResizableShell.displayName = "ResizableShell";

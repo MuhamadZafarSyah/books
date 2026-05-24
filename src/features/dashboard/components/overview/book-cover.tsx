@@ -18,13 +18,15 @@ type BookCoverProps = {
 export function BookCover({ src, alt, className }: BookCoverProps) {
   if (src) {
     return (
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes="(max-width: 640px) 45vw, 180px"
-        className={cn("object-cover", className)}
-      />
+      <span className="relative block size-full">
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="(max-width: 640px) 45vw, 180px"
+          className={cn("object-cover", className)}
+        />
+      </span>
     );
   }
 

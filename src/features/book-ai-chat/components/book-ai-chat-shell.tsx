@@ -33,7 +33,7 @@ export function BookAiChatShell({ data }: BookAiChatShellProps) {
         history={history}
         activeConversationId={conversation.id}
       />
-      <BookAiChatClient conversation={conversation} />
+      <BookAiChatClient key={conversation.id} conversation={conversation} />
     </>
   ) : (
     <EmptyMainPanel

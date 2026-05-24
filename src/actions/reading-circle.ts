@@ -269,7 +269,7 @@ export async function getPublicReadingCirclesForBook(
   return circles.map((circle) => serializeCircleSummary(circle, null));
 }
 
-export async function joinReadingCircle(circleId: string): Promise<void> {
+export async function joinReadingCircle(circleId: string): Promise<ReadingCircleDetail> {
   const userId = await requireUserId();
   const circle = await prisma.readingCircle.findUnique({
     where: { id: circleId },
@@ -310,9 +310,14 @@ export async function joinReadingCircle(circleId: string): Promise<void> {
 
   revalidatePath(`/dashboard/circles/${circleId}`);
   revalidatePath("/dashboard/circles");
+  revalidatePath("/dashboard/circles/discover");
+
+  const detail = await loadDetailRaw(circleId, userId);
+  if (!detail) throw new Error("Circle tidak ditemukan.");
+  return detail;
 }
 
-export async function leaveReadingCircle(circleId: string): Promise<void> {
+export async function leaveReadingCircle(circleId: string): Promise<ReadingCircleDetail> {
   const userId = await requireUserId();
 
   await prisma.$transaction(async (tx) => {
@@ -338,6 +343,11 @@ export async function leaveReadingCircle(circleId: string): Promise<void> {
 
   revalidatePath(`/dashboard/circles/${circleId}`);
   revalidatePath("/dashboard/circles");
+  revalidatePath("/dashboard/circles/discover");
+
+  const detail = await loadDetailRaw(circleId, userId);
+  if (!detail) throw new Error("Circle tidak ditemukan.");
+  return detail;
 }
 
 export type CreateReadingCirclePostInput = {

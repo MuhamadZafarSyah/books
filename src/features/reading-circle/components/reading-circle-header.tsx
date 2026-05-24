@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -58,6 +59,7 @@ export function ReadingCircleHeader({
   history,
   onUpdated,
 }: ReadingCircleHeaderProps) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const privacy = PRIVACY_META[circle.privacy];
   const isOwner = circle.myRole === "OWNER";
@@ -68,7 +70,9 @@ export function ReadingCircleHeader({
   const handleJoin = () =>
     startTransition(async () => {
       try {
-        await joinReadingCircle(circle.id);
+        const next = await joinReadingCircle(circle.id);
+        onUpdated(next);
+        router.refresh();
         toast.success("Anda bergabung ke circle.");
       } catch (error) {
         toast.error(
@@ -80,7 +84,9 @@ export function ReadingCircleHeader({
   const handleLeave = () =>
     startTransition(async () => {
       try {
-        await leaveReadingCircle(circle.id);
+        const next = await leaveReadingCircle(circle.id);
+        onUpdated(next);
+        router.refresh();
         toast.success("Anda keluar dari circle.");
       } catch (error) {
         toast.error(
