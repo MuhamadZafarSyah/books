@@ -43,7 +43,7 @@ export function ReadingCircleDiscoverCard({
       href={`/dashboard/circles/${circle.id}`}
       aria-label={circle.title}
       className={cn(
-        "group flex cursor-pointer items-start gap-3 rounded-xl p-3 transition-colors duration-150",
+        "group flex cursor-pointer border border-border items-start gap-3 rounded-xl p-3 transition-colors duration-150",
         "hover:bg-muted/60",
         "focus-visible:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
       )}

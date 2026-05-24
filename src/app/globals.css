@@ -154,6 +154,16 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+@keyframes book-cover-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .button-click {
   cursor: pointer !important;
   transition: transform 100ms ease-in-out !important;

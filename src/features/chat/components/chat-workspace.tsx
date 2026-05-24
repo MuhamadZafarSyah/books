@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { BookOpen, ChevronLeft, MessageCircle, PanelLeftIcon, Search, Send, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, MessageCircle, PanelLeftIcon, Send, Users } from "lucide-react";
 import { useDebounceCallback, useMediaQuery } from "usehooks-ts";
 import gsap from "gsap";
 
@@ -601,7 +601,7 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                     key={conversation.id}
                     aria-label={`Buka chat dengan ${conversation.title}`}
                     className={cn(
-                      "relative flex w-full cursor-pointer items-center rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:bg-card motion-reduce:transition-none",
+                      "relative flex min-w-0 w-full cursor-pointer items-center overflow-hidden rounded-2xl text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:bg-card motion-reduce:transition-none",
                       compact ? "justify-center p-1.5" : "justify-center p-1.5 lg:justify-start lg:gap-2 lg:p-2",
                       showConversationListDetails && "justify-start gap-2 p-2",
                       activeConversationId === conversation.id && "bg-card shadow-sm",
@@ -610,9 +610,9 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                     type="button"
                   >
                     <ConversationAvatar conversation={conversation} currentUserId={initialData.currentUser.id} />
-                    <span className={cn("hidden min-w-0 flex-1", !compact && "lg:block", showConversationListDetails && "block")}>
-                      <span className="block truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
-                      <span className="block truncate! text-[11px] leading-4 text-muted-foreground">
+                    <span className={cn("hidden min-w-0 max-w-full flex-1 overflow-hidden", !compact && "lg:block", showConversationListDetails && "block")}>
+                      <span className="block max-w-full truncate text-[13px] font-semibold leading-5 text-foreground">{conversation.title}</span>
+                      <span className="block max-w-full truncate text-[11px] leading-4 text-muted-foreground">
                         {preview}
                       </span>
                     </span>

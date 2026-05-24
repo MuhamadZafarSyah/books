@@ -22,7 +22,7 @@ export function BookCard({ book, onSelect }: BookCardProps) {
       )}
     >
       <div className="overflow-hidden rounded-md shadow-[0_4px_12px_-6px_rgba(36,26,18,0.35)] transition-shadow duration-300 group-hover:shadow-[0_10px_22px_-10px_rgba(36,26,18,0.45)]">
-        <BookCover src={book.coverUrl} title={book.title} rounded="md" />
+        <BookCover src={book.coverUrl} title={book.title} rounded="md" hoverZoom />
       </div>
       <div className="px-1">
         <h3 className="line-clamp-2 text-sm font-medium leading-snug tracking-tight text-foreground">

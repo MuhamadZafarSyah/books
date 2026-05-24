@@ -14,6 +14,7 @@ type BookCoverProps = {
   /** Hint to next/image about display size. */
   sizes?: string;
   priority?: boolean;
+  hoverZoom?: boolean;
 };
 
 const ROUNDED = {
@@ -29,9 +30,12 @@ export function BookCover({
   rounded = "md",
   sizes = "(min-width: 1280px) 200px, (min-width: 768px) 25vw, 45vw",
   priority = false,
+  hoverZoom = false,
 }: BookCoverProps) {
-  const [errored, setErrored] = useState(false);
-  const showFallback = !src || errored;
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+  const showFallback = !src || erroredSrc === src;
+  const isLoading = Boolean(src) && loadedSrc !== src && erroredSrc !== src;
 
   return (
     <div
@@ -44,15 +48,31 @@ export function BookCover({
       {showFallback ? (
         <NoCoverFallback title={title} />
       ) : (
-        <Image
-          src={src}
-          alt={`Cover ${title}`}
-          fill
-          sizes={sizes}
-          priority={priority}
-          onError={() => setErrored(true)}
-          className="object-cover"
-        />
+        <>
+          <Image
+            src={src}
+            alt={`Cover ${title}`}
+            fill
+            sizes={sizes}
+            priority={priority}
+            onLoad={() => setLoadedSrc(src)}
+            onError={() => setErroredSrc(src)}
+            className={cn(
+              "object-cover",
+              hoverZoom &&
+                "scale-100 transform-gpu motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.07] motion-safe:group-focus-visible:scale-[1.05]",
+            )}
+          />
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0 z-10 bg-muted transition-opacity duration-300",
+              isLoading ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card/70 to-transparent bg-[length:200%_100%] motion-safe:animate-[book-cover-shimmer_1.25s_ease-in-out_infinite] motion-reduce:animate-pulse" />
+          </div>
+        </>
       )}
     </div>
   );
