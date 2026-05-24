@@ -13,6 +13,7 @@ import {
   Globe2,
   Hash,
   Loader2,
+  Quote,
   Sparkles,
   Star,
   Users,
@@ -37,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookCover } from "@/features/books/components/book-cover";
 import { CreateCircleDialog } from "@/features/reading-circle/components/create-circle-dialog";
-import { BookShelfStatusDialog } from "@/features/user-books/components/book-shelf-status-dialog";
+import { BookShelfStatusDialog } from "@/features/user-books/components/book-shelf-status-kanban";
 import type { BookResult } from "@/features/books/types";
 import { cn } from "@/lib/utils";
 
@@ -244,6 +245,7 @@ function DetailActions({ book }: { book: BookResult }) {
               <Users aria-hidden="true" className="size-3.5" />
               Buat circle
             </Button>
+            <QuotesCta book={book} onAction={() => setOpen(false)} />
             <ReviewsCta
               book={book}
               className="justify-start rounded-[1rem] px-3"
@@ -370,6 +372,48 @@ function ReviewsCta({
         <Star aria-hidden="true" className="size-3.5" />
       )}
       {pending ? "Membuka..." : label}
+    </Button>
+  );
+}
+
+function QuotesCta({
+  book,
+  onAction,
+}: {
+  book: BookResult;
+  onAction?: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const handleClick = () => {
+    onAction?.();
+    startTransition(async () => {
+      try {
+        const { bookId } = await ensureLocalBookFromResult(book);
+        router.push(`/dashboard/explore/books/${bookId}/quotes`);
+      } catch (error) {
+        console.error("[book-quotes] open quotes failed", error);
+        toast.error("Gagal membuka halaman kutipan. Coba lagi sebentar.");
+      }
+    });
+  };
+
+  return (
+    <Button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      variant="ghost"
+      className="w-full cursor-pointer justify-start rounded-[1rem] px-3"
+      size="sm"
+    >
+      {pending ? (
+        <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+      ) : (
+        <Quote aria-hidden="true" className="size-3.5" />
+      )}
+      {pending ? "Membuka..." : "Simpan kutipan"}
     </Button>
   );
 }

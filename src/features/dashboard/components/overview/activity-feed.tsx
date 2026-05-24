@@ -5,6 +5,7 @@ import {
   CalendarHeart,
   MessageSquare,
   PenLine,
+  Quote,
   Star,
   UserPlus,
   Users,
@@ -40,6 +41,7 @@ const ACTIVITY_ICON: Record<UserActivityType, LucideIcon> = {
   READING_EVENT_CREATED: CalendarHeart,
   READING_EVENT_JOINED: CalendarHeart,
   BOOK_REVIEW_CREATED: Star,
+  BOOK_QUOTE_CREATED: Quote,
   USER_FOLLOW_CREATED: UserPlus,
 };
 
@@ -67,6 +69,8 @@ function describeActivity(
       return { verb: "ikut agenda", preposition: "" };
     case "BOOK_REVIEW_CREATED":
       return { verb: "menulis review", preposition: "untuk" };
+    case "BOOK_QUOTE_CREATED":
+      return { verb: "menyimpan kutipan", preposition: "dari" };
     case "USER_FOLLOW_CREATED":
       return { verb: "mengikuti", preposition: "" };
     default:

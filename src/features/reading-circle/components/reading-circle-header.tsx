@@ -97,11 +97,13 @@ export function ReadingCircleHeader({
 
   return (
     <header className="border-b border-border bg-card">
-      <div className="flex items-start gap-3 px-4 pb-4 pt-4 sm:gap-4 sm:px-6">
+      <div className="flex items-start relative gap-3 px-4 pb-4 pt-4 sm:gap-4 sm:px-6">
+          <div className="absolute top-2 right-2">
         <ReadingCircleHistoryDrawer
           history={history}
           activeCircleId={circle.id}
         />
+        </div>
 
         <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm sm:h-24 sm:w-16">
           {circle.context.coverUrl ? (

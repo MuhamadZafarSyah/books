@@ -17,6 +17,7 @@ export const ACTIVITY_POINTS: Record<UserActivityType, number> = {
   READING_EVENT_CREATED: 32,
   READING_EVENT_JOINED: 10,
   BOOK_REVIEW_CREATED: 24,
+  BOOK_QUOTE_CREATED: 8,
   USER_FOLLOW_CREATED: 4,
 };
 
@@ -29,6 +30,7 @@ export const ACTIVITY_POINTS: Record<UserActivityType, number> = {
 export const ACTIVITY_DAILY_CAP: Partial<Record<UserActivityType, number>> = {
   READING_CIRCLE_COMMENT_CREATED: 8,
   READING_CIRCLE_POST_CREATED: 5,
+  BOOK_QUOTE_CREATED: 10,
   USER_FOLLOW_CREATED: 10,
 };
 
@@ -49,6 +51,7 @@ export const ACTIVITY_SCOPE: Record<UserActivityType, Exclude<ScopeKey, "overall
   READING_EVENT_CREATED: "events",
   READING_EVENT_JOINED: "events",
   BOOK_REVIEW_CREATED: "reviews",
+  BOOK_QUOTE_CREATED: "reviews",
   USER_FOLLOW_CREATED: "social",
 };
 
@@ -67,7 +70,7 @@ export const SCOPE_ACTIVITY_TYPES: Record<
     "READING_CIRCLE_COMMENT_CREATED",
   ],
   events: ["READING_EVENT_CREATED", "READING_EVENT_JOINED"],
-  reviews: ["BOOK_REVIEW_CREATED"],
+  reviews: ["BOOK_REVIEW_CREATED", "BOOK_QUOTE_CREATED"],
   social: ["USER_FOLLOW_CREATED"],
 };
 
@@ -108,6 +111,10 @@ export const ACTIVITY_LABELS: Record<
   BOOK_REVIEW_CREATED: {
     label: "Menulis review buku",
     notes: "Hanya saat review pertama untuk buku tersebut.",
+  },
+  BOOK_QUOTE_CREATED: {
+    label: "Menyimpan kutipan buku",
+    notes: "Maksimal 10 kutipan ber-poin per hari.",
   },
   USER_FOLLOW_CREATED: {
     label: "Follow pembaca lain",

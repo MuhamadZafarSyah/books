@@ -36,6 +36,7 @@ model User {
   following UserFollow[] @relation("UserFollowing")
   books UserBook[]
   reviews BookReview[]
+  quotes BookQuote[]
   bookAiConversations BookAiConversation[]
   readingCirclesOwned       ReadingCircle[]
   readingCircleMemberships  ReadingCircleMember[]
@@ -91,6 +92,7 @@ model Book {
 
   owners  UserBook[]
   reviews BookReview[]
+  quotes  BookQuote[]
 
   @@index([editionKey])
 }
@@ -474,6 +476,29 @@ model ReadingEventParticipant {
   @@index([userId, joinedAt])
 }
 
+// ── Book Quotes (Highlight & Quote Collection) ─────────────
+
+model BookQuote {
+  id         String             @id @default(cuid())
+  userId     String
+  bookId     String
+  quote      String             @db.Text
+  note       String?            @db.Text
+  page       Int?
+  chapter    String?
+  visibility UserBookVisibility @default(PRIVATE)
+  isFavorite Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([bookId, createdAt])
+  @@index([visibility, createdAt])
+}
+
 // ── Leaderboard / Activity Ledger ───────────────────────────
 
 enum UserActivityType {
@@ -484,6 +509,7 @@ enum UserActivityType {
   READING_EVENT_CREATED
   READING_EVENT_JOINED
   BOOK_REVIEW_CREATED
+  BOOK_QUOTE_CREATED
   USER_FOLLOW_CREATED
 }
 
@@ -493,6 +519,7 @@ enum UserActivitySourceType {
   READING_CIRCLE_COMMENT
   READING_EVENT
   BOOK_REVIEW
+  BOOK_QUOTE
   USER_FOLLOW
 }
 

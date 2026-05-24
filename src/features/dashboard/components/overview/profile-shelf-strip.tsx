@@ -9,7 +9,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookCover } from "@/features/dashboard/components/overview/book-cover";
 import { SectionHeading } from "@/features/dashboard/components/overview/section-heading";
-import { BookShelfStatusDialog } from "@/features/user-books/components/book-shelf-status-dialog";
+import { BookShelfStatusDialog } from "@/features/user-books/components/book-shelf-status-kanban";
 import { cn } from "@/lib/utils";
 import { USER_BOOK_STATUS_META } from "@/lib/user-books/status";
 import type { UserBookStatus } from "@prisma/client";

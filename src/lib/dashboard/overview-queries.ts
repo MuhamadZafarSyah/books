@@ -158,6 +158,7 @@ async function buildRecentActivity(options?: {
     circleComments,
     readingEvents,
     bookReviews,
+    bookQuotes,
     followTargets,
   ] = await Promise.all([
     fetchManyById(byType.get("READING_CIRCLE"), (ids) =>
@@ -198,6 +199,15 @@ async function buildRecentActivity(options?: {
     ),
     fetchManyById(byType.get("BOOK_REVIEW"), (ids) =>
       prisma.bookReview.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          book: { select: { id: true, title: true } },
+        },
+      }),
+    ),
+    fetchManyById(byType.get("BOOK_QUOTE"), (ids) =>
+      prisma.bookQuote.findMany({
         where: { id: { in: ids } },
         select: {
           id: true,
@@ -256,6 +266,14 @@ async function buildRecentActivity(options?: {
         if (review) {
           subjectTitle = review.book.title;
           href = `/dashboard/explore/books/${review.book.id}/reviews`;
+        }
+        break;
+      }
+      case "BOOK_QUOTE": {
+        const quote = bookQuotes.get(event.sourceId);
+        if (quote) {
+          subjectTitle = quote.book.title;
+          href = `/dashboard/explore/books/${quote.book.id}/reviews`;
         }
         break;
       }
@@ -466,6 +484,7 @@ export async function getProfileOverview(input: {
     joinedEvents,
     leaderboardWeekly,
     leaderboardAllTime,
+    recentQuotes,
   ] = await Promise.all([
     prisma.userBook.groupBy({
       by: ["status"],
@@ -523,6 +542,14 @@ export async function getProfileOverview(input: {
     }),
     getLeaderboardForViewer({ userId, period: "weekly", scope: "overall" }),
     getLeaderboardForViewer({ userId, period: "all-time", scope: "overall" }),
+    prisma.bookQuote.findMany({
+      where: { userId, visibility: "PUBLIC" },
+      orderBy: [{ isFavorite: "desc" }, { createdAt: "desc" }],
+      take: 6,
+      include: {
+        book: { select: { id: true, title: true, author: true, coverUrl: true } },
+      },
+    }),
   ]);
 
   const counts = { reading: 0, finished: 0, wantToRead: 0 };
@@ -584,6 +611,18 @@ export async function getProfileOverview(input: {
     ),
     leaderboardWeekly,
     leaderboardAllTime,
+    recentQuotes: recentQuotes.map((q) => ({
+      id: q.id,
+      quote: q.quote,
+      note: q.note,
+      page: q.page,
+      chapter: q.chapter,
+      visibility: q.visibility,
+      isFavorite: q.isFavorite,
+      createdAt: q.createdAt.toISOString(),
+      updatedAt: q.updatedAt.toISOString(),
+      book: q.book,
+    })),
   };
 }
 

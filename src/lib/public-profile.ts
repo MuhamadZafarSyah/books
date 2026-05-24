@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { deriveEventStatus } from "@/features/reading-events/lib/derive-status";
 import { getLeaderboardForViewer } from "@/lib/leaderboard/queries";
 import { getCurrentUser } from "@/lib/session";
+import type { Prisma } from "@prisma/client";
 import type {
   DashboardCircleCard,
   DashboardEventCard,
@@ -94,6 +95,24 @@ export async function getPublicProfileBySlug(slug: string) {
   const currentUser = await getCurrentUser();
   const currentUserId = currentUser?.id ?? null;
   const isOwnProfile = currentUserId === profile.id;
+  const visibleQuoteWhere: Prisma.BookQuoteWhereInput = isOwnProfile
+    ? { userId: profile.id }
+    : currentUserId
+      ? {
+          userId: profile.id,
+          OR: [
+            { visibility: "PUBLIC" },
+            {
+              visibility: "FOLLOWERS",
+              user: {
+                followers: {
+                  some: { followerId: currentUserId },
+                },
+              },
+            },
+          ],
+        }
+      : { userId: profile.id, visibility: "PUBLIC" };
 
   const [
     followerCount,
@@ -105,6 +124,7 @@ export async function getPublicProfileBySlug(slug: string) {
     currentlyReading,
     publicShelf,
     latestReviews,
+    publicQuotes,
   ] = await Promise.all([
     prisma.userFollow.count({ where: { followingId: profile.id } }),
     prisma.userFollow.count({ where: { followerId: profile.id } }),
@@ -144,6 +164,14 @@ export async function getPublicProfileBySlug(slug: string) {
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { book: { select: { id: true, title: true, author: true } } },
+    }),
+    prisma.bookQuote.findMany({
+      where: visibleQuoteWhere,
+      orderBy: [{ isFavorite: "desc" }, { createdAt: "desc" }],
+      take: 6,
+      include: {
+        book: { select: { id: true, title: true, author: true, coverUrl: true } },
+      },
     }),
   ]);
 
@@ -264,6 +292,18 @@ export async function getPublicProfileBySlug(slug: string) {
     currentlyReading: currentlyReading.map(serializeUserBook),
     publicShelf: publicShelf.map(serializeUserBook),
     latestReviews: latestReviews.map(serializeReview),
+    publicQuotes: publicQuotes.map((q) => ({
+      id: q.id,
+      quote: q.quote,
+      note: q.note,
+      page: q.page,
+      chapter: q.chapter,
+      visibility: q.visibility,
+      isFavorite: q.isFavorite,
+      createdAt: q.createdAt.toISOString(),
+      updatedAt: q.updatedAt.toISOString(),
+      book: q.book,
+    })),
     myCircles,
     upcomingEvents,
     leaderboardWeekly: leaderboardWeekly satisfies DashboardLeaderboardSnippet,

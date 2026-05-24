@@ -8,6 +8,7 @@ import { ActivityFeed } from "@/features/dashboard/components/overview/activity-
 import { MyCirclesList } from "@/features/dashboard/components/overview/my-circles-list";
 import { ProfileReviewsList } from "@/features/dashboard/components/overview/profile-reviews-list";
 import { ProfileShelfStrip } from "@/features/dashboard/components/overview/profile-shelf-strip";
+import { ProfileQuotesList } from "@/features/book-quotes/components/profile-quotes-list";
 import { RankPill } from "@/features/dashboard/components/overview/rank-pill";
 import { SectionHeading } from "@/features/dashboard/components/overview/section-heading";
 import { StatsStrip } from "@/features/dashboard/components/overview/stats-strip";
@@ -160,6 +161,8 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
       <ProfileShelfStrip books={overview.recentlyRead} editable />
 
       <ProfileReviewsList reviews={overview.recentReviews} />
+
+      <ProfileQuotesList quotes={overview.recentQuotes} />
 
       <UpcomingEventsList
         events={[...overview.hostedEvents, ...overview.joinedEvents]

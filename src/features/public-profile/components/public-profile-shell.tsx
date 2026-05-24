@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MyCirclesList } from "@/features/dashboard/components/overview/my-circles-list";
 import { ProfileReviewsList } from "@/features/dashboard/components/overview/profile-reviews-list";
 import { ProfileShelfStrip } from "@/features/dashboard/components/overview/profile-shelf-strip";
+import { ProfileQuotesList } from "@/features/book-quotes/components/profile-quotes-list";
 import { RankPill } from "@/features/dashboard/components/overview/rank-pill";
 import { StatsStrip } from "@/features/dashboard/components/overview/stats-strip";
 import { UpcomingEventsList } from "@/features/dashboard/components/overview/upcoming-events-list";
@@ -216,6 +217,11 @@ export function PublicProfileShell({ profile }: PublicProfileShellProps) {
       <ProfileReviewsList
         reviews={recentReviews}
         emptyHint="Belum ada review yang dipublikasikan."
+      />
+
+      <ProfileQuotesList
+        quotes={profile.publicQuotes}
+        emptyHint="Belum ada kutipan yang dipublikasikan."
       />
 
       <UpcomingEventsList
