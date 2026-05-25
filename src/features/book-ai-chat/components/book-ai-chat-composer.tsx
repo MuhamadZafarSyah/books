@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { Send, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const MAX_LENGTH = 2000;
@@ -20,14 +21,6 @@ export function BookAiChatComposer({
   pending = false,
 }: BookAiChatComposerProps) {
   const [value, setValue] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    const node = textareaRef.current;
-    if (!node) return;
-    node.style.height = "auto";
-    node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
-  }, [value]);
 
   const trimmed = value.trim();
   const tooLong = value.length > MAX_LENGTH;
@@ -64,8 +57,7 @@ export function BookAiChatComposer({
             tooLong && "border-destructive",
           )}
         >
-          <textarea
-            ref={textareaRef}
+          <Textarea
             value={value}
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -73,7 +65,7 @@ export function BookAiChatComposer({
             rows={1}
             disabled={disabled}
             aria-label="Pesan untuk AI"
-            className="max-h-40 flex-1 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-6 flex-1 rounded-none border-0 bg-transparent p-0 text-sm leading-6 placeholder:text-muted-foreground/80 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <span
             className={cn(

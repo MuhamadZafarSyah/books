@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   joinEventSchema,
   type JoinEventInput,
@@ -171,7 +172,7 @@ export function EventJoinDialog({
             </span>
           </div>
 
-          <textarea
+          <Textarea
             id="event-join-comment"
             rows={4}
             placeholder="Komentar (opsional)"
@@ -179,7 +180,7 @@ export function EventJoinDialog({
             disabled={isPending}
             aria-invalid={Boolean(errors.comment)}
             className={cn(
-              "min-h-[6rem] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors",
+              "min-h-[6rem] rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 transition-colors",
               "placeholder:text-muted-foreground",
               "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
               "disabled:cursor-not-allowed disabled:opacity-60",

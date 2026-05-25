@@ -8,6 +8,7 @@ import { createReadingCirclePost } from "@/actions/reading-circle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -111,12 +112,12 @@ export function ReadingCirclePostComposer({
           onChange={(event) => setTitle(event.target.value)}
           maxLength={200}
         />
-        <textarea
+        <Textarea
           rows={4}
           value={body}
           onChange={(event) => setBody(event.target.value)}
           placeholder="Tulis pemikiran Anda..."
-          className="min-h-[6rem] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+          className="min-h-[6rem] rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
           maxLength={4000}
         />
 

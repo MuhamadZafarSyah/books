@@ -7,6 +7,7 @@ import { AlertTriangle, MessageCircle, Eye, Send } from "lucide-react";
 import { createReadingCircleComment } from "@/actions/reading-circle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type {
   ReadingCircleDetail,
@@ -225,12 +226,12 @@ export function ReadingCirclePostCard({
           <div className="mt-3 rounded-xl border border-border/70 bg-background p-2">
             {isMember ? (
               <div className="flex items-end gap-2">
-                <textarea
+                <Textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   placeholder="Tulis komentar..."
                   rows={1}
-                  className="max-h-32 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground/80"
+                  className="min-h-10 flex-1 rounded-none border-0 bg-transparent px-2 py-1.5 text-sm leading-5 placeholder:text-muted-foreground/80 focus-visible:ring-0"
                 />
                 <Button
                   type="button"

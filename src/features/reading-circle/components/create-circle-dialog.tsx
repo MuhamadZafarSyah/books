@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -151,7 +152,7 @@ export function CreateCircleDialog({
             <Label htmlFor="rc-desc" className="text-[10px] tracking-[0.18em]">
               Deskripsi singkat (opsional)
             </Label>
-            <textarea
+            <Textarea
               id="rc-desc"
               rows={isMobile ? 3 : 6}
               value={description}
@@ -159,7 +160,7 @@ export function CreateCircleDialog({
               maxLength={500}
               
               placeholder="Apa yang ingin dibahas di circle ini?"
-              className="min-h-[5rem] w-full resize-none hide-scrollbar  border-b border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors focus-visible:border-ring "
+              className="min-h-[5rem] rounded-none border-x-0 border-t-0 border-b-input bg-background px-3 py-2 text-sm leading-6 focus-visible:border-ring focus-visible:ring-0"
             />
           </div>
 

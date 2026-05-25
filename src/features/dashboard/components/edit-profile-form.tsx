@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   editProfileSchema,
@@ -368,7 +369,7 @@ export function EditProfileForm({ user }: { user: EditableProfileUser }) {
                   {watchedBio.length}/280
                 </span>
               </div>
-              <textarea
+              <Textarea
                 id="bio"
                 rows={5}
                 disabled={isPending}

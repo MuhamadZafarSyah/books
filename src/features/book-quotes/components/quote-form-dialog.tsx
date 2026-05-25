@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   bookQuoteSchema,
   type BookQuoteFormValues,
@@ -135,7 +136,7 @@ export function QuoteFormDialog({
             <Label htmlFor="quote" className="text-xs text-muted-foreground">
               Kutipan
             </Label>
-            <textarea
+            <Textarea
               id="quote"
               rows={3}
               placeholder="Tulis kalimat yang ingin kamu simpan..."
@@ -153,7 +154,7 @@ export function QuoteFormDialog({
               Catatan pribadi{" "}
               <span className="text-muted-foreground/60">(opsional)</span>
             </Label>
-            <textarea
+            <Textarea
               id="note"
               rows={2}
               placeholder="Apa yang membuat kutipan ini menarik?"

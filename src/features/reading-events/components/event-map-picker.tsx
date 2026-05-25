@@ -14,6 +14,7 @@ import { useDebounceValue } from "usehooks-ts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Map,
   MapControls,
@@ -381,15 +382,15 @@ export function EventMapPicker({
 
       <div className="space-y-1">
         <Label htmlFor={`${searchListId}-address`}>Alamat lokasi</Label>
-        <textarea
+        <Textarea
           id={`${searchListId}-address`}
+          rows={1}
           value={locationAddress}
           onChange={(event) => handleManualAddressChange(event.target.value)}
           placeholder="Contoh: Perpustakaan Nasional, Jakarta"
           disabled={manualInputsDisabled}
           readOnly={!loadFailed && mapLoaded}
-          className=
-          "h-fit hide-scrollbar w-full  border border-transparent border-b-input bg-transparent px-0 py-1 text-base transition-[color,border-color] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-b-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-b-destructive md:text-sm dark:aria-invalid:border-b-destructive/50"
+          className="min-h-10 rounded-none border-x-0 border-t-0 border-b-input bg-transparent px-0 py-1 text-base transition-[color,border-color] focus-visible:border-b-ring focus-visible:ring-0 disabled:pointer-events-none aria-invalid:border-b-destructive md:text-sm dark:aria-invalid:border-b-destructive/50"
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">

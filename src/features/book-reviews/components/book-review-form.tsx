@@ -13,6 +13,7 @@ import {
 } from "@/actions/book-reviews";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   bookReviewFormSchema,
   type BookReviewFormValues,
@@ -116,12 +117,12 @@ export function BookReviewForm({
         >
           Review
         </Label>
-        <textarea
+        <Textarea
           id="review-body"
           rows={6}
           placeholder="Bagikan kesan Anda tentang buku ini..."
           className={cn(
-            "min-h-[8rem] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors",
+            "min-h-[8rem] rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 transition-colors",
             "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
           )}
           disabled={pending || deleting}

@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ChatBootstrap, ChatConversationSummary, ChatMessageSummary, ChatSocketEvent, ChatUserSummary } from "@/lib/chat/types";
@@ -736,8 +737,9 @@ export function ChatWorkspace({ initialData, compact = false }: { initialData: C
                   sendMessage();
                 }}
               >
-                <textarea
-                  className="max-h-28 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-2 text-sm outline-none [scrollbar-color:color-mix(in_srgb,var(--primary)_55%,transparent)_transparent] [scrollbar-width:thin] placeholder:text-muted-foreground sm:min-h-11 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/35 hover:[&::-webkit-scrollbar-thumb]:bg-primary/55 [&::-webkit-scrollbar-track]:bg-transparent"
+                <Textarea
+                  rows={1}
+                  className="min-h-10 flex-1 rounded-none border-0 bg-transparent px-3 py-2 text-sm focus-visible:ring-0 sm:min-h-11"
                   onBlur={() => activeConversationId && syncTypingNow(activeConversationId, false)}
                   onChange={(event) => handleDraftChange(event.target.value)}
                   placeholder="Tulis pesan..."

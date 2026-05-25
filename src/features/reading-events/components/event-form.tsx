@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { EventMapPicker } from "@/features/reading-events/components/event-map-picker";
 import {
   createEventSchema,
@@ -218,7 +219,7 @@ export function EventForm(props: EventFormProps) {
             error={errors.description?.message}
             hint={`${watchedDescription.length}/${DESCRIPTION_MAX}`}
           >
-            <textarea
+            <Textarea
               id="event-description"
               rows={5}
               placeholder="Ceritakan suasana, buku yang akan dibaca, atau hal yang perlu dipersiapkan."
@@ -226,7 +227,7 @@ export function EventForm(props: EventFormProps) {
               disabled={isPending}
               aria-invalid={Boolean(errors.description)}
               className={cn(
-                "min-h-[7rem] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 outline-none transition-colors",
+                "min-h-[7rem] rounded-xl border border-input bg-background px-3 py-2 text-sm leading-6 transition-colors",
                 "placeholder:text-muted-foreground",
                 "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
                 "disabled:cursor-not-allowed disabled:opacity-60",
