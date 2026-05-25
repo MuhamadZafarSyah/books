@@ -157,7 +157,7 @@ function FeedCard({ item }: { item: (typeof feedItems)[number] }) {
               alt={`Cover ${item.book.title}`}
               fill
               sizes="60px"
-              className="object-cover"
+              className="object-contain"
             />
           </div>
 

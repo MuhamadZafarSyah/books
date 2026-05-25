@@ -86,7 +86,7 @@ export function BookAiChatSidebar({
                         alt={`Cover ${item.bookTitle}`}
                         fill
                         sizes="40px"
-                        className="object-cover"
+                        className="object-contain"
                       />
                     ) : (
                       <span className="flex size-full items-center justify-center text-muted-foreground/70">

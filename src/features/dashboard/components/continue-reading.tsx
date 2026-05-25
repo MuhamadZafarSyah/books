@@ -123,7 +123,7 @@ function BookProgressCard({
               alt={`Cover buku ${book.title}`}
               fill
               sizes="80px"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-contain transition-opacity duration-300 group-hover:opacity-95"
             />
             {/* Progress overlay */}
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent px-1.5 pb-1.5 pt-4">

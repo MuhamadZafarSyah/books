@@ -24,7 +24,7 @@ export function BookCover({ src, alt, className }: BookCoverProps) {
           alt={alt}
           fill
           sizes="(max-width: 640px) 45vw, 180px"
-          className={cn("object-cover", className)}
+          className={cn("object-contain", className)}
         />
       </span>
     );

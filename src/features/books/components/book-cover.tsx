@@ -58,9 +58,9 @@ export function BookCover({
             onLoad={() => setLoadedSrc(src)}
             onError={() => setErroredSrc(src)}
             className={cn(
-              "object-cover",
+              "object-contain",
               hoverZoom &&
-                "scale-100 transform-gpu motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.07] motion-safe:group-focus-visible:scale-[1.05]",
+                "motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out motion-safe:group-hover:opacity-95 motion-safe:group-focus-visible:opacity-95",
             )}
           />
           <div

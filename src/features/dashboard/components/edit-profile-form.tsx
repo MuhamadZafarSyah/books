@@ -473,7 +473,7 @@ function BannerDropZone({
           fill
           sizes="(max-width: 768px) 100vw, 768px"
           unoptimized={value.startsWith("blob:")}
-          className="object-cover"
+          className="object-contain"
         />
       ) : (
         <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-accent/30">

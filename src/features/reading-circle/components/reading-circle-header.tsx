@@ -112,7 +112,7 @@ export function ReadingCircleHeader({
               alt={`Cover ${circle.context.title}`}
               fill
               sizes="64px"
-              className="object-cover"
+              className="object-contain"
             />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary via-muted to-accent/40 p-2 text-center">

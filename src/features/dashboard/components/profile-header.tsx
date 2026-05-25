@@ -105,7 +105,7 @@ export function ProfileHeader({
             alt={`Banner profil ${user.name ?? "pengguna"}`}
             fill
             sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
+            className="object-contain"
           />
         ) : null}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTItMjJoMnYyaC0yVjhoMnYyaC0ydi0yem0yIDEwdjJoLTEydi0yaDEyem0tMTIgNGgxMnYySDI0di0yem0xMi04SDI0di0yaDEydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />

@@ -67,7 +67,7 @@ export function ProfileShell({ overview, ownActivity }: ProfileShellProps) {
                 alt={`Banner profil ${displayName}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 720px"
-                className="object-cover"
+                className="object-contain"
               />
             ) : null}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />

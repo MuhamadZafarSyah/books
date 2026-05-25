@@ -146,7 +146,7 @@ export function ProfileStats({
                           alt={`Cover ${book.title}`}
                           fill
                           sizes="90px"
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="object-contain transition-opacity duration-300 group-hover:opacity-95"
                         />
                       ) : (
                         <div className="flex size-full flex-col justify-between bg-linear-to-br from-primary to-[#8B6F4E] p-2 text-primary-foreground">

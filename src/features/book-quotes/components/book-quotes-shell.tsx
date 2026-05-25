@@ -82,7 +82,7 @@ export function BookQuotesShell({ book }: BookQuotesShellProps) {
                 alt=""
                 fill
                 sizes="64px"
-                className="object-cover"
+                className="object-contain"
               />
             ) : (
               <span className="flex size-full items-center justify-center">

@@ -31,7 +31,7 @@ export function BookReviewHeader({ book }: BookReviewHeaderProps) {
             alt={`Cover ${book.title}`}
             fill
             sizes="80px"
-            className="object-cover"
+            className="object-contain"
           />
         ) : (
           <div className="flex size-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary via-muted to-accent/40 p-2 text-center">

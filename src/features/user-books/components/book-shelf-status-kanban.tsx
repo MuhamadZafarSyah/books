@@ -1279,7 +1279,7 @@ function BookCoverImage({
         fill
         sizes="96px"
         onError={() => setErrored(true)}
-        className="object-cover"
+        className="object-contain"
       />
     );
   }
