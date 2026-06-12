@@ -1,6 +1,6 @@
 # Book AI Chat Plan
 
-Tambahkan fitur **room chat AI per buku** dari halaman `"/dashboard/explore"` dengan model gratis berbasis **Gemini**, lengkap dengan history room, konteks buku yang tegas, dan proteksi terhadap prompt injection / pertanyaan di luar konteks buku.
+Tambahkan fitur **room chat AI per buku** dari halaman `"/dashboard/explore"` dengan provider AI dinamis (Gemini, OpenRouter, atau OpenAI), lengkap dengan history room, konteks buku yang tegas, dan proteksi terhadap prompt injection / pertanyaan di luar konteks buku.
 
 ## Tujuan
 
@@ -15,7 +15,7 @@ Tambahkan fitur **room chat AI per buku** dari halaman `"/dashboard/explore"` de
 Saya tidak mengerti mengenai hal tersebut
 ```
 
-- Gunakan model AI gratis seperti Gemini, dengan fallback **retry multi API key** jika key aktif sedang quota/rate-limited.
+- Gunakan model AI yang dikonfigurasi lewat env, dengan fallback **retry multi API key** jika key aktif sedang quota/rate-limited.
 - Pertahankan gaya visual Shelfgram dan jangan mengubah UX fitur yang sudah ada di luar ruang lingkup fitur baru ini.
 
 ## Constraint Wajib
@@ -52,7 +52,7 @@ Saya tidak mengerti mengenai hal tersebut
    - sidebar history room AI user
 7. Saat user mengirim pesan:
    - server memvalidasi scope
-   - server memanggil Gemini dengan retry multi-key
+   - server memanggil provider AI terkonfigurasi dengan retry multi-key
    - server menyimpan pesan user + jawaban assistant
    - client menampilkan balasan, idealnya dengan streaming agar terasa seperti ChatGPT/Gemini
 
@@ -126,16 +126,18 @@ Alasan menyimpan snapshot:
 ### Required
 
 ```env
-GEMINI_API_KEYS=
-GEMINI_MODEL=gemini-2.0-flash
+AI_API_KEY=
+AI_MODEL=gemini-2.0-flash
 ```
 
-### Format `GEMINI_API_KEYS`
+`API_KEY` dan `MODEL` juga didukung sebagai alias generik. Legacy `GEMINI_API_KEYS` / `GEMINI_MODEL` masih dibaca sebagai fallback Gemini.
 
-Gunakan satu env berisi daftar key yang dipisah koma:
+### Format `AI_API_KEY`
+
+Gunakan satu env berisi satu key, atau daftar key yang dipisah koma jika ingin retry multi-key:
 
 ```env
-GEMINI_API_KEYS=keyA,keyB,keyC
+AI_API_KEY=keyA,keyB,keyC
 ```
 
 Helper server harus:
@@ -148,8 +150,16 @@ Helper server harus:
 ### Optional
 
 ```env
-GEMINI_TIMEOUT_MS=25000
+AI_TIMEOUT_MS=25000
 ```
+
+`GEMINI_TIMEOUT_MS` masih didukung sebagai fallback legacy.
+
+### Deteksi provider
+
+- `AI_MODEL=gemini-*` atau `models/gemini-*` memakai Gemini API.
+- `AI_API_KEY=sk-or-*` atau model berbentuk `provider/model` memakai OpenRouter.
+- Selain itu memakai OpenAI Chat Completions API.
 
 ## Retry Strategy Multi API Key
 
@@ -498,7 +508,18 @@ Tugas utama:
 8. simpan jawaban assistant ke DB
 9. update `lastMessageAt`
 
-### 9. `src/lib/ai/gemini.ts`
+### 9. `src/lib/ai/provider.ts`
+
+Adapter provider-agnostic untuk Gemini, OpenRouter, dan OpenAI.
+
+Tugas:
+
+- baca `AI_API_KEY` dan `AI_MODEL`
+- deteksi provider dari key/model
+- retry key satu per satu
+- logging yang aman tanpa membocorkan key
+
+### 10. `src/lib/ai/gemini.ts`
 
 Helper low-level panggilan Gemini via `fetch`.
 
@@ -506,11 +527,11 @@ Tugas:
 
 - build request body
 - parse response
-- expose function yang dipakai route handler
+- expose function yang dipakai adapter provider
 
-### 10. `src/lib/ai/gemini-retry.ts`
+### 11. `src/lib/ai/gemini-retry.ts`
 
-Helper retry multi-key.
+Helper retry multi-key legacy Gemini.
 
 Tugas:
 
@@ -519,7 +540,7 @@ Tugas:
 - retry hanya pada error retryable
 - logging yang aman tanpa membocorkan key
 
-### 11. `src/features/book-ai-chat/lib/prompt.ts`
+### 12. `src/features/book-ai-chat/lib/prompt.ts`
 
 Isi prompt sistem terpusat.
 
@@ -531,7 +552,7 @@ Harus memuat:
 - instruksi anti prompt injection
 - format output JSON yang ketat bila memakai schema output
 
-### 12. `src/features/book-ai-chat/lib/scope-guard.ts`
+### 13. `src/features/book-ai-chat/lib/scope-guard.ts`
 
 Tambahkan helper policy kecil untuk server-side enforcement.
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarHeart,
+  HeartHandshake,
   Home,
   Library,
   LogOut,
@@ -51,6 +52,11 @@ const mainNavItems = [
     title: "Cari Pembaca",
     href: "/dashboard/explore/readers",
     icon: UserSearch,
+  },
+  {
+    title: "Blind Match",
+    href: "/dashboard/blind-match",
+    icon: HeartHandshake,
   },
   // {
   //   title: "Rak Buku",

@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { callGeminiWithRetry } from "@/lib/ai/gemini-retry";
 import {
-  GeminiAllKeysFailedError,
-  GeminiNotConfiguredError,
-} from "@/lib/ai/gemini-retry";
-import { GeminiError, type GeminiContent } from "@/lib/ai/gemini";
+  AiAllKeysFailedError,
+  AiNotConfiguredError,
+  AiProviderError,
+  callAiWithRetry,
+  type AiChatMessage,
+} from "@/lib/ai/provider";
 import {
   buildSystemInstruction,
   getFallbackUnavailableMessage,
@@ -110,8 +111,8 @@ function readSnapshot(row: ContextRow): BookContextSnapshot {
  *
  * Body: { message: string }
  *
- * Persists the user message, generates an assistant reply via Gemini with
- * multi-key retry, enforces scope server-side, persists the assistant
+ * Persists the user message, generates an assistant reply via the configured
+ * AI provider with retry, enforces scope server-side, persists the assistant
  * reply, and returns both serialized messages.
  */
 export async function POST(
@@ -199,19 +200,19 @@ export async function POST(
   });
 
   // 2) Build prompt + history payload.
-  const contents: GeminiContent[] = history.map((message) => ({
-    role: message.role === "USER" ? "user" : "model",
-    parts: [{ text: message.body }],
+  const messages: AiChatMessage[] = history.map((message) => ({
+    role: message.role === "USER" ? "user" : "assistant",
+    content: message.body,
   }));
 
-  // 3) Call Gemini with multi-key retry. Translate every failure mode into
+  // 3) Call the configured AI provider. Translate every failure mode into
   //    a controlled assistant response so the user always gets a final
   //    bubble, even on outage.
   let assistantBody: string;
   try {
-    const result = await callGeminiWithRetry({
+    const result = await callAiWithRetry({
       systemInstruction: buildSystemInstruction(snapshot),
-      contents,
+      messages,
       responseSchema: RESPONSE_SCHEMA as unknown as Record<string, unknown>,
       temperature: 0.6,
       maxOutputTokens: 1024,
@@ -219,21 +220,28 @@ export async function POST(
     const guarded = enforceScope(result.text);
     assistantBody = guarded.text;
   } catch (error) {
-    if (error instanceof GeminiNotConfiguredError) {
-      console.error("[book-ai] Gemini not configured");
+    if (error instanceof AiNotConfiguredError) {
+      console.error("[book-ai] AI provider not configured", error.message);
       assistantBody = getFallbackUnavailableMessage();
-    } else if (error instanceof GeminiAllKeysFailedError) {
+    } else if (error instanceof AiAllKeysFailedError) {
       console.error(
-        "[book-ai] All Gemini keys failed",
+        "[book-ai] All AI provider keys failed",
         error.attempts.map((attempt) => ({
+          provider: attempt.provider,
+          model: attempt.model,
           key: attempt.keyMask,
           kind: attempt.error.kind,
           message: attempt.error.message,
         })),
       );
       assistantBody = getFallbackUnavailableMessage();
-    } else if (error instanceof GeminiError) {
-      console.error("[book-ai] Gemini error", error.kind, error.message);
+    } else if (error instanceof AiProviderError) {
+      console.error(
+        "[book-ai] AI provider error",
+        error.provider,
+        error.kind,
+        error.message,
+      );
       assistantBody = getFallbackUnavailableMessage();
     } else {
       console.error("[book-ai] Unexpected error", error);

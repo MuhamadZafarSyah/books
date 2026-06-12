@@ -225,9 +225,6 @@ export function BookShelfStatusDialog({
   const sourceKey =
     source.kind === "id" ? `id:${source.bookId}` : `result:${source.book.id}`;
   const isBusy = savePending || removePending;
-  const currentItem = shelf
-    ? board.find((item) => item.bookId === shelf.bookId) ?? null
-    : null;
   const activeItem = activeId
     ? board.find((item) => draggableIdFor(item.bookId) === activeId) ?? null
     : null;
@@ -357,12 +354,12 @@ export function BookShelfStatusDialog({
 
         const currentShelf: ShelfState = state
           ? {
-              bookId: current.bookId,
-              status: state.status,
-              visibility: state.visibility,
-              isBorrowable: state.isBorrowable,
-              progress: state.progress,
-            }
+            bookId: current.bookId,
+            status: state.status,
+            visibility: state.visibility,
+            isBorrowable: state.isBorrowable,
+            progress: state.progress,
+          }
           : { bookId: current.bookId, ...DEFAULT_STATE };
 
         setShelf(currentShelf);
@@ -514,11 +511,6 @@ export function BookShelfStatusDialog({
     });
   };
 
-  const handleRemove = () => {
-    if (!currentItem || currentItem.isTransient || isBusy) return;
-    persistRemoveItem(currentItem);
-  };
-
   const handleDragStart = (event: DragStartEvent) => {
     if (typeof event.active.id === "string") setActiveId(event.active.id);
     ensureDragScrollLoop(event.active);
@@ -590,7 +582,7 @@ export function BookShelfStatusDialog({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1">
-                  <Tooltip>
+                  {/* <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
@@ -617,7 +609,7 @@ export function BookShelfStatusDialog({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Hapus buku aktif dari rak</TooltipContent>
-                  </Tooltip>
+                  </Tooltip> */}
 
                   <SheetClose asChild>
                     <Button
@@ -765,7 +757,7 @@ function ShelfRemoveDropZone({
           ? "pointer-events-auto border-destructive/35 bg-background/90 text-destructive opacity-100"
           : "pointer-events-none translate-y-4 border-transparent opacity-0",
         isOver &&
-          "-translate-x-1/2 scale-[1.03] border-destructive bg-destructive/15 shadow-[0_0_0_1px_color-mix(in_srgb,var(--destructive)_35%,transparent),0_20px_48px_rgba(127,29,29,0.22)]",
+        "-translate-x-1/2 scale-[1.03] border-destructive bg-destructive/15 shadow-[0_0_0_1px_color-mix(in_srgb,var(--destructive)_35%,transparent),0_20px_48px_rgba(127,29,29,0.22)]",
       )}
     >
       <div className="flex items-center gap-2">
@@ -821,7 +813,7 @@ function ShelfStatusColumn({
         showLeftDivider && "border-l border-border/40",
         isDragging && !disabled && "bg-muted/35",
         isOver &&
-          "scale-[1.015] border-primary/50 bg-primary/10 shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_24%,transparent)]",
+        "scale-[1.015] border-primary/50 bg-primary/10 shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_24%,transparent)]",
       )}
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">

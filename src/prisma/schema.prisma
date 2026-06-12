@@ -46,6 +46,84 @@ model User {
   readingEventParticipations ReadingEventParticipant[]
   activityEvents             UserActivityEvent[]
   leaderboardSnapshots       UserLeaderboardSnapshot[]
+  blindMatchProfile          BlindMatchProfile?
+  blindMatchesViewed         BlindMatchCandidate[] @relation("BlindMatchViewer")
+  blindMatchesTargeted       BlindMatchCandidate[] @relation("BlindMatchTarget")
+}
+
+enum BlindMatchIntent {
+  CASUAL_DISCUSSION
+  GENRE_BUDDY
+  EVENT_BUDDY
+  SURPRISE_ME
+}
+
+enum BlindMatchStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum BlindMatchCandidateStatus {
+  PRESENTED
+  SKIPPED
+  INTERESTED
+  MUTUAL
+  REVEALED
+  EXPIRED
+  BLOCKED
+}
+
+enum BlindMatchRevealStage {
+  NONE
+  CHAPTER_1
+  CHAPTER_2
+  CHAPTER_3
+  MUTUAL
+}
+
+model BlindMatchProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  status          BlindMatchStatus @default(ACTIVE)
+  intent          BlindMatchIntent @default(CASUAL_DISCUSSION)
+  preferredGenres String[]         @default([])
+  discussionStyle String?
+  dailyLimit      Int              @default(3)
+  lastMatchedAt   DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
+}
+
+model BlindMatchCandidate {
+  id                 String                    @id @default(cuid())
+  viewerId           String
+  targetId           String
+  status             BlindMatchCandidateStatus @default(PRESENTED)
+  revealStage        BlindMatchRevealStage     @default(CHAPTER_1)
+  compatibilityScore Int
+  persona            String
+  reasonsJson        Json
+  cluesJson          Json
+  viewerInterestAt   DateTime?
+  targetInterestAt   DateTime?
+  mutualAt           DateTime?
+  revealedAt         DateTime?
+  skippedAt          DateTime?
+  expiresAt          DateTime
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  viewer User @relation("BlindMatchViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+  target User @relation("BlindMatchTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([viewerId, targetId])
+  @@index([viewerId, status, createdAt])
+  @@index([targetId, status, createdAt])
+  @@index([expiresAt])
 }
 
 model UserFollow {

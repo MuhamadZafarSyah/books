@@ -11,6 +11,8 @@ export type GeminiContent = {
 export type GeminiRequest = {
   systemInstruction: string;
   contents: GeminiContent[];
+  /** Optional model override for provider-agnostic callers. */
+  model?: string;
   /** Optional JSON schema for `responseMimeType: application/json`. */
   responseSchema?: Record<string, unknown>;
   /** Optional generation config overrides. */
@@ -59,12 +61,12 @@ export class GeminiError extends Error {
   }
 }
 
-export function getGeminiModel() {
-  return (process.env.GEMINI_MODEL ?? DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+export function getGeminiModel(modelOverride?: string) {
+  return (modelOverride ?? process.env.GEMINI_MODEL ?? DEFAULT_MODEL).trim() || DEFAULT_MODEL;
 }
 
 export function getGeminiTimeout() {
-  const raw = Number(process.env.GEMINI_TIMEOUT_MS ?? "");
+  const raw = Number(process.env.AI_TIMEOUT_MS ?? process.env.GEMINI_TIMEOUT_MS ?? "");
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_TIMEOUT_MS;
 }
 
@@ -87,7 +89,7 @@ export async function callGemini(
   apiKey: string,
   request: GeminiRequest,
 ): Promise<GeminiResult> {
-  const model = getGeminiModel();
+  const model = getGeminiModel(request.model);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model,
   )}:generateContent?key=${encodeURIComponent(apiKey)}`;
