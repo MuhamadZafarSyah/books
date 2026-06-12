@@ -149,6 +149,7 @@ const DEFAULT_STATE: Pick<
 
 const BOOK_DRAG_PREFIX = "shelf-book:";
 const STATUS_DROP_PREFIX = "shelf-status:";
+const REMOVE_DROP_ID = "shelf-remove-zone";
 
 const EMPTY_COLUMN_COPY: Record<UserBookStatus, string> = {
   WANT_TO_READ: "Kosong",
@@ -165,8 +166,8 @@ const SWIPE_TRACK_LIMIT = 96;
 const SWIPE_EXIT_DISTANCE = 120;
 const DRAG_LONG_PRESS_MS = 600;
 const DRAG_LONG_PRESS_TOLERANCE = 8;
-const DRAG_SCROLL_EDGE_THRESHOLD = 24;
-const DRAG_SCROLL_MAX_SPEED = 16;
+const DRAG_SCROLL_EDGE_THRESHOLD = 64;
+const DRAG_SCROLL_MAX_SPEED = 24;
 const STACK_TRANSITION =
   "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease-out";
 
@@ -467,28 +468,41 @@ export function BookShelfStatusDialog({
     });
   };
 
-  const handleRemove = () => {
-    if (!shelf || !currentItem || currentItem.isTransient || isBusy) return;
+  const removeTransientItem = (item: ShelfBoardItem) => {
+    const removesActiveBook = shelf?.bookId === item.bookId;
+
+    setBoard((current) =>
+      current.filter((book) => book.bookId !== item.bookId),
+    );
+    if (removesActiveBook) {
+      setShelf(null);
+      onSaved?.(null);
+    }
+    toast.success("Buku dikeluarkan dari tampilan rak.");
+  };
+
+  const persistRemoveItem = (item: ShelfBoardItem) => {
+    if (isBusy) return;
+
+    if (item.isTransient) {
+      removeTransientItem(item);
+      return;
+    }
 
     const previousBoard = board;
     const previousShelf = shelf;
-    const resetShelf: ShelfState = { bookId: shelf.bookId, ...DEFAULT_STATE };
-    const fallbackPreview = previewFromBoardItem(currentItem);
+    const removesActiveBook = shelf?.bookId === item.bookId;
 
-    setShelf(resetShelf);
     setBoard((current) =>
-      mergeBoardWithCurrent(
-        current.filter((item) => item.bookId !== shelf.bookId),
-        resetShelf,
-        fallbackPreview,
-      ),
+      current.filter((book) => book.bookId !== item.bookId),
     );
+    if (removesActiveBook) setShelf(null);
 
     startRemove(async () => {
       try {
-        await removeUserBook(shelf.bookId);
-        toast.success("Buku dihapus dari rak.");
-        onSaved?.(null);
+        await removeUserBook(item.bookId);
+        toast.success(`"${item.title}" dihapus dari rak.`);
+        if (removesActiveBook) onSaved?.(null);
         router.refresh();
       } catch (error) {
         toast.error(
@@ -498,6 +512,11 @@ export function BookShelfStatusDialog({
         setShelf(previousShelf);
       }
     });
+  };
+
+  const handleRemove = () => {
+    if (!currentItem || currentItem.isTransient || isBusy) return;
+    persistRemoveItem(currentItem);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -514,11 +533,18 @@ export function BookShelfStatusDialog({
     setActiveId(null);
 
     const draggedBookId = bookIdFromDraggableId(event.active.id);
-    const nextStatus = statusFromDroppableId(event.over?.id);
-    if (!draggedBookId || !nextStatus) return;
+    if (!draggedBookId) return;
 
     const item = board.find((book) => book.bookId === draggedBookId);
     if (!item) return;
+
+    if (event.over?.id === REMOVE_DROP_ID) {
+      persistRemoveItem(item);
+      return;
+    }
+
+    const nextStatus = statusFromDroppableId(event.over?.id);
+    if (!nextStatus) return;
 
     if (nextStatus !== item.status) {
       persistStatus(item, nextStatus);
@@ -548,10 +574,10 @@ export function BookShelfStatusDialog({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="max-h-[92vh] w-full border-border/70 bg-background p-0"
+        className="max-h-[94dvh] w-full border-border/70 bg-background p-0"
       >
         <TooltipProvider>
-          <div className="mx-auto flex h-[min(70vh,720px)] w-full max-w-[1200px] flex-col gap-3 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-[min(84dvh,820px)] w-full max-w-[1200px] flex-col gap-3 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
             <SheetHeader className="px-0 py-0 text-left">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-0.5">
@@ -662,23 +688,34 @@ export function BookShelfStatusDialog({
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div ref={boardScrollAreaRef} className="min-h-0 flex-1">
-                  <ScrollArea className="h-full overscroll-contain">
-                    <div className="flex min-w-max items-start gap-0 pb-2">
-                      {columns.map((column, index) => (
-                        <ShelfStatusColumn
-                          key={column.status}
-                          status={column.status}
-                          books={column.books}
-                          disabled={isBusy}
-                          activeBookId={shelf?.bookId ?? null}
-                          showLeftDivider={index > 0}
-                          onRotateDeck={rotateDeck}
-                        />
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                  <div
+                    ref={boardScrollAreaRef}
+                    className="min-h-[19rem] flex-1 overflow-hidden rounded-3xl border border-border/40 bg-card/20"
+                  >
+                    <ScrollArea className="h-full overscroll-contain">
+                      <div className="flex min-w-max items-start gap-1 px-1 pb-9 pt-2">
+                        {columns.map((column, index) => (
+                          <ShelfStatusColumn
+                            key={column.status}
+                            status={column.status}
+                            books={column.books}
+                            disabled={isBusy}
+                            isDragging={Boolean(activeItem)}
+                            activeBookId={shelf?.bookId ?? null}
+                            showLeftDivider={index > 0}
+                            onRotateDeck={rotateDeck}
+                          />
+                        ))}
+                      </div>
+                      <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                  </div>
+
+                  <ShelfRemoveDropZone
+                    activeItem={activeItem}
+                    disabled={isBusy}
+                  />
                 </div>
 
                 <DragOverlay adjustScale={false}>
@@ -705,10 +742,56 @@ export function BookShelfStatusDialog({
   );
 }
 
+function ShelfRemoveDropZone({
+  activeItem,
+  disabled,
+}: {
+  activeItem: ShelfBoardItem | null;
+  disabled: boolean;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: REMOVE_DROP_ID,
+    data: { action: "remove" },
+    disabled: disabled || !activeItem,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      aria-hidden={!activeItem}
+      className={cn(
+        "absolute bottom-4 left-1/2 z-30 flex min-h-16 w-[min(92%,34rem)] -translate-x-1/2 items-center justify-center rounded-2xl border border-dashed px-4 py-3 text-center text-sm shadow-lg backdrop-blur-md transition-[background-color,border-color,box-shadow,color,opacity,transform] duration-200",
+        activeItem
+          ? "pointer-events-auto border-destructive/35 bg-background/90 text-destructive opacity-100"
+          : "pointer-events-none translate-y-4 border-transparent opacity-0",
+        isOver &&
+          "-translate-x-1/2 scale-[1.03] border-destructive bg-destructive/15 shadow-[0_0_0_1px_color-mix(in_srgb,var(--destructive)_35%,transparent),0_20px_48px_rgba(127,29,29,0.22)]",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span className="grid size-8 place-items-center rounded-full bg-destructive/10">
+          <Trash2 aria-hidden="true" className="size-4" />
+        </span>
+        <div className="text-left leading-tight">
+          <p className="font-medium">
+            {isOver ? "Lepaskan untuk hapus dari rak" : "Tarik ke sini untuk hapus"}
+          </p>
+          <p className="text-xs text-destructive/75">
+            {activeItem?.isTransient
+              ? "Buku ini belum tersimpan, jadi hanya dikeluarkan dari tampilan."
+              : "Buku akan dihapus dari rak pribadi Anda."}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ShelfStatusColumn({
   status,
   books,
   disabled,
+  isDragging,
   activeBookId,
   showLeftDivider,
   onRotateDeck,
@@ -716,6 +799,7 @@ function ShelfStatusColumn({
   status: UserBookStatus;
   books: ShelfBoardItem[];
   disabled: boolean;
+  isDragging: boolean;
   activeBookId: string | null;
   showLeftDivider: boolean;
   onRotateDeck: (status: UserBookStatus) => void;
@@ -733,9 +817,11 @@ function ShelfStatusColumn({
       ref={setNodeRef}
       aria-label={meta.label}
       className={cn(
-        "flex w-32 shrink-0 flex-col px-2 py-1.5 transition-colors duration-200 sm:w-36 sm:px-2.5 lg:w-40",
+        "flex w-32 shrink-0 flex-col rounded-2xl border border-transparent px-2 py-1.5 transition-[background-color,border-color,box-shadow,transform] duration-200 sm:w-36 sm:px-2.5 lg:w-40",
         showLeftDivider && "border-l border-border/40",
-        isOver && "bg-primary/5",
+        isDragging && !disabled && "bg-muted/35",
+        isOver &&
+          "scale-[1.015] border-primary/50 bg-primary/10 shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_24%,transparent)]",
       )}
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">
@@ -748,7 +834,12 @@ function ShelfStatusColumn({
       </div>
 
       {books.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground sm:h-52">
+        <div
+          className={cn(
+            "flex h-48 items-center justify-center rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground transition-colors duration-200 sm:h-52",
+            isOver && "border-primary/50 bg-background/60 text-foreground",
+          )}
+        >
           {EMPTY_COLUMN_COPY[status]}
         </div>
       ) : (
@@ -1421,15 +1512,6 @@ function shelfWithStatus(
         : status === "WANT_TO_READ"
           ? null
           : shelf.progress,
-  };
-}
-
-function previewFromBoardItem(item: ShelfBoardItem): CurrentBookPreview {
-  return {
-    bookId: item.bookId,
-    title: item.title,
-    author: item.author,
-    coverUrl: item.coverUrl,
   };
 }
 
