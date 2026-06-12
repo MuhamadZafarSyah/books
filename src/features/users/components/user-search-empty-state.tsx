@@ -3,6 +3,7 @@
 import { Search, SearchX, AlertTriangle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { MIN_USER_SEARCH_QUERY_LENGTH } from "@/features/users/search-constants";
 import { cn } from "@/lib/utils";
 
 type UserSearchEmptyStateProps = {
@@ -16,8 +17,7 @@ const VARIANT_META = {
   idle: {
     icon: Search,
     title: "Mulai cari pembaca lain",
-    description:
-      "Ketik nama, username, atau lokasi untuk menemukan pembaca lain di Shelfgram.",
+    description: `Ketik minimal ${MIN_USER_SEARCH_QUERY_LENGTH} karakter nama atau username untuk menemukan pembaca lain di Shelfgram.`,
     tone: "bg-secondary text-secondary-foreground",
   },
   "no-results": {

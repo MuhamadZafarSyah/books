@@ -1,0 +1,3 @@
+export const MIN_USER_SEARCH_QUERY_LENGTH = 2;
+export const USER_SEARCH_MAX_QUERY_LENGTH = 80;
+export const USER_SEARCH_PAGE_LIMIT = 12;

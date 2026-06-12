@@ -390,7 +390,7 @@ export function EventMapPicker({
           placeholder="Contoh: Perpustakaan Nasional, Jakarta"
           disabled={manualInputsDisabled}
           readOnly={!loadFailed && mapLoaded}
-          className="min-h-10 rounded-none border-x-0 border-t-0 border-b-input bg-transparent px-0 py-1 text-base transition-[color,border-color] focus-visible:border-b-ring focus-visible:ring-0 disabled:pointer-events-none aria-invalid:border-b-destructive md:text-sm dark:aria-invalid:border-b-destructive/50"
+          className="min-h-10 rounded-none border-x-0 border-t-0 border-b-input bg-transparent px-1 py-1 text-base transition-[color,border-color] focus-visible:border-b-ring focus-visible:ring-0 disabled:pointer-events-none aria-invalid:border-b-destructive md:text-sm dark:aria-invalid:border-b-destructive/50"
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">

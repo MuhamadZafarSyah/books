@@ -14,6 +14,10 @@ import { Input } from "@/components/ui/input";
 import { UserSearchEmptyState } from "@/features/users/components/user-search-empty-state";
 import { UserSearchList } from "@/features/users/components/user-search-list";
 import { UserSearchSkeleton } from "@/features/users/components/user-search-skeleton";
+import {
+  MIN_USER_SEARCH_QUERY_LENGTH,
+  USER_SEARCH_PAGE_LIMIT,
+} from "@/features/users/search-constants";
 import { cn } from "@/lib/utils";
 import type {
   UserSearchResponse,
@@ -21,34 +25,69 @@ import type {
 } from "@/features/users/types";
 
 const DEBOUNCE_MS = 450;
-const PAGE_LIMIT = 12;
+const SKELETON_DELAY_MS = 500;
 
 type Status = "idle" | "loading" | "success" | "empty" | "error";
 
 export function UserSearchExperience() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSearchResult[]>([]);
-  const [status, setStatus] = useState<Status>("loading");
+  const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState(false);
 
   const trimmedQuery = useMemo(() => query.trim(), [query]);
 
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const skeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const runSearch = useCallback(async (request: string) => {
+  const clearSkeletonTimer = useCallback(() => {
+    if (skeletonTimerRef.current) {
+      clearTimeout(skeletonTimerRef.current);
+      skeletonTimerRef.current = null;
+    }
+  }, []);
+
+  const resetSearch = useCallback(() => {
+    requestIdRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    clearSkeletonTimer();
+    setResults([]);
+    setErrorMessage(null);
+    setShowSkeleton(false);
+    setStatus("idle");
+  }, [clearSkeletonTimer]);
+
+  const runSearch = useCallback(async (rawRequest: string) => {
+    const request = rawRequest.trim();
+    if (request.length < MIN_USER_SEARCH_QUERY_LENGTH) {
+      setResults([]);
+      setErrorMessage(null);
+      setStatus("idle");
+      return;
+    }
+
     const requestId = ++requestIdRef.current;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
+    clearSkeletonTimer();
+    setShowSkeleton(false);
     setStatus("loading");
     setErrorMessage(null);
+    skeletonTimerRef.current = setTimeout(() => {
+      if (requestId === requestIdRef.current) {
+        setShowSkeleton(true);
+      }
+    }, SKELETON_DELAY_MS);
 
     try {
       const params = new URLSearchParams();
-      if (request.length > 0) params.set("q", request);
-      params.set("limit", String(PAGE_LIMIT));
+      params.set("q", request);
+      params.set("limit", String(USER_SEARCH_PAGE_LIMIT));
 
       const response = await fetch(
         `/api/users/search?${params.toString()}`,
@@ -69,17 +108,15 @@ export function UserSearchExperience() {
       const data = (await response.json()) as UserSearchResponse;
       if (requestId !== requestIdRef.current) return;
 
+      clearSkeletonTimer();
+      setShowSkeleton(false);
       setResults(data.results);
-      setStatus(
-        data.results.length === 0
-          ? request.length > 0
-            ? "empty"
-            : "idle"
-          : "success",
-      );
+      setStatus(data.results.length === 0 ? "empty" : "success");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (requestId !== requestIdRef.current) return;
+      clearSkeletonTimer();
+      setShowSkeleton(false);
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -87,35 +124,64 @@ export function UserSearchExperience() {
       );
       setStatus("error");
     }
-  }, []);
+  }, [clearSkeletonTimer]);
 
   const debouncedSearch = useDebounceCallback(runSearch, DEBOUNCE_MS);
 
-  // The debounced search effect below also fires on mount with an empty
-  // query, which loads suggested readers. Keeping a single trigger path
-  // avoids running runSearch synchronously inside an effect.
   useEffect(() => {
+    if (trimmedQuery.length < MIN_USER_SEARCH_QUERY_LENGTH) {
+      debouncedSearch.cancel();
+      requestIdRef.current += 1;
+      abortRef.current?.abort();
+      clearSkeletonTimer();
+      return;
+    }
+
     debouncedSearch(trimmedQuery);
-  }, [trimmedQuery, debouncedSearch]);
+  }, [trimmedQuery, debouncedSearch, clearSkeletonTimer]);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
       debouncedSearch.cancel();
+      clearSkeletonTimer();
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, clearSkeletonTimer]);
 
   const handleRetry = useCallback(() => {
+    if (trimmedQuery.length < MIN_USER_SEARCH_QUERY_LENGTH) return;
     void runSearch(trimmedQuery);
   }, [runSearch, trimmedQuery]);
+
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      setErrorMessage(null);
+
+      if (value.trim().length < MIN_USER_SEARCH_QUERY_LENGTH) {
+        debouncedSearch.cancel();
+        resetSearch();
+      }
+    },
+    [debouncedSearch, resetSearch],
+  );
+
+  const handleClear = useCallback(() => {
+    debouncedSearch.cancel();
+    setQuery("");
+    resetSearch();
+  }, [debouncedSearch, resetSearch]);
 
   return (
     <div className="space-y-6">
       <SearchBar
         query={query}
-        onQueryChange={setQuery}
-        onClear={() => setQuery("")}
-        loading={status === "loading"}
+        onQueryChange={handleQueryChange}
+        onClear={handleClear}
+        loading={
+          status === "loading" &&
+          trimmedQuery.length >= MIN_USER_SEARCH_QUERY_LENGTH
+        }
       />
 
       <ResultsHeader
@@ -129,6 +195,7 @@ export function UserSearchExperience() {
         query={trimmedQuery}
         results={results}
         errorMessage={errorMessage}
+        showSkeleton={showSkeleton}
         onRetry={handleRetry}
       />
     </div>
@@ -215,16 +282,18 @@ function ResultsBody({
   query,
   results,
   errorMessage,
+  showSkeleton,
   onRetry,
 }: {
   status: Status;
   query: string;
   results: UserSearchResult[];
   errorMessage: string | null;
+  showSkeleton: boolean;
   onRetry: () => void;
 }) {
   if (status === "loading" && results.length === 0) {
-    return <UserSearchSkeleton count={6} />;
+    return showSkeleton ? <UserSearchSkeleton count={6} /> : null;
   }
 
   if (status === "error") {

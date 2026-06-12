@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Crosshair,
-  ExternalLink,
   Loader2,
   LocateFixed,
   MapPin,
@@ -84,9 +83,6 @@ export function EventRouteDialog({
       userLocation ? [userLocation.longitude, userLocation.latitude] : null,
     [userLocation],
   );
-  const googleMapsUrl = userLocation
-    ? `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${latitude},${longitude}`
-    : null;
 
   const handleOpenRoute = () => {
     setOpen(true);
@@ -311,25 +307,6 @@ export function EventRouteDialog({
                   })}
                 </div>
               </div>
-
-              {/* {googleMapsUrl ? (
-                <Button
-                  asChild
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="w-full cursor-pointer justify-center"
-                >
-                  <a
-                    href={googleMapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink aria-hidden="true" data-icon="inline-start" />
-                    Buka turn-by-turn
-                  </a>
-                </Button>
-              ) : null} */}
             </aside>
           </div>
         ) : null}

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { searchUsers } from "@/lib/users/search";
 import { userSearchParamsSchema } from "@/features/users/schemas/user-search-schemas";
+import { MIN_USER_SEARCH_QUERY_LENGTH } from "@/features/users/search-constants";
 import type { UserSearchResponse } from "@/features/users/types";
 
 export const runtime = "nodejs";
@@ -12,8 +13,8 @@ export const dynamic = "force-dynamic";
  * GET /api/users/search?q=...&limit=...
  *
  * Auth-gated. Returns a ranked list of users matching the query, with
- * follow state from the perspective of the current user. Empty query
- * returns a small set of recently joined users so the UI never feels dead.
+ * follow state from the perspective of the current user. Empty or very short
+ * queries return an empty payload without touching the database.
  */
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -31,16 +32,26 @@ export async function GET(request: NextRequest) {
   }
 
   const { q = "", limit } = parsed.data;
+  const query = q.trim();
+
+  if (query.length < MIN_USER_SEARCH_QUERY_LENGTH) {
+    const payload: UserSearchResponse = {
+      query,
+      total: 0,
+      results: [],
+    };
+    return NextResponse.json(payload);
+  }
 
   try {
     const results = await searchUsers({
-      query: q,
+      query,
       limit,
       currentUserId: session.user.id,
     });
 
     const payload: UserSearchResponse = {
-      query: q,
+      query,
       total: results.length,
       results,
     };
