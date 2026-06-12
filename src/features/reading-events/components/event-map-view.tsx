@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, MapPinOff } from "lucide-react";
 
 import {
@@ -9,6 +9,7 @@ import {
   MarkerContent,
   useMap,
 } from "@/components/ui/map";
+import { EventRouteDialog } from "@/features/reading-events/components/event-route-dialog";
 import { cn } from "@/lib/utils";
 
 const FALLBACK_TIMEOUT_MS = 8000;
@@ -47,8 +48,20 @@ export function EventMapView({
     return () => clearTimeout(timer);
   }, [hasLoaded]);
 
+  const routeDialog = (
+    <EventRouteDialog
+      latitude={latitude}
+      longitude={longitude}
+      locationAddress={locationAddress}
+    />
+  );
+
   if (loadFailed && !hasLoaded) {
-    return <EventMapFallback locationAddress={locationAddress} className={className} />;
+    return (
+      <EventMapFallback locationAddress={locationAddress} className={className}>
+        {routeDialog}
+      </EventMapFallback>
+    );
   }
 
   return (
@@ -72,6 +85,7 @@ export function EventMapView({
           </MarkerContent>
         </MapMarker>
       </MapComponent>
+      <div className="absolute right-3 bottom-3 z-10">{routeDialog}</div>
     </div>
   );
 }
@@ -94,16 +108,18 @@ function MapLoadDetector({ onLoaded }: { onLoaded: () => void }) {
 function EventMapFallback({
   locationAddress,
   className,
+  children,
 }: {
   locationAddress: string;
   className?: string;
+  children?: ReactNode;
 }) {
   return (
     <div
       role="status"
       aria-live="polite"
       className={cn(
-        "border-border bg-muted/40 flex h-72 w-full flex-col justify-center gap-3 rounded-2xl border p-5 text-sm lg:h-80",
+        "border-border bg-muted/40 relative flex h-72 w-full flex-col justify-center gap-3 rounded-2xl border p-5 text-sm lg:h-80",
         className,
       )}
     >
@@ -118,6 +134,7 @@ function EventMapFallback({
         />
         <p className="text-foreground leading-relaxed">{locationAddress}</p>
       </div>
+      {children ? <div className="absolute right-3 bottom-3">{children}</div> : null}
     </div>
   );
 }

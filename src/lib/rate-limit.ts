@@ -29,6 +29,17 @@ const geocodeRatelimit = redis
     })
   : null
 
+// 20 requests per 60-second sliding window — used for route planning calls
+// against the public OSRM demo service from the reading-events detail map.
+const routingRatelimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(20, "60 s"),
+      analytics: true,
+      prefix: "ratelimit:routing",
+    })
+  : null
+
 /**
  * Check rate limit for a given key (e.g. "register:user@example.com").
  * Returns { success: true } if allowed, or { success: false, error } if blocked.
@@ -83,6 +94,34 @@ export async function checkGeocodeRateLimit(
   } catch (error) {
     // If Redis is unreachable, fail open (allow the request) but log the error
     console.error("Geocode rate limit check failed:", error)
+    return { success: true }
+  }
+}
+
+/**
+ * Check the route-planning rate limit (20 requests per minute per key).
+ */
+export async function checkRoutingRateLimit(
+  key: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!routingRatelimit) {
+    return { success: true }
+  }
+
+  try {
+    const { success } = await routingRatelimit.limit(key)
+
+    if (!success) {
+      return {
+        success: false,
+        error: "Terlalu banyak permintaan.",
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    // If Redis is unreachable, fail open (allow the request) but log the error
+    console.error("Routing rate limit check failed:", error)
     return { success: true }
   }
 }
