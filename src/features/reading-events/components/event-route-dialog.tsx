@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  Clock,
   Crosshair,
   Loader2,
   LocateFixed,
@@ -10,6 +11,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -159,12 +161,12 @@ export function EventRouteDialog({
         Route Planning
       </Button>
 
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>Route Planning</DialogTitle>
           <DialogDescription>
             Izinkan akses lokasi browser untuk menghitung rekomendasi rute dari
-            posisi Anda ke titik agenda baca.
+            posisi Anda ke {locationAddress}.
           </DialogDescription>
         </DialogHeader>
 
@@ -212,102 +214,63 @@ export function EventRouteDialog({
         ) : null}
 
         {status === "ready" && selectedRoute && userCoordinate ? (
-          <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-            <div className="relative h-80 overflow-hidden rounded-2xl border border-border bg-muted/30 sm:h-96">
-              <MapComponent
-                viewport={{ center: destinationCoordinate, zoom: 13 }}
-                interactive
+          <div className="relative h-[28rem] overflow-hidden rounded-2xl border border-border bg-muted/30 sm:h-[34rem]">
+            <MapComponent
+              viewport={{ center: destinationCoordinate, zoom: 13 }}
+              interactive
+
+
+            >
+              <MapControls position="top-right" showZoom={false} />
+              <RouteBoundsFitter
+                coordinates={selectedRoute.coordinates}
+                start={userCoordinate}
+                destination={destinationCoordinate}
+              />
+              {routes.map((route, index) => {
+                const selected = index === selectedRouteIndex;
+
+                return (
+                  <MapRoute
+                    key={route.id}
+                    id={`reading-event-${route.id}`}
+                    coordinates={route.coordinates}
+                    color={selected ? "#6366f1" : "#94a3b8"}
+                    width={selected ? 6 : 4}
+                    opacity={selected ? 0.98 : 0.45}
+                    onClick={() => setSelectedRouteIndex(index)}
+                  />
+                );
+              })}
+              <MapMarker
+                longitude={userCoordinate[0]}
+                latitude={userCoordinate[1]}
+                draggable={false}
               >
-                <MapControls position="top-right" />
-                <RouteBoundsFitter
-                  coordinates={selectedRoute.coordinates}
-                  start={userCoordinate}
-                  destination={destinationCoordinate}
-                />
-                {routes.map((route, index) => {
-                  const selected = index === selectedRouteIndex;
+                <MarkerContent className="rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg ring-4 ring-background">
+                  <Crosshair className="size-4" aria-hidden />
+                </MarkerContent>
+              </MapMarker>
+              <MapMarker
+                longitude={destinationCoordinate[0]}
+                latitude={destinationCoordinate[1]}
+                draggable={false}
+              >
+                <MarkerContent>
+                  <MapPin
+                    className="fill-[#8fb89e]! text-black! shadow-md"
+                    size={30}
+                    aria-hidden
+                  />
+                </MarkerContent>
+              </MapMarker>
+            </MapComponent>
 
-                  return (
-                    <MapRoute
-                      key={route.id}
-                      id={`reading-event-${route.id}`}
-                      coordinates={route.coordinates}
-                      color={selected ? "#6366f1" : "#94a3b8"}
-                      width={selected ? 6 : 4}
-                      opacity={selected ? 0.98 : 0.45}
-                      onClick={() => setSelectedRouteIndex(index)}
-                    />
-                  );
-                })}
-                <MapMarker
-                  longitude={userCoordinate[0]}
-                  latitude={userCoordinate[1]}
-                  draggable={false}
-                >
-                  <MarkerContent className="rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg ring-4 ring-background">
-                    <Crosshair className="size-4" aria-hidden />
-                  </MarkerContent>
-                </MapMarker>
-                <MapMarker
-                  longitude={destinationCoordinate[0]}
-                  latitude={destinationCoordinate[1]}
-                  draggable={false}
-                >
-                  <MarkerContent>
-                    <MapPin
-                      className="fill-[#8fb89e]! text-black! shadow-md"
-                      size={30}
-                      aria-hidden
-                    />
-                  </MarkerContent>
-                </MapMarker>
-              </MapComponent>
-            </div>
-
-            <aside className="space-y-4">
-              <div className="space-y-1 text-sm">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Tujuan
-                </p>
-                <p className="leading-relaxed text-foreground">
-                  {locationAddress}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Rekomendasi rute
-                </p>
-                <div className="space-y-2">
-                  {routes.map((route, index) => {
-                    const selected = index === selectedRouteIndex;
-                    return (
-                      <Button
-                        key={route.id}
-                        type="button"
-                        variant={selected ? "secondary" : "outline"}
-                        className="h-auto w-full cursor-pointer justify-between gap-3 rounded-2xl px-3 py-3 text-left normal-case tracking-normal"
-                        onClick={() => setSelectedRouteIndex(index)}
-                      >
-                        <span className="min-w-0 space-y-1">
-                          <span className="block text-sm font-semibold">
-                            {index === 0
-                              ? "Rute tercepat"
-                              : `Alternatif ${index + 1}`}
-                          </span>
-                          <span className="block text-xs font-normal text-muted-foreground">
-                            {formatDistance(route.distanceMeters)}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums">
-                          {formatDuration(route.durationSeconds)}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            </aside>
+            <RouteOptionsOverlay
+              routes={routes}
+              selectedRouteIndex={selectedRouteIndex}
+              onSelect={setSelectedRouteIndex}
+            />
           </div>
         ) : null}
 
@@ -343,6 +306,57 @@ function RouteStatusPanel({
         <p className="font-medium text-foreground">{title}</p>
         <p className="leading-relaxed text-muted-foreground">{description}</p>
       </div>
+    </div>
+  );
+}
+
+function RouteOptionsOverlay({
+  routes,
+  selectedRouteIndex,
+  onSelect,
+}: {
+  routes: RouteOption[];
+  selectedRouteIndex: number;
+  onSelect: (index: number) => void;
+}) {
+  return (
+    <div className="pointer-events-none absolute top-3 left-3 z-20 flex w-[calc(100%-1.25rem)] max-w-sm flex-col gap-2 sm:top-4 sm:left-4 sm:w-84">
+      {routes.map((route, index) => {
+        const selected = index === selectedRouteIndex;
+
+        return (
+          <Button
+            key={route.id}
+            type="button"
+            variant={selected ? "secondary" : "outline"}
+            className={cn(
+              "pointer-events-auto h-auto w-full cursor-pointer justify-between gap-3 rounded-2xl px-3 py-3 text-left normal-case tracking-normal shadow-sm backdrop-blur",
+              selected
+                ? "bg-background/95 text-foreground hover:bg-background"
+                : "bg-card/90 text-foreground hover:bg-card",
+            )}
+            onClick={() => onSelect(index)}
+            aria-pressed={selected}
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex items-center gap-1.5 text-sm font-semibold tabular-nums">
+                <Clock aria-hidden data-icon="inline-start" />
+                {formatDuration(route.durationSeconds)}
+              </span>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground tabular-nums">
+                <Navigation aria-hidden data-icon="inline-start" />
+                {formatDistance(route.distanceMeters)}
+              </span>
+            </span>
+
+            {index === 0 ? (
+              <Badge className="rounded-md bg-primary px-2 py-1 text-[0.625rem] text-primary-foreground">
+                Tercepat
+              </Badge>
+            ) : null}
+          </Button>
+        );
+      })}
     </div>
   );
 }
