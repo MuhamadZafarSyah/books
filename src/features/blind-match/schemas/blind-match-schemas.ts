@@ -11,12 +11,12 @@ export const blindMatchProfileSchema = z.object({
   intent: z.enum(BLIND_MATCH_INTENTS),
   preferredGenres: z
     .array(z.string().trim().min(1).max(32))
-    .max(8)
+    .max(8, "Pilih maksimal 8 taste.")
     .default([]),
   discussionStyle: z
     .string()
     .trim()
-    .max(160)
+    .max(160, "Vibe ngobrol maksimal 160 karakter.")
     .optional()
     .default(""),
 });

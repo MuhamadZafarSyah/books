@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Blind Reading Match | Shelfgram",
-  description: "Temukan pembaca misterius berdasarkan chemistry bacaan.",
+  description: "Swipe pembaca berdasarkan profile singkat dan rak buku publik.",
 };
 
 export default async function BlindMatchPage() {

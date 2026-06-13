@@ -3,6 +3,7 @@ import type {
   BlindMatchIntent,
   BlindMatchRevealStage,
   BlindMatchStatus,
+  UserBookStatus,
 } from "@prisma/client";
 
 export type BlindMatchClue = {
@@ -35,6 +36,46 @@ export type BlindMatchEligibility = {
   missing: string[];
 };
 
+export type BlindMatchBookPreview = {
+  id: string;
+  bookId: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  status: UserBookStatus;
+  progress: number | null;
+  updatedAt: string;
+};
+
+export type BlindMatchReaderProfile = {
+  id: string | null;
+  displayName: string;
+  handle: string | null;
+  slug: string | null;
+  bio: string | null;
+  readingVibe: string;
+  preferredGenres: string[];
+  discussionStyle: string | null;
+  topAuthors: string[];
+  publicBookCount: number;
+  publicReviewCount: number;
+  publicQuoteCount: number;
+  bookshelf: {
+    currentlyReading: BlindMatchBookPreview[];
+    finished: BlindMatchBookPreview[];
+    recent: BlindMatchBookPreview[];
+    shared: BlindMatchBookPreview[];
+  };
+  latestReview: {
+    bookTitle: string;
+    body: string;
+  } | null;
+  favoriteQuote: {
+    bookTitle: string;
+    quote: string;
+  } | null;
+};
+
 export type BlindMatchCandidateView = {
   id: string;
   status: BlindMatchCandidateStatus;
@@ -42,27 +83,37 @@ export type BlindMatchCandidateView = {
   compatibilityScore: number;
   persona: string;
   reasons: BlindMatchReason[];
-  clues: BlindMatchClue[];
-  visibleClues: BlindMatchClue[];
+  matchHint: string;
+  profile: BlindMatchReaderProfile;
   expiresAt: string;
   createdAt: string;
+  interestSentAt: string | null;
+  mutualAt: string | null;
   isMutual: boolean;
-  canBookmarkInterest: boolean;
-  revealedUser: {
-    id: string;
-    name: string | null;
-    username: string | null;
-    image: string | null;
-    slug: string;
-    bio: string | null;
-    location: string | null;
-  } | null;
+  canSendInterest: boolean;
+};
+
+export type BlindMatchInboxItem = {
+  id: string;
+  direction: "incoming" | "sent" | "match";
+  status: BlindMatchCandidateStatus;
+  compatibilityScore: number;
+  persona: string;
+  profile: BlindMatchReaderProfile;
+  reasons: BlindMatchReason[];
+  matchHint: string;
+  createdAt: string;
+  interestAt: string | null;
+  mutualAt: string | null;
 };
 
 export type BlindMatchHomeData = {
   profile: BlindMatchProfileView | null;
   eligibility: BlindMatchEligibility;
   candidates: BlindMatchCandidateView[];
+  incomingInterests: BlindMatchInboxItem[];
+  sentInterests: BlindMatchInboxItem[];
+  matches: BlindMatchInboxItem[];
   dailyRemaining: number;
 };
 

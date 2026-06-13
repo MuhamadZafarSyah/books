@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "intro.js/minified/introjs.min.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -208,6 +209,45 @@ select:-webkit-autofill:active {
 
 .maplibregl-ctrl-bottom-right details {
   @apply hidden!;
+}
+
+.shelfgram-intro {
+  border: 1px solid var(--border) !important;
+  border-radius: 1.25rem !important;
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  /* box-shadow: 0 24px 70px
+    color-mix(in oklab, var(--foreground) 18%, transparent) !important; */
+}
+
+.shelfgram-intro .introjs-tooltip-title {
+  font-family: var(--font-heading);
+  color: var(--foreground);
+  font-size: 1.125rem;
+}
+
+.shelfgram-intro .introjs-tooltiptext {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.shelfgram-intro .introjs-button {
+  border: 1px solid var(--border) !important;
+  border-radius: 999px !important;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  text-shadow: none !important;
+}
+
+.shelfgram-intro .introjs-nextbutton,
+.shelfgram-intro .introjs-donebutton {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.shelfgram-intro-highlight {
+  border-radius: 1.25rem !important;
 }
 
 /* ============================================================
@@ -996,7 +1036,8 @@ select:-webkit-autofill:active {
   text-underline-offset: 4px !important;
 }
 
-.theme-sketchy a:not([class*="no-underline"]):not(button a):not([role="button"] a) {
+.theme-sketchy
+  a:not([class*="no-underline"]):not(button a):not([role="button"] a) {
   text-decoration: underline !important;
   text-decoration-style: wavy !important;
   text-decoration-color: var(--border) !important;
@@ -1014,3 +1055,6 @@ select:-webkit-autofill:active {
   text-decoration: none !important;
 }
 
+.introjs-progressbar {
+  background-color: var(--primary) !important;
+}
