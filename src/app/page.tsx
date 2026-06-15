@@ -15,6 +15,7 @@ import CinematicReadingJourney from "@/features/landing/components/cinematic-rea
 import CinematicBlindMatch from "@/features/landing/components/cinematic-blind-match";
 import CinematicBookAiChat from "@/features/landing/components/cinematic-book-ai-chat";
 import CinematicFinalCta from "@/features/landing/components/cinematic-final-cta";
+import { LandingScrollSmoother } from "@/features/landing/components/landing-scroll-smoother";
 
 const featureCards = [
   {
@@ -49,29 +50,30 @@ const statCards = [
 export default function Page() {
   return (
     <SplashScreen>
-      <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
-        <CinematicHero
-          brandName="Shelfgram"
-          cardDescription="Catat buku, tulis review, ketemu pembaca lain."
-          cardHeading="Buku. Review. Temen baca."
-          ctaDescription="Catat bacaanmu, temuin circle yang seru."
-          ctaHeading="Bikin rak bacamu."
-          metricLabel="buku pilihan"
-          metricValue={128}
-          splineScene="/3d/opening_book_on_scroll.spline"
-          tagline1="Read."
-          tagline2="Review. Connect."
-        />
+      <LandingScrollSmoother>
+        <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
+          <CinematicHero
+            brandName="Shelfgram"
+            cardDescription="Catat buku, tulis review, ketemu pembaca lain."
+            cardHeading="Buku. Review. Temen baca."
+            ctaDescription="Catat bacaanmu, temuin circle yang seru."
+            ctaHeading="Bikin rak bacamu."
+            metricLabel="buku pilihan"
+            metricValue={128}
+            splineScene="/3d/opening_book_on_scroll.spline"
+            tagline1="Read."
+            tagline2="Review. Connect."
+          />
 
-        {/* <CinematicStorytelling /> */}
+          {/* <CinematicStorytelling /> */}
 
-        {/* <CinematicReadingFlow /> */}
-        <CinematicReadingJourney />
-        <CinematicBookAiChat />
-        <CinematicBlindMatch />
-        <CinematicFinalCta />
-
-      </main>
+          {/* <CinematicReadingFlow /> */}
+          <CinematicReadingJourney />
+          <CinematicBookAiChat />
+          <CinematicBlindMatch />
+          <CinematicFinalCta />
+        </main>
+      </LandingScrollSmoother>
     </SplashScreen>
   );
 }
