@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run next dev",
+    "dev": "next dev",
     "dev-prisma": "npm run prisma:generate && next dev",
     "build": "npm run prisma:generate && next build",
     "start": "next start",

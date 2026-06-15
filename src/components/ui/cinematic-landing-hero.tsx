@@ -150,15 +150,15 @@ export interface CinematicHeroProps extends React.HTMLAttributes<HTMLDivElement>
 export function CinematicHero({
   brandName = "Shelfgram",
   tagline1 = "Baca.",
-  tagline2 = "Review. Terhubung.",
-  cardHeading = "Buku. Review. Teman baca.",
+  tagline2 = "Review. Nyambung.",
+  cardHeading = "Buku. Review. Temen baca.",
   cardDescription = (
-    <>Catat buku, tulis review, dan temukan pembaca lain.</>
+    <>Catat buku, tulis review, ketemu pembaca lain.</>
   ),
   metricValue = 128,
-  metricLabel = "buku terkurasi",
-  ctaHeading = "Mulai rakmu.",
-  ctaDescription = "Catat buku. Tulis review. Temukan pembaca lain.",
+  metricLabel = "buku pilihan",
+  ctaHeading = "Bikin rak bacamu.",
+  ctaDescription = "Catat bacaanmu, temuin circle yang seru.",
   splineScene = DEFAULT_SPLINE_SCENE,
   className,
   ...props
@@ -479,7 +479,7 @@ export function CinematicHero({
       <div className="sg-hero-text-wrapper sg-transform-3d absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
         <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm backdrop-blur sm:text-sm">
           <LibraryBig aria-hidden="true" className="size-4 text-primary" />
-          Social reading for cozy libraries
+          Ruang baca sosial yang bikin betah.
         </p>
         <h1 className="sg-text-track sg-gsap-reveal sg-text-3d mb-2 max-w-5xl font-heading text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl lg:text-[6.5rem]">
           {tagline1}
@@ -503,7 +503,7 @@ export function CinematicHero({
             href="/auth/register"
           >
             <BookOpen aria-hidden="true" className="size-5" />
-            Mulai rak bacaan
+            Mulai rak bacaku
           </a>
           <a
             aria-label="Masuk ke Shelfgram"
@@ -511,7 +511,7 @@ export function CinematicHero({
             href="/auth/login"
           >
             <Users aria-hidden="true" className="size-5" />
-            Masuk komunitas
+            Gabung komunitas
           </a>
         </div>
       </div>
@@ -554,10 +554,10 @@ export function CinematicHero({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
-                    Review tersimpan
+                    Review kesimpen
                   </p>
                   <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
-                    Rating dan kesan.
+                    Rating &amp; kesanmu.
                   </p>
                 </div>
               </div>
@@ -568,10 +568,10 @@ export function CinematicHero({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
-                    Teman baca aktif
+                    Temen baca aktif
                   </p>
                   <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
-                    Profil dan review.
+                    Profil &amp; review.
                   </p>
                 </div>
               </div>
@@ -585,11 +585,11 @@ export function CinematicHero({
                 {cardDescription}
               </p>
 
-              <div className="sg-mini-card mt-5 hidden rounded-2xl border border-[#fff9f0]/16 bg-[#07150f]/55 p-4 text-left backdrop-blur md:block">
+              {/* <div className="sg-mini-card mt-5 hidden rounded-2xl border border-[#fff9f0]/16 bg-[#07150f]/55 p-4 text-left backdrop-blur md:block">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#fff9f0]/75">
-                      Library pulse
+                      Denyut rak
                     </p>
                     <p className="mt-1 text-3xl font-bold text-[#fff9f0]">
                       <span className="sg-counter-val">0</span>
@@ -600,7 +600,7 @@ export function CinematicHero({
                     <MessageCircle aria-hidden="true" className="size-6" />
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

@@ -55,6 +55,46 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
   const showSplash = isClient && phase !== "done";
   const contentVisible = !isClient || phase === "done";
 
+  useEffect(() => {
+    if (!isClient || !showSplash) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+
+    const previous = {
+      htmlOverflow: html.style.overflow,
+      htmlOverscrollBehavior: html.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyTouchAction: body.style.touchAction,
+    };
+
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.touchAction = "none";
+
+    return () => {
+      html.style.overflow = previous.htmlOverflow;
+      html.style.overscrollBehavior = previous.htmlOverscrollBehavior;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.overscrollBehavior = previous.bodyOverscrollBehavior;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      body.style.touchAction = previous.bodyTouchAction;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isClient, showSplash]);
+
   return (
     <>
       {/* Main content — visible on server, hidden during splash on client */}
@@ -79,7 +119,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
             clipPath:
               phase === "exit" ? "inset(0 0 100% 0)" : "inset(0 0 0% 0)",
           }}
-          aria-label="Memuat Shelfgram"
+          aria-label="Lagi nyiapin Shelfgram…"
           role="status"
         >
           {/* Brand mark */}
@@ -139,7 +179,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
                   : "translate-y-2 opacity-0",
               )}
             >
-              Baca. Review. Terhubung.
+              Baca. Review. Nemu circle-mu.
             </p>
           </div>
 

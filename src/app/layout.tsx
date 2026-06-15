@@ -32,7 +32,7 @@ const architectsDaughter = Architects_Daughter({
 export const metadata: Metadata = {
   title: "Shelfgram | Social Reading Platform",
   description:
-    "Shelfgram helps readers track books, write reviews, build reading profiles, and connect through physical book collections.",
+    "Shelfgram bantu kamu catat buku, tulis review, bangun profil baca, dan nyambung lewat koleksi buku fisik.",
 };
 
 export default function RootLayout({

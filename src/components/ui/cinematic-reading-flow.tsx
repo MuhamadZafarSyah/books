@@ -11,20 +11,20 @@ const steps = [
   {
     icon: BookOpen,
     eyebrow: "01 Catat",
-    title: "Simpan bacaan.",
-    copy: "Masukkan buku ke rak: baca, selesai, atau ingin baca.",
+    title: "Simpan bacaanmu.",
+    copy: "Geser buku ke rak: lagi dibaca, kelar, atau mau dibaca.",
   },
   {
     icon: MessageCircle,
     eyebrow: "02 Review",
-    title: "Bagikan kesan.",
-    copy: "Rating, quote, dan catatan tampil ringkas.",
+    title: "Bagikan kesanmu.",
+    copy: "Rating, quote, & catatan tampil rapi.",
   },
   {
     icon: Users,
     eyebrow: "03 Komunitas",
-    title: "Temukan pembaca.",
-    copy: "Lihat profil, review, dan circle yang cocok dengan ritme bacamu.",
+    title: "Temuin circle-mu.",
+    copy: "Intip profil, review, & circle yang seirama sama ritme bacamu.",
   },
 ] as const;
 
@@ -94,13 +94,13 @@ export function CinematicReadingFlow({ className }: { className?: string }) {
         <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#d6b28b]">
-              Alur Shelfgram
+              Cara kerja Shelfgram
             </p>
             <h2 className="mt-4 max-w-xl font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Tiga aksi. Satu ruang baca.
+              Tiga langkah. Satu ruang baca.
             </h2>
             <p className="mt-5 max-w-md text-base leading-7 text-[#fff9f0]/78 sm:text-lg sm:leading-8">
-              Fokus pada hal yang pembaca lakukan setiap hari.
+              Fokus ke hal yang kamu lakuin tiap hari.
             </p>
           </div>
 
