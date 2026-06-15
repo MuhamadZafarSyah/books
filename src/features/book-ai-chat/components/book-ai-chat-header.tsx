@@ -82,7 +82,7 @@ export function BookAiChatHeader({
         )}
       </div>
 
-      {openLibraryUrl && (
+      {/* {openLibraryUrl && (
         <Button
           asChild
           variant="outline"
@@ -99,7 +99,7 @@ export function BookAiChatHeader({
             Open Library
           </Link>
         </Button>
-      )}
+      )} */}
     </header>
   );
 }

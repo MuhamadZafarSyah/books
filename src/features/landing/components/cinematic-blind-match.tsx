@@ -208,13 +208,13 @@ export default function CinematicBlindMatch() {
             key={i}
             data-anim="particle"
             className={`absolute font-heading text-2xl font-semibold text-[#d6b28b] opacity-20 sm:text-3xl ${[
-                "left-[8%] top-[20%]",
-                "left-[85%] top-[15%]",
-                "left-[15%] top-[70%]",
-                "left-[78%] top-[68%]",
-                "left-[45%] top-[10%]",
-                "left-[55%] top-[82%]",
-              ][i]
+              "left-[8%] top-[20%]",
+              "left-[85%] top-[15%]",
+              "left-[15%] top-[70%]",
+              "left-[78%] top-[68%]",
+              "left-[45%] top-[10%]",
+              "left-[55%] top-[82%]",
+            ][i]
               }`}
           >
             {p}
@@ -307,7 +307,7 @@ export default function CinematicBlindMatch() {
               data-anim="name"
               className="font-heading text-xl font-semibold tracking-tight text-[#fff9f0]"
             >
-              Sena, 23 · Bandung
+              Zafar, 19 · Jakarta
             </span>
           </div>
 
