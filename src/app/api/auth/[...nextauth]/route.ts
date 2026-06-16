@@ -1,3 +1,14 @@
 import { handlers } from "@/lib/auth";
+import { NextResponse, type NextRequest } from "next/server";
 
-export const { GET, POST } = handlers;
+const { GET: originalGET, POST } = handlers;
+
+async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.has("error")) {
+    return NextResponse.redirect(new URL("/auth/login", request.nextUrl.origin));
+  }
+
+  return originalGET(request);
+}
+
+export { GET, POST };

@@ -7,7 +7,7 @@ import { ArrowRight, Info, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { registerByEmail } from "@/actions/auth";
+import { loginWithGoogle, registerByEmail } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,9 @@ import {
   registerSchema,
   type RegisterFormValues,
 } from "@/features/auth/schemas/auth-schemas";
+import { Separator } from "@/components/ui/separator";
 
-export default function RegisterForm() {
+export default function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -62,6 +63,51 @@ export default function RegisterForm() {
           Mulai perjalanan membaca bersama komunitas Shelfgram.
         </p>
       </div>
+
+      <div className="mt-8">
+        <form action={loginWithGoogle}>
+          <input name="callbackUrl" type="hidden" value={callbackUrl} />
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={isPending}
+            className="h-11 w-full cursor-pointer gap-3 rounded-xl text-sm font-medium"
+          >
+            <svg
+              className="size-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.67 15.63 16.89 16.81 15.72 17.59V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23C14.97 23 17.46 22.02 19.28 20.34L15.72 17.59C14.73 18.25 13.48 18.66 12 18.66C9.13 18.66 6.7 16.73 5.82 14.14H2.15V16.99C3.96 20.59 7.69 23 12 23Z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.82 14.14C5.59 13.48 5.46 12.76 5.46 12C5.46 11.24 5.59 10.52 5.82 9.86V7.01H2.15C1.4 8.51 1 10.21 1 12C1 13.79 1.4 15.49 2.15 16.99L5.82 14.14Z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.34C13.62 5.34 15.06 5.89 16.2 6.98L19.36 3.82C17.45 2.03 14.97 1 12 1C7.69 1 3.96 3.41 2.15 7.01L5.82 9.86C6.7 7.27 9.13 5.34 12 5.34Z"
+                fill="#EA4335"
+              />
+            </svg>
+            Lanjutkan dengan Google
+          </Button>
+        </form>
+      </div>
+
+      {/* Divider */}
+      <div className="my-6 flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-[11px] text-muted-foreground">atau</span>
+        <Separator className="flex-1" />
+      </div>
+
 
       {/* Form */}
       <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)}>
