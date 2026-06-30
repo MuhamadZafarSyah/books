@@ -45,3 +45,10 @@ next-env.d.ts
 
 /.agents
 /.kiro/skills
+/.kiro
+.kiro
+
+.opencode
+/.opencode
+
+.vscode
