@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from "react";
 import {
   BookOpen,
   LibraryBig,
-  MessageCircle,
   Star,
   Users,
 } from "lucide-react";
@@ -12,6 +11,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { SplineScene } from "@/components/spline";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_SPLINE_SCENE = "/3d/opening_book_on_scroll.spline";
@@ -20,10 +20,12 @@ const INJECTED_STYLES = `
   .sg-gsap-reveal { visibility: hidden; }
   .sg-transform-3d { transform-style: preserve-3d; }
 
-  .sg-film-grain {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 50; opacity: 0.055; mix-blend-mode: multiply;
-    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+  @media (min-width: 768px) {
+    .sg-film-grain {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 50; opacity: 0.055; mix-blend-mode: multiply;
+      background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+    }
   }
 
   .sg-bg-grid {
@@ -151,14 +153,14 @@ export function CinematicHero({
   brandName = "Shelfgram",
   tagline1 = "Baca.",
   tagline2 = "Review. Nyambung.",
-  cardHeading = "Buku. Review. Temen baca.",
+  cardHeading = "Read. Review. Connect.",
   cardDescription = (
-    <>Catat buku, tulis review, ketemu pembaca lain.</>
+    <>Log books, share reviews, and find your reading community.</>
   ),
   metricValue = 128,
-  metricLabel = "buku pilihan",
-  ctaHeading = "Bikin rak bacamu.",
-  ctaDescription = "Catat bacaanmu, temuin circle yang seru.",
+  metricLabel = "books chosen",
+  ctaHeading = "Start your reading journey.",
+  ctaDescription = "Log your books, find your circle, and read together.",
   splineScene = DEFAULT_SPLINE_SCENE,
   className,
   ...props
@@ -167,9 +169,11 @@ export function CinematicHero({
   const mainCardRef = useRef<HTMLDivElement>(null);
   const splineWrapRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (window.innerWidth < 768) return; // Skip mousemove parallax on mobile
     gsap.registerPlugin(ScrollTrigger);
 
     const reduced = window.matchMedia(
@@ -226,17 +230,34 @@ export function CinematicHero({
     const container = containerRef.current;
     if (!container) return;
 
-    if (reduced) {
+    const isMobileViewport = window.innerWidth < 768;
+
+    if (reduced || isMobileViewport) {
+      // Mobile / Reduced Motion: skip scroll-pinning, immediately show elements
       gsap.set(".sg-gsap-reveal", {
         autoAlpha: 1,
         y: 0,
         scale: 1,
         filter: "blur(0px)",
       });
+      gsap.set(".sg-main-card", { y: 0, autoAlpha: 1 });
+      gsap.set(
+        [
+          ".sg-card-left",
+          ".sg-card-right",
+          ".sg-spline-wrapper",
+          ".sg-floating-badge",
+        ],
+        { autoAlpha: 1, y: 0, scale: 1, rotationX: 0, rotationY: 0 },
+      );
+      gsap.set(".sg-cta-wrapper", {
+        autoAlpha: 1,
+        scale: 1,
+        filter: "blur(0px)",
+      });
       return;
     }
 
-    const isMobile = window.innerWidth < 768;
     let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
     let onSplashDone: (() => void) | undefined;
 
@@ -287,14 +308,12 @@ export function CinematicHero({
           "-=0.85",
         );
 
-      // Coordinate with splash screen: wait for it to finish before revealing hero text.
       onSplashDone = () => {
         setTimeout(() => introTl.play(), 300);
       };
       window.addEventListener("shelfgram:splash-done", onSplashDone, {
         once: true,
       });
-      // Fallback: play after 4s if event never fires.
       fallbackTimer = setTimeout(() => {
         if (!introTl.isActive() && introTl.progress() === 0) {
           introTl.play();
@@ -305,7 +324,7 @@ export function CinematicHero({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: isMobile ? "+=4300" : "+=5600",
+          end: "+=5600",
           pin: true,
           scrub: 1,
           anticipatePin: 1,
@@ -428,9 +447,9 @@ export function CinematicHero({
         .to(
           ".sg-main-card",
           {
-            width: isMobile ? "92vw" : "86vw",
-            height: isMobile ? "88vh" : "84vh",
-            borderRadius: isMobile ? "28px" : "40px",
+            width: "86vw",
+            height: "84vh",
+            borderRadius: "40px",
             ease: "expo.inOut",
             duration: 1.65,
           },
@@ -463,148 +482,178 @@ export function CinematicHero({
     <div
       ref={containerRef}
       className={cn(
-        "relative flex h-screen w-full items-center justify-center overflow-hidden bg-background font-sans text-foreground antialiased",
+        "relative flex w-full items-center justify-center overflow-hidden bg-background font-sans text-foreground antialiased",
+        isMobile ? "min-h-screen flex-col py-12" : "h-screen",
         className,
       )}
-      style={{ perspective: "1500px" }}
+      style={{ perspective: isMobile ? "none" : "1500px" }}
       {...props}
     >
       <style dangerouslySetInnerHTML={{ __html: INJECTED_STYLES }} />
-      <div aria-hidden="true" className="sg-film-grain" />
+      {!isMobile && <div aria-hidden="true" className="sg-film-grain" />}
       <div
         aria-hidden="true"
         className="sg-bg-grid absolute inset-0 z-0 pointer-events-none opacity-60"
       />
 
-      <div className="sg-hero-text-wrapper sg-transform-3d absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
-        <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm backdrop-blur sm:text-sm">
-          <LibraryBig aria-hidden="true" className="size-4 text-primary" />
-          Ruang baca sosial yang bikin betah.
-        </p>
-        <h1 className="sg-text-track sg-gsap-reveal sg-text-3d mb-2 max-w-5xl font-heading text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl lg:text-[6.5rem]">
-          {tagline1}
-        </h1>
-        <h1 className="sg-text-days sg-gsap-reveal sg-text-warm-metal max-w-6xl font-heading text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-[6.5rem]">
-          {tagline2}
-        </h1>
-      </div>
+      {isMobile ? (
+        /* ================= MOBILE LAYOUT (SIMPLE MINIMALIST) ================= */
+        <div className="z-10 flex w-full max-w-md flex-col items-center justify-center px-6 text-center py-6">
+          {/* Brand Tagline Badge */}
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-foreground/85 shadow-sm backdrop-blur-sm">
+            <LibraryBig aria-hidden="true" className="size-3.5 text-primary" />
+            Shelfgram · Ruang Baca Sosial
+          </div>
 
-      <div className="sg-cta-wrapper sg-gsap-reveal absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
-        <h2 className="sg-text-warm-metal mb-5 max-w-4xl font-heading text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-          {ctaHeading}
-        </h2>
-        <p className="mx-auto mb-9 max-w-2xl text-base font-normal leading-7 text-muted-foreground sm:text-lg md:text-xl md:leading-8">
-          {ctaDescription}
-        </p>
-        <div className="flex w-full max-w-md flex-col gap-4 sm:max-w-none sm:flex-row sm:justify-center">
-          <a
-            aria-label="Daftar Shelfgram"
-            className="sg-btn-dark inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
-            href="/auth/register"
-          >
-            <BookOpen aria-hidden="true" className="size-5" />
-            Mulai rak bacaku
-          </a>
-          <a
-            aria-label="Masuk ke Shelfgram"
-            className="sg-btn-light inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
-            href="/auth/login"
-          >
-            <Users aria-hidden="true" className="size-5" />
-            Gabung komunitas
-          </a>
-        </div>
-      </div>
+          {/* Main Editorial Headline */}
+          <h1 className="sg-text-warm-metal font-heading text-4xl font-extrabold tracking-tight leading-tight">
+            {cardHeading}
+          </h1>
 
-      <div
-        className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
-        style={{ perspective: "1500px" }}
-      >
-        <div
-          ref={mainCardRef}
-          className="sg-main-card sg-premium-card sg-gsap-reveal pointer-events-auto relative flex h-[88vh] w-[92vw] items-center justify-center overflow-hidden rounded-[28px] md:h-[84vh] md:w-[86vw] md:rounded-[40px]"
-        >
-          <div aria-hidden="true" className="sg-card-sheen" />
+          {/* Subtitle */}
+          <p className="mt-3.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            {ctaDescription}
+          </p>
 
-          <div className="relative z-10 mx-auto grid h-full w-full max-w-7xl grid-rows-[auto_1fr_auto] items-center gap-4 px-4 py-5 sm:px-6 md:gap-6 lg:grid-cols-[0.8fr_1.45fr_0.75fr] lg:grid-rows-1 lg:gap-8 lg:px-10 lg:py-0 xl:px-12">
-            <div className="sg-card-right sg-gsap-reveal order-1 flex w-full justify-center lg:order-3 lg:justify-end">
-              <h2 className="sg-card-title-metal fixed z-50! font-heading text-4xl font-black uppercase tracking-[-0.08em] sm:text-6xl md:text-7xl lg:text-[6.5rem] xl:text-[8rem]">
-                {brandName}
-              </h2>
-            </div>
 
-            <div
-              className="sg-spline-wrapper  sg-gsap-reveal order-2 relative flex h-[min(54vh,31rem)] w-full items-center justify-center sm:h-[min(58vh,36rem)] lg:order-2 lg:h-[min(72vh,42rem)]"
-              style={{ perspective: "1200px" }}
+
+          {/* Simple CTA Buttons */}
+          <div className="flex mt-12 w-full flex-col gap-3 max-w-xs">
+            <a
+              aria-label="Daftar Shelfgram"
+              className="sg-btn-dark inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-bold shadow-md"
+              href="/auth/register"
             >
-              <div
-                ref={splineWrapRef}
-                className="sg-spline-stage sg-transform-3d relative h-full w-full max-w-[42rem] overflow-hidden rounded-[2rem] will-change-transform sm:rounded-[2.5rem]"
-              >
-                <SplineScene
-                  className="h-full min-h-[24rem] w-full sm:min-h-[32rem]"
-                  scene={splineScene}
-                />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#17120d]/55 to-transparent" />
-              </div>
-
-              <div className="sg-floating-badge absolute left-1 top-3 z-30 flex max-w-[13rem] items-center gap-3 rounded-2xl p-3 sm:left-4 sm:top-8 sm:max-w-[16rem] sm:p-4 lg:-left-6">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#d6b28b]/30 bg-[#d6b28b]/15 text-[#d6b28b]">
-                  <Star aria-hidden="true" className="size-5 fill-current" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
-                    Review kesimpen
-                  </p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
-                    Rating &amp; kesanmu.
-                  </p>
-                </div>
-              </div>
-
-              <div className="sg-floating-badge absolute right-1 bottom-4 z-30 flex max-w-[13rem] items-center gap-3 rounded-2xl p-3 sm:right-4 sm:bottom-8 sm:max-w-[16rem] sm:p-4 lg:-right-6">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#8fb89e]/30 bg-[#8fb89e]/15 text-[#8fb89e]">
-                  <Users aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
-                    Temen baca aktif
-                  </p>
-                  <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
-                    Profil &amp; review.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="sg-card-left sg-copy-panel sg-gsap-reveal order-3 flex w-full flex-col justify-center rounded-[1.5rem] px-4 py-4 text-center lg:order-1 lg:px-5 lg:py-5 lg:text-left">
-              <h3 className="mb-3 font-heading text-2xl font-semibold tracking-tight text-[#fff9f0] sm:text-3xl lg:text-4xl">
-                {cardHeading}
-              </h3>
-              <p className="mx-auto hidden max-w-sm text-sm leading-7 text-[#fff9f0]/90 md:block lg:mx-0 lg:max-w-none lg:text-base">
-                {cardDescription}
-              </p>
-
-              {/* <div className="sg-mini-card mt-5 hidden rounded-2xl border border-[#fff9f0]/16 bg-[#07150f]/55 p-4 text-left backdrop-blur md:block">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#fff9f0]/75">
-                      Denyut rak
-                    </p>
-                    <p className="mt-1 text-3xl font-bold text-[#fff9f0]">
-                      <span className="sg-counter-val">0</span>
-                    </p>
-                    <p className="text-xs text-[#fff9f0]/82">{metricLabel}</p>
-                  </div>
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-[#fff9f0]/10 text-[#d6b28b]">
-                    <MessageCircle aria-hidden="true" className="size-6" />
-                  </div>
-                </div>
-              </div> */}
-            </div>
+              <BookOpen aria-hidden="true" className="size-4" />
+              Mulai rak bacaku
+            </a>
+            <a
+              aria-label="Masuk ke Shelfgram"
+              className="sg-btn-light inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-bold"
+              href="/auth/login"
+            >
+              <Users aria-hidden="true" className="size-4" />
+              Gabung komunitas
+            </a>
           </div>
         </div>
-      </div>
+      ) : (
+        /* ================= DESKTOP LAYOUT (EXACT ORIGINAL) ================= */
+        <>
+          <div className="sg-hero-text-wrapper sg-transform-3d absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
+            <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm backdrop-blur sm:text-sm">
+              <LibraryBig aria-hidden="true" className="size-4 text-primary" />
+              Ruang baca sosial yang bikin betah.
+            </p>
+            <h1 className="sg-text-track sg-gsap-reveal sg-text-3d mb-2 max-w-5xl font-heading text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl lg:text-[6.5rem]">
+              {tagline1}
+            </h1>
+            <h1 className="sg-text-days sg-gsap-reveal sg-text-warm-metal max-w-6xl font-heading text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-[6.5rem]">
+              {tagline2}
+            </h1>
+          </div>
+
+          <div className="sg-cta-wrapper sg-gsap-reveal absolute z-10 flex w-full flex-col items-center justify-center px-4 text-center will-change-transform">
+            <h2 className="sg-text-warm-metal mb-5 max-w-4xl font-heading text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              {ctaHeading}
+            </h2>
+            <p className="mx-auto mb-9 max-w-2xl text-base font-normal leading-7 text-muted-foreground sm:text-lg md:text-xl md:leading-8">
+              {ctaDescription}
+            </p>
+            <div className="flex w-full max-w-md flex-col gap-4 sm:max-w-none sm:flex-row sm:justify-center">
+              <a
+                aria-label="Daftar Shelfgram"
+                className="sg-btn-dark inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
+                href="/auth/register"
+              >
+                <BookOpen aria-hidden="true" className="size-5" />
+                Mulai rak bacaku
+              </a>
+              <a
+                aria-label="Masuk ke Shelfgram"
+                className="sg-btn-light inline-flex min-h-12 items-center justify-center gap-3 rounded-[1.25rem] px-7 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background sm:text-base"
+                href="/auth/login"
+              >
+                <Users aria-hidden="true" className="size-5" />
+                Gabung komunitas
+              </a>
+            </div>
+          </div>
+
+          <div
+            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
+            style={{ perspective: "1500px" }}
+          >
+            <div
+              ref={mainCardRef}
+              className="sg-main-card sg-premium-card sg-gsap-reveal pointer-events-auto relative flex h-[88vh] w-[92vw] items-center justify-center overflow-hidden rounded-[28px] md:h-[84vh] md:w-[86vw] md:rounded-[40px]"
+            >
+              <div aria-hidden="true" className="sg-card-sheen" />
+
+              <div className="relative z-10 mx-auto grid h-full w-full max-w-7xl grid-rows-[auto_1fr_auto] items-center gap-4 px-4 py-5 sm:px-6 md:gap-6 lg:grid-cols-[0.8fr_1.45fr_0.75fr] lg:grid-rows-1 lg:gap-8 lg:px-10 lg:py-0 xl:px-12">
+                <div className="sg-card-right sg-gsap-reveal order-1 flex w-full justify-center lg:order-3 lg:justify-end">
+                  <h2 className="sg-card-title-metal fixed z-50! font-heading text-4xl font-black uppercase tracking-[-0.08em] sm:text-6xl md:text-7xl lg:text-[6.5rem] xl:text-[8rem]">
+                    {brandName}
+                  </h2>
+                </div>
+
+                <div
+                  className="sg-spline-wrapper sg-gsap-reveal order-2 relative flex h-[min(54vh,31rem)] w-full items-center justify-center sm:h-[min(58vh,36rem)] lg:order-2 lg:h-[min(72vh,42rem)]"
+                  style={{ perspective: "1200px" }}
+                >
+                  <div
+                    ref={splineWrapRef}
+                    className="sg-spline-stage sg-transform-3d relative h-full w-full max-w-[42rem] overflow-hidden rounded-[2rem] will-change-transform sm:rounded-[2.5rem]"
+                  >
+                    <SplineScene
+                      className="h-full min-h-[24rem] w-full sm:min-h-[32rem]"
+                      scene={splineScene}
+                    />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#17120d]/55 to-transparent" />
+                  </div>
+
+                  <div className="sg-floating-badge absolute left-1 top-3 z-30 flex max-w-[13rem] items-center gap-3 rounded-2xl p-3 sm:left-4 sm:top-8 sm:max-w-[16rem] sm:p-4 lg:-left-6">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#d6b28b]/30 bg-[#d6b28b]/15 text-[#d6b28b]">
+                      <Star aria-hidden="true" className="size-5 fill-current" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
+                        Review kesimpen
+                      </p>
+                      <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
+                        Rating &amp; kesanmu.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="sg-floating-badge absolute right-1 bottom-4 z-30 flex max-w-[13rem] items-center gap-3 rounded-2xl p-3 sm:right-4 sm:bottom-8 sm:max-w-[16rem] sm:p-4 lg:-right-6">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#8fb89e]/30 bg-[#8fb89e]/15 text-[#8fb89e]">
+                      <Users aria-hidden="true" className="size-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#fff9f0] sm:text-sm">
+                        Temen baca aktif
+                      </p>
+                      <p className="text-[10px] font-medium text-[#fff9f0]/82 sm:text-xs">
+                        Profil &amp; review.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sg-card-left sg-copy-panel sg-gsap-reveal order-3 flex w-full flex-col justify-center rounded-[1.5rem] px-4 py-4 text-center lg:order-1 lg:px-5 lg:py-5 lg:text-left">
+                  <h3 className="mb-3 font-heading text-2xl font-semibold tracking-tight text-[#fff9f0] sm:text-3xl lg:text-4xl">
+                    {cardHeading}
+                  </h3>
+                  <p className="mx-auto hidden max-w-sm text-sm leading-7 text-[#fff9f0]/90 md:block lg:mx-0 lg:max-w-none lg:text-base">
+                    {cardDescription}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

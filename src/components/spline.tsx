@@ -2,6 +2,7 @@
 
 import { Component, Suspense, lazy } from "react";
 import type { ReactNode } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Spline = lazy(() => import("@splinetool/react-spline"));
 
@@ -43,6 +44,8 @@ interface SplineSceneProps {
 }
 
 export function SplineScene({ scene, className }: SplineSceneProps) {
+  const isMobile = useIsMobile();
+
   const fallback = (
     <div className="flex h-full min-h-80 w-full items-center justify-center rounded-[2rem] bg-card/60 px-6 text-center">
       <div>
@@ -55,6 +58,10 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <SplineErrorBoundary fallback={fallback} key={scene}>
@@ -71,3 +78,4 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
     </SplineErrorBoundary>
   );
 }
+

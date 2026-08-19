@@ -95,6 +95,7 @@ export default function CinematicReadingJourney() {
     const prefersReduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+    const isMobile = window.innerWidth < 768;
 
     const ctx = gsap.context(() => {
       // initial glow color
@@ -128,13 +129,14 @@ export default function CinematicReadingJourney() {
         },
       });
 
-      if (prefersReduced) {
-        // Tanpa animasi berat: pastikan semua step terlihat.
+      if (prefersReduced || isMobile) {
+        // Mobile or reduced motion: no scroll-pinning. Show steps clearly in sequence.
         gsap.set("[data-anim='step']", { opacity: 1, yPercent: 0 });
+        gsap.set("[data-anim='progress-fill']", { width: "100%" });
         return;
       }
 
-      // --- Pinned cinematic timeline: steps scrub through ---
+      // --- Pinned cinematic timeline: steps scrub through (Desktop only) ---
       const steps = gsap.utils.toArray<HTMLElement>("[data-anim='step']");
 
       const tl = gsap.timeline({
@@ -199,9 +201,6 @@ export default function CinematicReadingJourney() {
           });
         }
       });
-
-      // --- Counter naik 0 -> 128 saat masuk viewport ---
-
     }, root);
 
     return () => ctx.revert();
@@ -221,22 +220,22 @@ export default function CinematicReadingJourney() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]" />
 
       {/* Intro */}
-      <div className="relative mx-auto max-w-5xl px-6 pt-28 pb-10 text-center">
+      <div className="relative mx-auto max-w-5xl px-6 pt-20 pb-8 text-center md:pt-28 md:pb-10">
         <p
           data-anim="intro"
-          className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-[#d6b28b]"
+          className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#d6b28b] sm:text-sm"
         >
           Cara kerja Shelfgram
         </p>
         <h2
           data-anim="intro"
-          className="text-balance font-heading text-4xl font-semibold leading-tight tracking-tight text-[#fff9f0] sm:text-5xl md:text-6xl"
+          className="text-balance font-heading text-3xl font-semibold leading-tight tracking-tight text-[#fff9f0] sm:text-5xl md:text-6xl"
         >
           Tiga langkah. <span className="text-[#d6b28b]">Satu ruang baca.</span>
         </h2>
         <p
           data-anim="intro"
-          className="mx-auto mt-5 max-w-xl text-pretty text-base leading-7 text-[#fff9f0]/78 sm:text-lg sm:leading-8"
+          className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-7 text-[#fff9f0]/78 sm:text-lg sm:leading-8"
         >
           Fokus ke hal yang kamu lakuin tiap hari—nyatet, ngereview, dan nemu
           temen baca yang sefrekuensi.
@@ -259,55 +258,50 @@ export default function CinematicReadingJourney() {
       </div>
       <div className="mt-1 h-px w-full max-w-md bg-gradient-to-r from-transparent via-[#fff9f0]/10 to-transparent" />
 
-
-      {/* Pinned cinematic steps */}
+      {/* Pinned / Flow steps */}
       <div
         ref={pinRef}
-        className="relative flex min-h-screen items-center justify-center [perspective:1000px]"
+        className="relative flex min-h-fit py-12 items-center justify-center md:min-h-screen md:py-0 [perspective:1000px]"
       >
-        {/* progress bar */}
-        <div className="absolute left-1/2 top-10 h-1 w-48 -translate-x-1/2 overflow-hidden rounded-full bg-[#fff9f0]/10">
+        {/* progress bar (desktop only) */}
+        <div className="hidden md:block absolute left-1/2 top-10 h-1 w-48 -translate-x-1/2 overflow-hidden rounded-full bg-[#fff9f0]/10">
           <div
             data-anim="progress-fill"
             className="h-full w-0 rounded-full bg-[#d6b28b]"
           />
         </div>
 
-        {/* steps stacked di tengah, di-reveal lewat timeline */}
-        <div className="relative grid w-full max-w-2xl place-items-center px-6">
+        {/* steps container */}
+        <div className="relative flex flex-col gap-6 w-full max-w-2xl px-6 md:grid md:place-items-center md:gap-0">
           {STEPS.map((step) => (
             <div
               key={step.id}
               data-anim="step"
               data-glow={step.glow}
-              className="col-start-1 row-start-1 w-full opacity-0"
+              className="w-full opacity-100 md:col-start-1 md:row-start-1 md:opacity-0"
             >
               <div
                 data-anim="step-card"
-                className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm sm:p-12"
+                className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-sm sm:p-12"
               >
                 <span
                   className={`text-xs font-bold uppercase tracking-[0.22em] ${step.accent}`}
                 >
                   {step.index}
                 </span>
-                <h3 className="mt-3 font-heading text-3xl font-semibold tracking-tight text-[#fff9f0] sm:text-4xl">
+                <h3 className="mt-2 font-heading text-2xl font-semibold tracking-tight text-[#fff9f0] sm:text-4xl">
                   {step.title}
                 </h3>
-                <p className="mt-4 font-heading text-2xl font-semibold leading-snug text-[#f5ebdd] sm:text-3xl">
+                <p className="mt-3 font-heading text-xl font-semibold leading-snug text-[#f5ebdd] sm:text-3xl">
                   {step.headline}
                 </p>
-                <p className="mx-auto mt-3 max-w-md text-pretty text-base leading-7 text-[#fff9f0]/72">
+                <p className="mx-auto mt-2 max-w-md text-pretty text-sm leading-6 text-[#fff9f0]/72 sm:text-base sm:leading-7">
                   {step.description}
                 </p>
               </div>
             </div>
           ))}
         </div>
-
-        {/* <p className="absolute bottom-10 left-1/2 -translate-x-1/2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfae9c]">
-          Scroll buat lanjut
-        </p> */}
       </div>
     </section>
   );

@@ -30,39 +30,6 @@ if (typeof window !== "undefined") {
 
 const HEADLINE = ["Mulai", "rak", "bacamu", "hari", "ini."];
 
-const SHELF_BOOKS = [
-  "from-[#d6b28b] to-[#8b6f4e]",
-  "from-[#1f4d3a] to-[#123225]",
-  "from-[#c98348] to-[#6b3d1d]",
-  "from-[#8fb89e] to-[#1f4d3a]",
-  "from-[#fff9f0] to-[#d6b28b]",
-  "from-[#2f7d4f] to-[#17402c]",
-  "from-[#bfae9c] to-[#8b6f4e]",
-];
-
-const FOOTER_COLUMNS = [
-  {
-    title: "Produk",
-    links: [
-      "Rak buku",
-      "Review & quote",
-      "Reading Circle",
-      "Blind Match",
-      "Book AI",
-    ],
-  },
-  {
-    title: "Komunitas",
-    links: ["Jelajah pembaca", "Events offline", "Leaderboard"],
-  },
-  {
-    title: "Shelfgram",
-    links: ["Tentang kami", "Privasi", "Bantuan"],
-  },
-];
-
-const SOCIALS = ["Instagram", "TikTok", "X", "Discord"];
-
 export default function CinematicFinalCta() {
   const rootRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
@@ -168,10 +135,10 @@ export default function CinematicFinalCta() {
 
       {/* Final CTA */}
       <section
-        className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pt-32 pb-24 text-center"
+        className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pt-20 pb-16 text-center md:pt-32 md:pb-24"
         aria-label="Ajakan mulai pakai Shelfgram"
       >
-        <h2 className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-balance font-heading text-5xl font-semibold leading-tight tracking-tight text-[#fff9f0] sm:text-6xl md:text-7xl">
+        <h2 className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-balance font-heading text-4xl font-semibold leading-tight tracking-tight text-[#fff9f0] sm:text-6xl md:text-7xl">
           {HEADLINE.map((word, i) => (
             <span key={i} className="overflow-hidden pb-1">
               <span
@@ -187,7 +154,7 @@ export default function CinematicFinalCta() {
 
         <p
           data-anim="sub"
-          className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-[#fff9f0]/78 sm:text-lg sm:leading-8"
+          className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-7 text-[#fff9f0]/78 sm:text-lg sm:leading-8"
         >
           Catat bacaanmu, tulis review, dan temuin circle yang sefrekuensi.
           Gratis buat mulai—ruang bacamu nunggu di Shelfgram.
