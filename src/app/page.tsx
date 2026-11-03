@@ -1,3 +1,4 @@
+// Ini untuk landing page
 import { CinematicHero } from "@/components/ui/cinematic-landing-hero";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import CinematicReadingJourney from "@/features/landing/components/cinematic-reading-journey";
